@@ -4,6 +4,7 @@ import { parseItem, isPoEItem, analyzeMap } from "@exiled-orb/shared";
 import type { ParsedItem } from "@exiled-orb/shared";
 import { useOverlayStore } from "../stores/overlay-store";
 import { useSettingsStore } from "../stores/settings-store";
+import { useGearCaptureStore } from "../stores/gear-capture-store";
 import { checkPrice } from "./usePriceCheck";
 import { analyzeItemWithAi } from "./useAiAnalysis";
 
@@ -24,6 +25,31 @@ export function useClipboard() {
 
       try {
         const item = parseItem(raw);
+
+        // Gear-capture mode is exclusive: every clipboard item is consumed
+        // by the capture session. Items that don't match any slot rule are
+        // logged and dropped — we don't fall through to price-check or map
+        // analysis, since those popups during a kit tour are confusing and
+        // hide the slot-checklist UI. The capture store overrides item.game
+        // to the session's game (parser falls back to poe1 for shared item
+        // classes like body armours / rings — the user's already declared
+        // the active game by starting capture).
+        const captureStore = useGearCaptureStore.getState();
+        if (captureStore.active) {
+          const slot = captureStore.ingest(item);
+          const sessionGame = captureStore.game;
+          if (slot) {
+            console.log(
+              `[ExiledOrb] Captured ${sessionGame} ${slot}: ${item.name || item.baseType} (${item.rarity})`,
+            );
+          } else {
+            console.log(
+              `[ExiledOrb] Capture: no slot for item class ${JSON.stringify(item.itemClass)} (${item.rarity}, ${item.name || item.baseType})`,
+            );
+          }
+          return;
+        }
+
         console.log("[ExiledOrb] Parsed item:", item.rarity, item.name || item.baseType, "class:", item.itemClass, "game:", item.game);
 
         // Route based on item class

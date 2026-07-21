@@ -52,10 +52,26 @@ export interface LogEventPayload {
 /** Initial game state returned by the Rust `get_initial_game_state` IPC command. */
 export interface InitialGameState {
   character_name: string | null;
+  character_level: number | null;
   zone: string | null;
   area_level: number | null;
   game: string | null;
   log_path: string | null;
+}
+
+/**
+ * A character mined from local Client.txt history. Returned by the Rust
+ * `scan_character_history` IPC command. Provides name + class + max-level
+ * for characters where GGG's API is unavailable (e.g. PoE2 without OAuth).
+ */
+export interface DetectedCharacter {
+  name: string;
+  class: string | null;
+  level: number;
+  game: string;
+  /** "YYYY/MM/DD HH:MM:SS" prefix from the most recent log line. */
+  last_seen: string | null;
+  deaths: number;
 }
 
 /** An active play session */

@@ -1,6 +1,9 @@
 use serde::{Deserialize, Serialize};
+use tauri::AppHandle;
 
-const CHAR_API: &str = "https://www.pathofexile.com/character-window/get-characters";
+use crate::oauth_flow;
+
+const CHAR_API_BASE: &str = "https://api.pathofexile.com/character";
 
 /// GGG Character data
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -13,12 +16,14 @@ pub struct GggCharacter {
     pub game: String,
 }
 
-/// Fetch a single realm's characters
-async fn fetch_realm(client: &reqwest::Client, account_name: &str, realm: Option<&str>) -> Vec<GggCharacter> {
-    let mut url = format!("{}?accountName={}", CHAR_API, urlencode(account_name));
-    if let Some(r) = realm {
-        url.push_str(&format!("&realm={}", r));
-    }
+/// Fetch a single realm's characters via the documented OAuth endpoint.
+/// Path is `/character` for PoE1 (default) and `/character/poe2` for PoE2.
+/// Response shape: `{ "characters": [...] }` (per developer docs).
+async fn fetch_realm(client: &reqwest::Client, token: &str, realm: Option<&str>) -> Vec<GggCharacter> {
+    let url = match realm {
+        Some(r) => format!("{}/{}", CHAR_API_BASE, r),
+        None => CHAR_API_BASE.to_string(),
+    };
 
     let game_tag = match realm {
         Some("poe2") => "poe2",
@@ -27,26 +32,43 @@ async fn fetch_realm(client: &reqwest::Client, account_name: &str, realm: Option
 
     let res = match client
         .get(&url)
+        .bearer_auth(token)
         .header("User-Agent", "exiled-orb/0.1.0")
         .send()
         .await
     {
         Ok(r) => r,
-        Err(_) => return vec![],
+        Err(e) => {
+            eprintln!("[ExiledOrb] fetch_realm {:?} network error: {}", realm, e);
+            return vec![];
+        }
     };
 
     if !res.status().is_success() {
+        let status = res.status();
+        let body = res.text().await.unwrap_or_default();
+        eprintln!("[ExiledOrb] fetch_realm {:?} HTTP {}: {}", realm, status, body);
         return vec![];
     }
 
     let data: serde_json::Value = match res.json().await {
         Ok(d) => d,
-        Err(_) => return vec![],
+        Err(e) => {
+            eprintln!("[ExiledOrb] fetch_realm {:?} parse error: {}", realm, e);
+            return vec![];
+        }
     };
 
-    data.as_array()
+    // Documented shape is { "characters": [...] }; fall back to a top-level
+    // array just in case GGG returns something different in practice.
+    let chars = data
+        .get("characters")
+        .and_then(|v| v.as_array())
         .cloned()
-        .unwrap_or_default()
+        .or_else(|| data.as_array().cloned())
+        .unwrap_or_default();
+
+    chars
         .iter()
         .filter_map(|c| {
             Some(GggCharacter {
@@ -61,25 +83,30 @@ async fn fetch_realm(client: &reqwest::Client, account_name: &str, realm: Option
         .collect()
 }
 
-/// Fetch characters from both PoE1 and PoE2
+/// Fetch characters from both PoE1 and PoE2 via the OAuth-authenticated
+/// `api.pathofexile.com/character` endpoint. Account is identified by the
+/// stored access token — no `accountName` param needed.
 #[tauri::command]
-pub async fn fetch_characters(account_name: String) -> Result<Vec<GggCharacter>, String> {
+pub async fn fetch_characters(app: AppHandle) -> Result<Vec<GggCharacter>, String> {
+    let token = oauth_flow::get_access_token(&app).await?;
     let client = reqwest::Client::new();
 
-    // Fetch both realms in parallel
     let (poe1, poe2) = tokio::join!(
-        fetch_realm(&client, &account_name, None),
-        fetch_realm(&client, &account_name, Some("poe2")),
+        fetch_realm(&client, &token, None),
+        fetch_realm(&client, &token, Some("poe2")),
     );
 
     let mut all = poe1;
     all.extend(poe2);
 
     if all.is_empty() {
-        return Err("No characters found. Check account name and make sure your profile is public.".to_string());
+        return Err(
+            "No characters returned from GGG. The OAuth call succeeded but the response was empty — make sure you have characters on this account."
+                .to_string(),
+        );
     }
 
-    // Deduplicate by name — keep the higher level one
+    // Dedupe by name — keep the higher-level entry
     let mut seen = std::collections::HashMap::new();
     for char in &all {
         let entry = seen.entry(char.name.clone()).or_insert(char.clone());
@@ -87,12 +114,9 @@ pub async fn fetch_characters(account_name: String) -> Result<Vec<GggCharacter>,
             *entry = char.clone();
         }
     }
-    let mut all: Vec<GggCharacter> = seen.into_values().collect();
-
-    // Sort by level descending
-    all.sort_by(|a, b| b.level.cmp(&a.level));
-
-    Ok(all)
+    let mut deduped: Vec<GggCharacter> = seen.into_values().collect();
+    deduped.sort_by(|a, b| b.level.cmp(&a.level));
+    Ok(deduped)
 }
 
 /// A single socket with color and link group
@@ -118,25 +142,38 @@ pub struct GggItem {
     pub mods: Vec<String>,
 }
 
-/// Fetch equipped items for a character
+/// Fetch equipped items for a character via the documented OAuth endpoint
+/// `GET api.pathofexile.com/character[/<realm>]/<name>`. The response includes
+/// equipment, inventory (PoE1), rucksack (PoE1), and skills (PoE2) — we only
+/// surface `equipment` for now to match the existing build-analysis flow.
 #[tauri::command]
-pub async fn fetch_character_items(account_name: String, character: String) -> Result<Vec<GggItem>, String> {
+pub async fn fetch_character_items(
+    app: AppHandle,
+    character: String,
+    game: String,
+) -> Result<Vec<GggItem>, String> {
+    let token = oauth_flow::get_access_token(&app).await?;
     let client = reqwest::Client::new();
-    let url = format!(
-        "https://www.pathofexile.com/character-window/get-items?accountName={}&character={}",
-        urlencode(&account_name),
-        urlencode(&character),
-    );
+
+    let encoded_name = urlencode(&character);
+    let url = if game == "poe2" {
+        format!("{}/poe2/{}", CHAR_API_BASE, encoded_name)
+    } else {
+        format!("{}/{}", CHAR_API_BASE, encoded_name)
+    };
 
     let res = client
         .get(&url)
+        .bearer_auth(&token)
         .header("User-Agent", "exiled-orb/0.1.0")
         .send()
         .await
         .map_err(|e| format!("Request failed: {}", e))?;
 
     if !res.status().is_success() {
-        return Err(format!("API error: {}", res.status()));
+        let status = res.status();
+        let body = res.text().await.unwrap_or_default();
+        return Err(format!("API error ({}): {}", status, body));
     }
 
     let data: serde_json::Value = res
@@ -144,15 +181,22 @@ pub async fn fetch_character_items(account_name: String, character: String) -> R
         .await
         .map_err(|e| format!("Parse error: {}", e))?;
 
-    let items = data["items"]
-        .as_array()
+    // Documented shape: { "character": { ..., "equipment": [...], ... } }.
+    // Fall back to top-level `equipment` just in case.
+    let equipment = data
+        .get("character")
+        .and_then(|c| c.get("equipment"))
+        .or_else(|| data.get("equipment"))
+        .and_then(|e| e.as_array())
         .cloned()
-        .unwrap_or_default()
+        .unwrap_or_default();
+
+    let items = equipment
         .iter()
         .filter_map(|item| {
             let inventory_id = item["inventoryId"].as_str()?.to_string();
 
-            // Parse sockets with colors and link groups
+            // Sockets — same shape as legacy character-window
             let mut socket_details: Vec<SocketInfo> = Vec::new();
             let (socket_count, max_links) = if let Some(sockets) = item["sockets"].as_array() {
                 let count = sockets.len() as u32;
@@ -162,12 +206,12 @@ pub async fn fetch_character_items(account_name: String, character: String) -> R
                     *groups.entry(group as u64).or_insert(0) += 1;
                     let attr = s["attr"].as_str().unwrap_or("G");
                     let color = match attr {
-                        "S" => "R",  // Strength = Red
-                        "D" => "G",  // Dexterity = Green
-                        "I" => "B",  // Intelligence = Blue
-                        "G" => "W",  // General = White
-                        "A" => "A",  // Abyss
-                        "DV" => "W", // Delve = White
+                        "S" => "R",
+                        "D" => "G",
+                        "I" => "B",
+                        "G" => "W",
+                        "A" => "A",
+                        "DV" => "W",
                         _ => "W",
                     };
                     socket_details.push(SocketInfo {
@@ -181,7 +225,6 @@ pub async fn fetch_character_items(account_name: String, character: String) -> R
                 (None, None)
             };
 
-            // Rarity from frameType
             let rarity = match item["frameType"].as_u64().unwrap_or(0) {
                 0 => "Normal",
                 1 => "Magic",
@@ -192,7 +235,6 @@ pub async fn fetch_character_items(account_name: String, character: String) -> R
                 _ => "Normal",
             };
 
-            // Collect explicit mods
             let mods: Vec<String> = item["explicitMods"]
                 .as_array()
                 .map(|arr| arr.iter().filter_map(|m| m.as_str().map(|s| s.to_string())).collect())

@@ -1,6 +1,31 @@
 import { create } from "zustand";
 import { getStore } from "../utils/store";
 
+/** A single socket on an equipped item — color + link group. */
+export interface BuildSocket {
+  color: string;
+  group: number;
+}
+
+/**
+ * One equipped item on a build, in the same shape as GGG's get-items API
+ * returns. Used both by GGG-fetched characters and by clipboard-captured
+ * builds so a single `<ItemCard />` renders both.
+ */
+export interface BuildItem {
+  name: string;
+  base_type: string;
+  inventory_id: string;
+  icon: string;
+  rarity: string;
+  socket_count: number | null;
+  max_links: number | null;
+  socket_details: BuildSocket[];
+  ilvl: number | null;
+  corrupted: boolean;
+  mods: string[];
+}
+
 export interface BuildGoal {
   /** Main skill / build archetype, e.g. "Lightning Arrow Deadeye" */
   buildName: string;
@@ -32,6 +57,13 @@ interface ActiveBuild {
   /** Raw gear summary for AI context */
   gearSummary: string;
 
+  /**
+   * Equipped items in structured form. Optional for backwards compatibility
+   * with builds saved before this field existed (those just have gearSummary
+   * text). Captured + GGG-fetched builds populate this.
+   */
+  gear?: BuildItem[];
+
   /** Build goal — user-defined optimization target */
   goal: BuildGoal | null;
 
@@ -47,8 +79,6 @@ interface BuildState {
   setGoal: (characterName: string, goal: BuildGoal) => Promise<void>;
   loadBuilds: () => Promise<void>;
   deleteBuild: (characterName: string) => Promise<void>;
-  exportBuildCode: () => string | null;
-  importBuildCode: (code: string) => boolean;
 }
 
 const STORE_KEY = "saved_builds";
@@ -117,24 +147,6 @@ export const useBuildStore = create<BuildState>((set, get) => ({
       await store.set(STORE_KEY, saved);
       await store.save();
     } catch (err) { console.error("[ExiledOrb] Store error:", err); }
-  },
-
-  exportBuildCode: () => {
-    const build = get().activeBuild;
-    if (!build) return null;
-    return btoa(JSON.stringify(build));
-  },
-
-  importBuildCode: (code) => {
-    try {
-      const json = atob(code.trim());
-      const build: ActiveBuild = JSON.parse(json);
-      if (build.characterName && build.characterClass) {
-        get().setActiveBuild(build);
-        return true;
-      }
-    } catch (err) { console.error("[ExiledOrb] Store error:", err); }
-    return false;
   },
 }));
 

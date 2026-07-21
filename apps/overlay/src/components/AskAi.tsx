@@ -144,7 +144,8 @@ export default function AskAi() {
       const ab = useBuildStore.getState().activeBuild;
       let buildContext = "";
       if (ab) {
-        buildContext = `\n\n[Active Build Context]\nCharacter: ${ab.characterName} (${ab.characterClass}, Lv.${ab.level}, ${ab.game})\nDamage: ${ab.damageTypes.join(", ") || "unknown"}\nDefense: ${ab.defenseTypes.join(", ") || "unknown"}\nRecovery: ${ab.recoveryTypes.join(", ") || "unknown"}\nKey Uniques: ${ab.keyItems.join(", ") || "none"}${ab.goal ? `\nBuild Goal: ${ab.goal.buildName} (Focus: ${ab.goal.focus.join(", ")}, Budget: ${ab.goal.budget})${ab.goal.notes ? `\nNotes: ${ab.goal.notes}` : ""}` : ""}`;
+        const hasGearDetail = ab.gearSummary && !ab.gearSummary.startsWith("(no gear data");
+        buildContext = `\n\n[Active Build Context]\nCharacter: ${ab.characterName} (${ab.characterClass}, Lv.${ab.level}, ${ab.game})\nDamage: ${ab.damageTypes.join(", ") || "unknown"}\nDefense: ${ab.defenseTypes.join(", ") || "unknown"}\nRecovery: ${ab.recoveryTypes.join(", ") || "unknown"}\nKey Uniques: ${ab.keyItems.join(", ") || "none"}${ab.goal ? `\nBuild Goal: ${ab.goal.buildName} (Focus: ${ab.goal.focus.join(", ")}, Budget: ${ab.goal.budget})${ab.goal.notes ? `\nNotes: ${ab.goal.notes}` : ""}` : ""}${hasGearDetail ? `\n\n[Gear Snapshot]\n${ab.gearSummary}` : ""}`;
       }
 
       const history = messages.slice(-6).map((m) => `${m.role === "user" ? "User" : "Assistant"}: ${m.text}`).join("\n");

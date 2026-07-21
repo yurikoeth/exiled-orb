@@ -20,9 +20,6 @@ ExiledOrb is a transparent, always-on-top desktop overlay that monitors your cli
 
 - **Leveling Guide** -- Step-by-step guides for PoE1 (Acts 1-10) and PoE2 (Acts 1-6) with per-character checklists that auto-advance as you change zones.
 
-- **Atlas Strategies** -- Eight curated endgame farming strategies with recommended maps, atlas passive trees, and game plans.
-
-- **Currency Flip Tracker** -- Parses incoming trade whispers, tracks buy/sell pairs, and shows running profit and loss for currency flipping sessions.
 
 ---
 

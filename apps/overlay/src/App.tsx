@@ -8,16 +8,13 @@ import MapSplitDisplay from "./components/MapSplitDisplay";
 import AiPriceInsight from "./components/AiPriceInsight";
 import TradeAssistant from "./components/TradeAssistant";
 import LevelingGuide from "./components/LevelingGuide";
-import FlipTracker from "./components/FlipTracker";
 import RunHistory from "./components/RunHistory";
 import RunTimeChart from "./components/RunTimeChart";
 import MapLeaderboard from "./components/MapLeaderboard";
 import MapCountStats from "./components/MapCountStats";
-import AtlasHelper from "./components/AtlasHelper";
 import GggAccount from "./components/GggAccount";
 import AskAi from "./components/AskAi";
 import MarketTab from "./components/MarketTab";
-import { useFlipTracker } from "./hooks/useFlipTracker";
 import { useClipboard } from "./hooks/useClipboard";
 import { useClientLog } from "./hooks/useClientLog";
 import { useMapSpeedrun } from "./hooks/useMapSpeedrun";
@@ -29,26 +26,22 @@ import { useBuildStore } from "./stores/build-store";
 
 import menuMarket from "./assets/menu/market.png";
 import menuLeveling from "./assets/menu/leveling.png";
-import menuAtlas from "./assets/menu/atlas.png";
 import menuMaps from "./assets/menu/maps.png";
-import menuFlips from "./assets/menu/flips.png";
 import menuAsk from "./assets/menu/ask.png";
 import menuChar from "./assets/menu/char.png";
 
-type Page = "home" | "market" | "leveling" | "atlas" | "maps" | "flips" | "ask" | "char";
+type Page = "home" | "market" | "leveling" | "maps" | "ask" | "char";
 
 const MENU_ITEMS: { id: Page; label: string; desc: string; bg: string }[] = [
   { id: "market", label: "Market", desc: "Live prices from poe.ninja", bg: menuMarket },
   { id: "leveling", label: "Leveling", desc: "Act-by-act progression", bg: menuLeveling },
-  { id: "atlas", label: "Atlas", desc: "Farming strategies", bg: menuAtlas },
   { id: "maps", label: "Maps", desc: "Speedrun timer & stats", bg: menuMaps },
-  { id: "flips", label: "Flips", desc: "Currency profit tracker", bg: menuFlips },
   { id: "ask", label: "Ask AI", desc: "Ask anything about PoE", bg: menuAsk },
   { id: "char", label: "Characters", desc: "Gear & build analysis", bg: menuChar },
 ];
 
 export default function App() {
-  const { activePanel } = useOverlayStore();
+  const activePanel = useOverlayStore((s) => s.activePanel);
   const currentRun = useSpeedrunStore((s) => s.currentRun);
   const [page, setPage] = useState<Page>("home");
   const [leaderboardMap, setLeaderboardMap] = useState<{ name: string; game: string } | null>(null);
@@ -68,7 +61,6 @@ export default function App() {
   useClientLog();
   useMapSpeedrun();
   useTradeWhispers();
-  useFlipTracker();
 
   // Listen for toggle hotkey
   useEffect(() => {
@@ -164,7 +156,6 @@ export default function App() {
       {/* PAGES */}
       {page === "market" && <MarketTab />}
       {page === "leveling" && <LevelingGuide />}
-      {page === "atlas" && <AtlasHelper />}
       {page === "maps" && (
         <>
           <MapSplitDisplay />
@@ -189,17 +180,6 @@ export default function App() {
               "• Export session data as CSV/JSON",
             ]} />
           )}
-        </>
-      )}
-      {page === "flips" && (
-        <>
-          <FlipTracker />
-          <HintPanel title="Currency Flip Tracker" lines={[
-            "Automatically tracks buy/sell trade whispers.",
-            "• Running profit/loss",
-            "• Buy vs sell totals",
-            "• Recent trade history",
-          ]} />
         </>
       )}
       {page === "ask" && <AskAi />}

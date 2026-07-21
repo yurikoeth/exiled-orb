@@ -8,7 +8,7 @@ const dangerStyles = {
 };
 
 export default function MapModWarnings() {
-  const { mapAnalysis } = useOverlayStore();
+  const mapAnalysis = useOverlayStore((s) => s.mapAnalysis);
   if (!mapAnalysis) return null;
 
   const overallStyle = dangerStyles[mapAnalysis.overallDanger];

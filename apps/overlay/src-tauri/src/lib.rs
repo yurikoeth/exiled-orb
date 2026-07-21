@@ -2,6 +2,7 @@ mod ai;
 mod clipboard;
 mod log_watcher;
 mod oauth;
+mod oauth_flow;
 mod settings;
 
 use std::path::PathBuf;
@@ -32,24 +33,7 @@ fn set_log_path(app: tauri::AppHandle, path: String) {
 /// Tauri command: get default log file paths to check
 #[tauri::command]
 fn get_default_log_paths() -> Vec<String> {
-    vec![
-        // PoE1 paths
-        r"C:\Program Files (x86)\Grinding Gear Games\Path of Exile\logs\Client.txt".into(),
-        r"C:\Program Files (x86)\Steam\steamapps\common\Path of Exile\logs\Client.txt".into(),
-        r"C:\Program Files\Grinding Gear Games\Path of Exile\logs\Client.txt".into(),
-        // PoE1 — custom Steam library locations
-        r"D:\SteamLibrary\steamapps\common\Path of Exile\logs\Client.txt".into(),
-        r"E:\SteamLibrary\steamapps\common\Path of Exile\logs\Client.txt".into(),
-        r"F:\SteamLibrary\steamapps\common\Path of Exile\logs\Client.txt".into(),
-        // PoE2 paths
-        r"C:\Program Files (x86)\Grinding Gear Games\Path of Exile 2\logs\Client.txt".into(),
-        r"C:\Program Files (x86)\Steam\steamapps\common\Path of Exile 2\logs\Client.txt".into(),
-        r"C:\Program Files\Grinding Gear Games\Path of Exile 2\logs\Client.txt".into(),
-        // PoE2 — custom Steam library locations
-        r"D:\SteamLibrary\steamapps\common\Path of Exile 2\logs\Client.txt".into(),
-        r"E:\SteamLibrary\steamapps\common\Path of Exile 2\logs\Client.txt".into(),
-        r"F:\SteamLibrary\steamapps\common\Path of Exile 2\logs\Client.txt".into(),
-    ]
+    log_watcher::log_path_candidates()
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -70,6 +54,7 @@ pub fn run() {
             get_default_log_paths,
             show_settings,
             log_watcher::get_initial_game_state,
+            log_watcher::scan_character_history,
             ai::ask_poe_question,
             ai::ask_poe_with_image,
             ai::analyze_item_price,
@@ -79,6 +64,9 @@ pub fn run() {
             oauth::fetch_characters,
             oauth::fetch_ninja,
             oauth::fetch_character_items,
+            oauth_flow::start_oauth_flow,
+            oauth_flow::is_authenticated,
+            oauth_flow::disconnect_oauth,
         ])
         .setup(|app| {
             // Build system tray
@@ -117,16 +105,22 @@ pub fn run() {
             let handle = app.handle().clone();
             clipboard::start_clipboard_watcher(handle);
 
-            // Try to auto-detect and watch Client.txt
+            // Auto-detect Client.txt: pick the most-recently-modified existing log
+            // so the active game wins when both PoE1 and PoE2 are installed.
             let handle = app.handle().clone();
             let paths = get_default_log_paths();
-            for path_str in &paths {
-                let path = PathBuf::from(path_str);
-                if path.exists() {
-                    println!("Auto-detected log file: {}", path_str);
-                    log_watcher::start_log_watcher(handle.clone(), path);
-                    break;
-                }
+            let mut candidates: Vec<(PathBuf, std::time::SystemTime)> = paths
+                .iter()
+                .map(PathBuf::from)
+                .filter_map(|p| {
+                    let modified = std::fs::metadata(&p).ok()?.modified().ok()?;
+                    Some((p, modified))
+                })
+                .collect();
+            candidates.sort_by(|a, b| b.1.cmp(&a.1));
+            if let Some((path, _)) = candidates.into_iter().next() {
+                println!("Auto-detected log file (most recent): {:?}", path);
+                log_watcher::start_log_watcher(handle, path);
             }
 
             Ok(())

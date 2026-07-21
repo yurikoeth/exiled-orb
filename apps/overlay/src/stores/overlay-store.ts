@@ -24,6 +24,7 @@ interface OverlayState {
   detectedGame: "poe1" | "poe2" | null;
   characterName: string | null;
   characterClass: string | null;
+  characterLevel: number | null;
   areaLevel: number | null;
 
   // Actions
@@ -35,6 +36,7 @@ interface OverlayState {
   addDeath: (characterName?: string) => void;
   setCharacterName: (name: string) => void;
   setCharacterClass: (cls: string) => void;
+  setCharacterLevel: (level: number) => void;
   setDetectedGame: (game: "poe1" | "poe2") => void;
   setAreaLevel: (level: number) => void;
   resetSession: () => void;
@@ -57,6 +59,7 @@ export const useOverlayStore = create<OverlayState>((set) => ({
   detectedGame: null,
   characterName: null,
   characterClass: null,
+  characterLevel: null,
   areaLevel: null,
 
   toggleVisibility: () => set((s) => ({ visible: !s.visible })),
@@ -92,6 +95,8 @@ export const useOverlayStore = create<OverlayState>((set) => ({
   setCharacterName: (name) => set({ characterName: name }),
 
   setCharacterClass: (cls) => set({ characterClass: cls }),
+
+  setCharacterLevel: (level) => set({ characterLevel: level }),
 
   setDetectedGame: (game) => set({ detectedGame: game }),
 

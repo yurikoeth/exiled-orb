@@ -36,7 +36,9 @@ const verdictLabels: Record<string, string> = {
 };
 
 export default function PriceCheck() {
-  const { currentItem, priceResult, priceLoading } = useOverlayStore();
+  const currentItem = useOverlayStore((s) => s.currentItem);
+  const priceResult = useOverlayStore((s) => s.priceResult);
+  const priceLoading = useOverlayStore((s) => s.priceLoading);
 
   // Evaluate rare item mods
   const evaluation: ItemEvaluation | null = useMemo(() => {

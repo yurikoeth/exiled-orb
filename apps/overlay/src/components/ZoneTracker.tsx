@@ -72,8 +72,16 @@ function useClassImage(className: string | null): string | null {
 }
 
 export default function ZoneTracker() {
-  const { currentZone, sessionDeaths, sessionStart, detectedGame, characterName, characterClass, areaLevel } =
-    useOverlayStore();
+  // Use individual selectors instead of destructuring the entire store —
+  // otherwise the tile re-renders on every clipboard/price-check/map event,
+  // since those write unrelated fields to the same store.
+  const currentZone = useOverlayStore((s) => s.currentZone);
+  const sessionDeaths = useOverlayStore((s) => s.sessionDeaths);
+  const sessionStart = useOverlayStore((s) => s.sessionStart);
+  const detectedGame = useOverlayStore((s) => s.detectedGame);
+  const characterName = useOverlayStore((s) => s.characterName);
+  const characterClass = useOverlayStore((s) => s.characterClass);
+  const areaLevel = useOverlayStore((s) => s.areaLevel);
   const [elapsed, setElapsed] = useState(0);
 
   useEffect(() => {

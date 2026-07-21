@@ -15,6 +15,7 @@ export function useClientLog() {
     invoke<InitialGameState>("get_initial_game_state").then((state) => {
       const store = useOverlayStore.getState();
       if (state.character_name) store.setCharacterName(state.character_name);
+      if (state.character_level) store.setCharacterLevel(state.character_level);
       if (state.zone) store.setZone(state.zone);
       if (state.area_level) store.setAreaLevel(state.area_level);
       if (state.game === "poe1" || state.game === "poe2") store.setDetectedGame(state.game);
@@ -31,6 +32,10 @@ export function useClientLog() {
       console.log("[ExiledOrb] log-event received:", JSON.stringify(data));
       const store = useOverlayStore.getState();
 
+      if (data.game === "poe1" || data.game === "poe2") {
+        store.setDetectedGame(data.game);
+      }
+
       switch (data.type) {
         case "zone":
           if (data.zone_name) {
@@ -45,6 +50,7 @@ export function useClientLog() {
             store.setCharacterName(data.character_name);
           }
           if (data.level && data.level > 0) {
+            store.setCharacterLevel(data.level);
             console.log(`[ExiledOrb] Level up: ${data.character_name} → ${data.level}`);
           }
           break;

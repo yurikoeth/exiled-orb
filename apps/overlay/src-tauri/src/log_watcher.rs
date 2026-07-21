@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::fs::File;
 use std::io::{BufRead, BufReader, Seek, SeekFrom};
 use std::path::PathBuf;
@@ -5,6 +6,51 @@ use std::sync::Mutex;
 use std::thread;
 use std::time::Duration;
 use tauri::{AppHandle, Emitter, Manager};
+
+/// Default Client.txt search paths (PoE1 + PoE2 across common install
+/// locations). The active-game watcher picks the most-recently-modified one;
+/// the character-history scan reads ALL existing files so chars from both
+/// games (and across drives) are surfaced.
+pub fn log_path_candidates() -> Vec<String> {
+    vec![
+        // PoE1 paths
+        r"C:\Program Files (x86)\Grinding Gear Games\Path of Exile\logs\Client.txt".into(),
+        r"C:\Program Files (x86)\Steam\steamapps\common\Path of Exile\logs\Client.txt".into(),
+        r"C:\Program Files\Grinding Gear Games\Path of Exile\logs\Client.txt".into(),
+        r"D:\SteamLibrary\steamapps\common\Path of Exile\logs\Client.txt".into(),
+        r"E:\SteamLibrary\steamapps\common\Path of Exile\logs\Client.txt".into(),
+        r"F:\SteamLibrary\steamapps\common\Path of Exile\logs\Client.txt".into(),
+        // PoE2 paths
+        r"C:\Program Files (x86)\Grinding Gear Games\Path of Exile 2\logs\Client.txt".into(),
+        r"C:\Program Files (x86)\Steam\steamapps\common\Path of Exile 2\logs\Client.txt".into(),
+        r"C:\Program Files\Grinding Gear Games\Path of Exile 2\logs\Client.txt".into(),
+        r"D:\SteamLibrary\steamapps\common\Path of Exile 2\logs\Client.txt".into(),
+        r"E:\SteamLibrary\steamapps\common\Path of Exile 2\logs\Client.txt".into(),
+        r"F:\SteamLibrary\steamapps\common\Path of Exile 2\logs\Client.txt".into(),
+    ]
+}
+
+/// Wraps a LogEvent with the originating game so the frontend can re-sync
+/// detectedGame when activity is observed (handles mid-session game switches
+/// once we ever watch both logs concurrently).
+#[derive(serde::Serialize, Clone)]
+struct LogEventEnvelope<'a> {
+    game: &'a str,
+    #[serde(flatten)]
+    event: &'a LogEvent,
+}
+
+fn detect_game_from_path(path: &PathBuf) -> &'static str {
+    if path.to_string_lossy().contains("Path of Exile 2") { "poe2" } else { "poe1" }
+}
+
+/// PoE2 SCENE sentinels that should not be treated as zone changes:
+/// `(null)` and `(unknown)` are scene-unload markers, and `Act N` is the
+/// act-select hub screen between actual zone loads.
+fn is_scene_sentinel(zone: &str) -> bool {
+    matches!(zone, "(null)" | "(unknown)")
+        || (zone.starts_with("Act ") && zone[4..].chars().all(|c| c.is_ascii_digit()))
+}
 
 /// Represents a parsed log event sent to the frontend
 #[derive(serde::Serialize, Clone)]
@@ -33,6 +79,7 @@ pub enum LogEvent {
 #[derive(serde::Serialize, Clone, Default)]
 pub struct InitialGameState {
     pub character_name: Option<String>,
+    pub character_level: Option<u32>,
     pub zone: Option<String>,
     pub area_level: Option<u32>,
     pub game: Option<String>,
@@ -42,20 +89,55 @@ pub struct InitialGameState {
 /// Wrapper for Tauri managed state
 pub struct GameState(pub Mutex<InitialGameState>);
 
+/// A character mined from a Client.txt log file. Aggregates the highest level
+/// seen, class (from PoE2 level-up suffix), death count, and last-seen
+/// timestamp. Returned by `scan_character_history`.
+#[derive(serde::Serialize, Clone, Debug)]
+pub struct DetectedCharacter {
+    pub name: String,
+    pub class: Option<String>,
+    pub level: u32,
+    pub game: String,
+    /// First 19 chars of the most recent log line referencing this char
+    /// ("YYYY/MM/DD HH:MM:SS"). None if no timestamped event was found.
+    pub last_seen: Option<String>,
+    pub deaths: u32,
+}
+
 /// Tauri command: frontend calls this after mounting to get initial state
 #[tauri::command]
 pub fn get_initial_game_state(state: tauri::State<'_, GameState>) -> InitialGameState {
     state.0.lock().unwrap().clone()
 }
 
-/// Parse a single Client.txt log line into an event
-fn parse_log_line(line: &str) -> Option<LogEvent> {
-    // Check for DEBUG lines (area level detection)
+/// Parse a single Client.txt log line into an event.
+/// `game` selects the zone-detection format: PoE1 uses
+/// "You have entered X."; PoE2 uses "[SCENE] Set Source [X]".
+fn parse_log_line(line: &str, game: &str) -> Option<LogEvent> {
+    // Check for DEBUG lines (area level detection — same format in both games)
     if line.contains("[DEBUG Client ") && line.contains("Generating level ") {
         if let Some(rest) = line.split("Generating level ").nth(1) {
             if let Some(level_str) = rest.split_whitespace().next() {
                 if let Ok(level) = level_str.parse::<u32>() {
                     return Some(LogEvent::AreaLevel { level });
+                }
+            }
+        }
+    }
+
+    // PoE2 zone change: "[INFO Client XXX] [SCENE] Set Source [zone]".
+    // PoE1 also emits SCENE lines but uses "You have entered" for actual zone
+    // changes, so we only treat SCENE as a zone signal for PoE2.
+    if game == "poe2" && line.contains("[INFO Client ") {
+        const MARKER: &str = "[SCENE] Set Source [";
+        if let Some(start) = line.find(MARKER) {
+            let after = &line[start + MARKER.len()..];
+            if let Some(end) = after.find(']') {
+                let zone = &after[..end];
+                if !is_scene_sentinel(zone) {
+                    return Some(LogEvent::Zone {
+                        zone_name: zone.to_string(),
+                    });
                 }
             }
         }
@@ -68,14 +150,16 @@ fn parse_log_line(line: &str) -> Option<LogEvent> {
     let colon_pos = after_marker.find("] : ")?;
     let message = after_marker[colon_pos + 4..].trim();
 
-    // Zone change: "You have entered {zone}."
-    if let Some(zone) = message
-        .strip_prefix("You have entered ")
-        .and_then(|s| s.strip_suffix('.'))
-    {
-        return Some(LogEvent::Zone {
-            zone_name: zone.to_string(),
-        });
+    // PoE1 zone change: "You have entered {zone}."
+    if game == "poe1" {
+        if let Some(zone) = message
+            .strip_prefix("You have entered ")
+            .and_then(|s| s.strip_suffix('.'))
+        {
+            return Some(LogEvent::Zone {
+                zone_name: zone.to_string(),
+            });
+        }
     }
 
     // Death: "{name} has been slain."
@@ -108,12 +192,19 @@ fn parse_log_line(line: &str) -> Option<LogEvent> {
     }
 
     // Level up: "{name} is now level {level}"
+    // PoE2 emits "{name} ({class}) is now level {N}", so strip a trailing
+    // " (Class)" suffix to keep the stored character name clean.
     if message.contains(" is now level ") {
         let parts: Vec<&str> = message.split(" is now level ").collect();
         if parts.len() == 2 {
             if let Ok(level) = parts[1].trim().parse::<u32>() {
+                let raw = parts[0].trim();
+                let name = raw.rsplit_once(" (")
+                    .filter(|(_, suffix)| suffix.ends_with(')'))
+                    .map(|(name, _)| name)
+                    .unwrap_or(raw);
                 return Some(LogEvent::LevelUp {
-                    character_name: parts[0].to_string(),
+                    character_name: name.to_string(),
                     level,
                 });
             }
@@ -135,13 +226,9 @@ fn scan_log_history(log_path: &PathBuf) -> InitialGameState {
     let mut state = InitialGameState::default();
 
     // Detect game from path
-    let path_str = log_path.to_string_lossy().to_string();
-    state.game = Some(if path_str.contains("Path of Exile 2") {
-        "poe2".to_string()
-    } else {
-        "poe1".to_string()
-    });
-    state.log_path = Some(path_str);
+    let game = detect_game_from_path(log_path);
+    state.game = Some(game.to_string());
+    state.log_path = Some(log_path.to_string_lossy().to_string());
 
     if let Ok(mut file) = File::open(log_path) {
         let file_len = file.metadata().map(|m| m.len()).unwrap_or(0);
@@ -150,13 +237,14 @@ fn scan_log_history(log_path: &PathBuf) -> InitialGameState {
 
         let reader = BufReader::new(file);
         for line in reader.lines().filter_map(|l| l.ok()) {
-            if let Some(event) = parse_log_line(line.trim()) {
+            if let Some(event) = parse_log_line(line.trim(), game) {
                 match &event {
                     LogEvent::Death { character_name } => {
                         state.character_name = Some(character_name.clone());
                     }
-                    LogEvent::LevelUp { character_name, .. } => {
+                    LogEvent::LevelUp { character_name, level } => {
                         state.character_name = Some(character_name.clone());
+                        state.character_level = Some(*level);
                     }
                     LogEvent::Zone { zone_name } => {
                         state.zone = Some(zone_name.clone());
@@ -171,8 +259,8 @@ fn scan_log_history(log_path: &PathBuf) -> InitialGameState {
     }
 
     println!(
-        "Scanned log history: char={:?}, zone={:?}, area_level={:?}, game={:?}",
-        state.character_name, state.zone, state.area_level, state.game
+        "Scanned log history: char={:?}, char_level={:?}, zone={:?}, area_level={:?}, game={:?}",
+        state.character_name, state.character_level, state.zone, state.area_level, state.game
     );
 
     state
@@ -186,6 +274,8 @@ pub fn start_log_watcher(app: AppHandle, log_path: PathBuf) {
     if let Some(game_state) = app.try_state::<GameState>() {
         *game_state.0.lock().unwrap() = initial;
     }
+
+    let game = detect_game_from_path(&log_path);
 
     std::thread::spawn(move || {
         // Open file and seek to end
@@ -211,7 +301,7 @@ pub fn start_log_watcher(app: AppHandle, log_path: PathBuf) {
         loop {
             let mut line = String::new();
             while reader.read_line(&mut line).unwrap_or(0) > 0 {
-                if let Some(log_event) = parse_log_line(line.trim()) {
+                if let Some(log_event) = parse_log_line(line.trim(), game) {
                     // Update managed state
                     if let Some(game_state) = app.try_state::<GameState>() {
                         let mut gs = game_state.0.lock().unwrap();
@@ -219,8 +309,9 @@ pub fn start_log_watcher(app: AppHandle, log_path: PathBuf) {
                             LogEvent::Death { character_name } => {
                                 gs.character_name = Some(character_name.clone());
                             }
-                            LogEvent::LevelUp { character_name, .. } => {
+                            LogEvent::LevelUp { character_name, level } => {
                                 gs.character_name = Some(character_name.clone());
+                                gs.character_level = Some(*level);
                             }
                             LogEvent::Zone { zone_name } => {
                                 gs.zone = Some(zone_name.clone());
@@ -232,7 +323,8 @@ pub fn start_log_watcher(app: AppHandle, log_path: PathBuf) {
                         }
                     }
 
-                    if let Err(e) = app.emit("log-event", &log_event) {
+                    let envelope = LogEventEnvelope { game, event: &log_event };
+                    if let Err(e) = app.emit("log-event", &envelope) {
                         eprintln!("Failed to emit log event: {}", e);
                     }
                 }
@@ -242,4 +334,173 @@ pub fn start_log_watcher(app: AppHandle, log_path: PathBuf) {
             thread::sleep(Duration::from_millis(1000));
         }
     });
+}
+
+/// Extract the "YYYY/MM/DD HH:MM:SS" prefix from a log line if it has one.
+fn extract_timestamp(line: &str) -> Option<&str> {
+    if line.len() < 19 {
+        return None;
+    }
+    let bytes = line.as_bytes();
+    if bytes[4] == b'/' && bytes[7] == b'/' && bytes[10] == b' '
+        && bytes[13] == b':' && bytes[16] == b':'
+    {
+        Some(&line[..19])
+    } else {
+        None
+    }
+}
+
+/// Pulls (name, class, level) from a level-up line. The standard parser
+/// strips the class suffix; for history-mining we want to keep it. Returns
+/// None for non-level-up lines or malformed timestamps.
+fn parse_levelup_for_history(line: &str) -> Option<(String, Option<String>, u32)> {
+    let marker = "[INFO Client ";
+    let marker_pos = line.find(marker)?;
+    let after_marker = &line[marker_pos..];
+    let colon_pos = after_marker.find("] : ")?;
+    let message = after_marker[colon_pos + 4..].trim();
+
+    let parts: Vec<&str> = message.split(" is now level ").collect();
+    if parts.len() != 2 {
+        return None;
+    }
+    let level = parts[1].trim().parse::<u32>().ok()?;
+    let raw_name = parts[0].trim();
+
+    // PoE2: "Witchtimeee (Witch)"; PoE1: "Witchtimeee".
+    if let Some((name_part, suffix)) = raw_name.rsplit_once(" (") {
+        if suffix.ends_with(')') {
+            let class = &suffix[..suffix.len() - 1];
+            return Some((name_part.to_string(), Some(class.to_string()), level));
+        }
+    }
+    Some((raw_name.to_string(), None, level))
+}
+
+/// Pulls the character name from a "<name> has been slain." line.
+fn parse_death_for_history(line: &str) -> Option<String> {
+    let marker = "[INFO Client ";
+    let marker_pos = line.find(marker)?;
+    let after_marker = &line[marker_pos..];
+    let colon_pos = after_marker.find("] : ")?;
+    let message = after_marker[colon_pos + 4..].trim();
+    message.strip_suffix(" has been slain.").map(|s| s.to_string())
+}
+
+/// Read an entire Client.txt and collect every character that ever leveled
+/// up or died in it. Aggregates by name: highest level wins, last-seen
+/// timestamp tracks the most recent line that mentioned the character,
+/// deaths counts every slain event.
+fn scan_for_characters(log_path: &PathBuf) -> Vec<DetectedCharacter> {
+    let game = detect_game_from_path(log_path).to_string();
+    let mut acc: HashMap<String, DetectedCharacter> = HashMap::new();
+
+    let file = match File::open(log_path) {
+        Ok(f) => f,
+        Err(e) => {
+            eprintln!("[ExiledOrb] scan_for_characters: cannot open {:?}: {}", log_path, e);
+            return vec![];
+        }
+    };
+    let reader = BufReader::new(file);
+
+    for line in reader.lines().filter_map(|l| l.ok()) {
+        let timestamp = extract_timestamp(&line).map(|s| s.to_string());
+
+        if let Some((name, class, level)) = parse_levelup_for_history(&line) {
+            let entry = acc.entry(name.clone()).or_insert_with(|| DetectedCharacter {
+                name: name.clone(),
+                class: class.clone(),
+                level,
+                game: game.clone(),
+                last_seen: timestamp.clone(),
+                deaths: 0,
+            });
+            if level > entry.level {
+                entry.level = level;
+            }
+            if class.is_some() && entry.class.is_none() {
+                entry.class = class;
+            }
+            if timestamp.is_some() && timestamp > entry.last_seen {
+                entry.last_seen = timestamp;
+            }
+            continue;
+        }
+
+        if let Some(name) = parse_death_for_history(&line) {
+            let entry = acc.entry(name.clone()).or_insert_with(|| DetectedCharacter {
+                name: name.clone(),
+                class: None,
+                level: 0,
+                game: game.clone(),
+                last_seen: timestamp.clone(),
+                deaths: 0,
+            });
+            entry.deaths += 1;
+            if timestamp.is_some() && timestamp > entry.last_seen {
+                entry.last_seen = timestamp;
+            }
+        }
+    }
+
+    acc.into_values().collect()
+}
+
+/// Tauri command: scan every existing Client.txt file (PoE1 + PoE2 across
+/// drives), aggregate detected characters, return sorted by level descending.
+/// Frontend invokes this on the Characters tab; results are cached client-side.
+#[tauri::command]
+pub fn scan_character_history() -> Vec<DetectedCharacter> {
+    use std::collections::HashSet;
+
+    let mut all: Vec<DetectedCharacter> = Vec::new();
+    let mut seen_paths: HashSet<PathBuf> = HashSet::new();
+
+    for path_str in log_path_candidates() {
+        let path = PathBuf::from(&path_str);
+        if !path.exists() {
+            continue;
+        }
+        // Dedupe by canonical path so symlinks/duplicates don't double-scan.
+        let canon = path.canonicalize().unwrap_or_else(|_| path.clone());
+        if !seen_paths.insert(canon) {
+            continue;
+        }
+        all.extend(scan_for_characters(&path));
+    }
+
+    // Dedupe across files by (name, game): keep highest level, max deaths,
+    // most recent timestamp, prefer non-empty class.
+    let mut by_key: HashMap<(String, String), DetectedCharacter> = HashMap::new();
+    for c in all {
+        let key = (c.name.clone(), c.game.clone());
+        match by_key.get_mut(&key) {
+            Some(entry) => {
+                if c.level > entry.level {
+                    entry.level = c.level;
+                }
+                entry.deaths = entry.deaths.max(c.deaths);
+                if c.last_seen.is_some() && c.last_seen > entry.last_seen {
+                    entry.last_seen = c.last_seen;
+                }
+                if entry.class.is_none() && c.class.is_some() {
+                    entry.class = c.class;
+                }
+            }
+            None => {
+                by_key.insert(key, c);
+            }
+        }
+    }
+
+    let mut result: Vec<DetectedCharacter> = by_key.into_values().collect();
+    result.sort_by(|a, b| b.level.cmp(&a.level));
+
+    println!(
+        "[ExiledOrb] scan_character_history: {} characters detected",
+        result.len()
+    );
+    result
 }
