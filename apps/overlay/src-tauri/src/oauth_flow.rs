@@ -108,7 +108,8 @@ fn generate_state() -> String {
         .collect()
 }
 
-fn urlencode(s: &str) -> String {
+/// Minimal percent-encoding (shared with oauth.rs for path segments).
+pub(crate) fn urlencode(s: &str) -> String {
     let mut result = String::with_capacity(s.len() * 2);
     for c in s.chars() {
         match c {

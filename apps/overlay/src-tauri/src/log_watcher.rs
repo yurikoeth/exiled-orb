@@ -110,6 +110,27 @@ pub fn get_initial_game_state(state: tauri::State<'_, GameState>) -> InitialGame
     state.0.lock().unwrap().clone()
 }
 
+/// Fold a parsed log event into the tracked game state. Used both by the
+/// initial history scan and the live watcher loop.
+fn apply_event(state: &mut InitialGameState, event: &LogEvent) {
+    match event {
+        LogEvent::Death { character_name } => {
+            state.character_name = Some(character_name.clone());
+        }
+        LogEvent::LevelUp { character_name, level } => {
+            state.character_name = Some(character_name.clone());
+            state.character_level = Some(*level);
+        }
+        LogEvent::Zone { zone_name } => {
+            state.zone = Some(zone_name.clone());
+        }
+        LogEvent::AreaLevel { level } => {
+            state.area_level = Some(*level);
+        }
+        _ => {}
+    }
+}
+
 /// Parse a single Client.txt log line into an event.
 /// `game` selects the zone-detection format: PoE1 uses
 /// "You have entered X."; PoE2 uses "[SCENE] Set Source [X]".
@@ -238,22 +259,7 @@ fn scan_log_history(log_path: &PathBuf) -> InitialGameState {
         let reader = BufReader::new(file);
         for line in reader.lines().filter_map(|l| l.ok()) {
             if let Some(event) = parse_log_line(line.trim(), game) {
-                match &event {
-                    LogEvent::Death { character_name } => {
-                        state.character_name = Some(character_name.clone());
-                    }
-                    LogEvent::LevelUp { character_name, level } => {
-                        state.character_name = Some(character_name.clone());
-                        state.character_level = Some(*level);
-                    }
-                    LogEvent::Zone { zone_name } => {
-                        state.zone = Some(zone_name.clone());
-                    }
-                    LogEvent::AreaLevel { level } => {
-                        state.area_level = Some(*level);
-                    }
-                    _ => {}
-                }
+                apply_event(&mut state, &event);
             }
         }
     }
@@ -304,23 +310,7 @@ pub fn start_log_watcher(app: AppHandle, log_path: PathBuf) {
                 if let Some(log_event) = parse_log_line(line.trim(), game) {
                     // Update managed state
                     if let Some(game_state) = app.try_state::<GameState>() {
-                        let mut gs = game_state.0.lock().unwrap();
-                        match &log_event {
-                            LogEvent::Death { character_name } => {
-                                gs.character_name = Some(character_name.clone());
-                            }
-                            LogEvent::LevelUp { character_name, level } => {
-                                gs.character_name = Some(character_name.clone());
-                                gs.character_level = Some(*level);
-                            }
-                            LogEvent::Zone { zone_name } => {
-                                gs.zone = Some(zone_name.clone());
-                            }
-                            LogEvent::AreaLevel { level } => {
-                                gs.area_level = Some(*level);
-                            }
-                            _ => {}
-                        }
+                        apply_event(&mut game_state.0.lock().unwrap(), &log_event);
                     }
 
                     let envelope = LogEventEnvelope { game, event: &log_event };

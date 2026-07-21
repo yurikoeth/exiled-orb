@@ -28,19 +28,26 @@ poe-helper/
 │   ├── src-tauri/
 │   │   ├── .cargo/config.toml   # target-dir = "E:\\rust-target" (avoids C: disk space issues)
 │   │   ├── capabilities/        # Tauri v2 permissions (MUST include core:event:allow-listen)
-│   │   └── src/                 # ai.rs, clipboard.rs, log_watcher.rs, oauth.rs, settings.rs, lib.rs
+│   │   └── src/                 # ai.rs, clipboard.rs, log_watcher.rs, ninja.rs (poe.ninja proxy),
+│   │                            # oauth.rs (GGG API), oauth_flow.rs (PKCE flow), settings.rs, lib.rs
 │   └── src/
 │       ├── hooks/       # useClipboard, useClientLog, usePriceCheck, useMapSpeedrun,
 │       │                # useAiAnalysis, useTradeWhispers, useLevelingTracker
-│       ├── components/  # PriceCheck, ZoneTracker, GggAccount, AskAi, MarketTab,
-│       │                # LevelingGuide, MapTimer, Settings, WitchSays,
-│       │                # AiPriceInsight, TradeAssistant, SpeedrunStats
+│       ├── components/  # ui.tsx (Panel/Btn/SectionTitle primitives), PriceCheck,
+│       │                # ZoneTracker, AskAi, MarketTab, LevelingGuide, MapTimer,
+│       │                # WitchSays, AiPriceInsight, TradeAssistant, SpeedrunStats
+│       │   └── characters/  # GggAccount (orchestrator), GggCharacterRow, LiveSessionTile,
+│       │                    # BuildCapturePanel, DetectedCharacterTile, ItemCard,
+│       │                    # BuildGoalEditor, BuildAnalysisCard, ApiKeyInline,
+│       │                    # build-actions.ts, character-history.ts, constants.ts
 │       ├── stores/      # overlay-store, settings-store, speedrun-store, ai-store,
 │       │                # build-store, gear-capture-store
-│       ├── utils/       # store.ts (shared tauri-plugin-store access)
+│       ├── utils/       # store.ts (getStore/persistToStore/getApiKey), slots.ts
+│       │                # (slot order/labels — single source), parseAiJson.ts
 │       └── assets/      # classes/, menu/, poe1/poe2 logos, wallpaper
+├── docs/                # ggg-developer-application, oauth-migration-affected-features,
+│                        # recent-changes-2026-05-28 (rebuild plans + migration notes)
 └── run.bat              # Launch script
-ggg-developer-application.txt   # Draft GGG OAuth dev-app submission (pending)
 ```
 
 ## Commands
@@ -91,7 +98,7 @@ Tauri's file watcher triggers Rust rebuilds when `src-tauri/` files change. If i
 
 ### Clipboard → Price Check
 ```
-Ctrl+C in PoE → Win32 clipboard API (polls 200ms)
+Ctrl+C in PoE → Win32 clipboard API (polls 500ms)
   → detects "Item Class:" or "Rarity:" + "--------"
   → Tauri "clipboard-item" event → useClipboard hook
   → item-parser.ts → ParsedItem
@@ -122,39 +129,54 @@ Level-up strips the PoE2 "(Class)" suffix: "Name (Witch) is now level N" → "Na
 log-event envelope carries `game` so the frontend re-syncs detectedGame live.
 ```
 
-### PoE2 Characters — no public API, so two workarounds
+### GGG OAuth2 (implemented)
 ```
-GGG's public character API returns ONLY PoE1 chars (realm=poe2 is ignored;
-api.pathofexile.com needs OAuth). Until OAuth lands (app draft pending), PoE2
-characters come from:
+oauth_flow.rs: PKCE flow against pathofexile.com
+  Connect → bind localhost:11343 FIRST → open browser to /oauth/authorize
+  → callback validates state → POST /oauth/token → tokens persisted to
+  ggg_tokens.json in the Tauri app-data dir. get_access_token() transparently
+  refreshes within 60s of expiry. Scopes: account:characters account:profile
+  (client_id "exiledorb"; account:stashes NOT granted).
+oauth.rs: documented api.pathofexile.com endpoints (Bearer auth)
+  fetch_characters  → GET /character + /character/poe2 (parallel, deduped by
+                      name keeping higher level)
+  fetch_character_items → GET /character[/poe2]/<name> → equipment → GggItem
+The legacy character-window/* endpoints are a TOS breach (GGG email
+2026-05-28) — never reintroduce them.
+```
+
+### PoE2 fallbacks without OAuth (still active when not connected)
+```
   1. Character history mining — scan_character_history (log_watcher.rs) reads
      ENTIRE Client.txt files (PoE1+PoE2, all drives), aggregates name/class/
      max-level/deaths/last-seen per character. Frontend caches result module-
-     level (detectedCharsCache); "↻ history" forces re-scan. Surfaced ONLY in
-     the PoE2 section (PoE1 stays GGG-API-only).
+     level (characters/character-history.ts); "↻ history" forces re-scan.
+     Surfaced ONLY in the PoE2 section.
   2. Gear Capture — useGearCaptureStore + BuildCapturePanel. User clicks
      "Capture gear", Ctrl+Cs each equipped item; clipboard items route to slots
-     (slotForItem), game forced to the session's game. Save → setActiveBuild
+     (slotForItem), game forced to the session's game. Save → saveActiveBuild
      with structured gear (BuildItem[], same shape as GGG fetch) so ItemCard
      renders it + AI build review works identically to PoE1.
-Live Session tile (GggAccount) ties it together: shows the live Client.txt
-character with manual class entry (persisted live_char_classes), Capture gear,
-Analyze build, build-goal editor, and a gear viewer.
+Live Session tile ties it together: shows the live Client.txt character with
+manual class entry (persisted live_char_classes), Capture gear, Analyze build,
+build-goal editor, and a gear viewer.
 ```
 
 ### Characters + AI Build Analysis
 ```
-GGG public API → fetch_characters (PoE1 + PoE2, deduped by name)
+fetch_characters (OAuth) → GggCharacterRow list (PoE1 + PoE2, deduped by name)
   → fetch_character_items → gear with sockets/links
-  → Analyze Build → ai.rs (Sonnet, 4096 tokens, Witch persona)
+  → Analyze Build → characters/build-actions.ts runBuildAnalysis
+  → ai.rs analyze_build (Sonnet, 4096 tokens, Witch persona)
   → parseAiJson handles malformed JSON (code fences, truncation, trailing commas)
 ```
 
 ### Navigation
 ```
-Home: ZoneTracker header + menu grid (7 pages)
+Home: ZoneTracker header + menu grid (5 pages)
   Market | Leveling | Maps | Ask AI | Characters
-Esc → back to home
+Esc → back to home. No settings window — settings UI not built yet
+(settings-store + SQLite persistence exist; edited nowhere currently).
 ```
 
 ## Key Design Decisions
@@ -167,7 +189,7 @@ Esc → back to home
 - **Witch AI Persona**: WITCH_PERSONA constant in ai.rs, injected into all Claude system prompts.
 - **Mod Tier Evaluation**: Local mod-tiers.ts with T1-T5 ranges for 30+ mods. No API needed.
 - **Build Store**: Per-character build profiles with goals + structured gear (BuildItem[]). Fed as context to all AI features (AskAi includes a [Gear Snapshot] block).
-- **PoE2 character workarounds**: GGG exposes no public PoE2 character API, so we mine Client.txt history + capture gear via clipboard. These are deliberate stopgaps until OAuth — see the PoE2 architecture section.
+- **PoE2 fallbacks**: without OAuth connected we mine Client.txt history + capture gear via clipboard — see the PoE2 fallback architecture section.
 - **Zustand selectors**: Read store fields via `useStore((s) => s.x)`, NOT `const {x} = useStore()` — the latter re-renders on every unrelated store write (matters for always-mounted components like ZoneTracker).
 - **Timeouts**: 60s for Claude API, 10s for poe.ninja. Prevents hanging requests.
 
@@ -181,22 +203,37 @@ Esc → back to home
 - One Zustand store per domain (overlay, settings, speedrun, ai, build)
 - AI: Haiku for fast, Sonnet for deep analysis. All wrapped in WitchSays component.
 - Console logs prefixed with `[ExiledOrb]`, Rust stderr with `[ExiledOrb]`
+- UI: build panels/buttons/headers from `components/ui.tsx` primitives (Panel,
+  Btn, SectionTitle, COLORS, RARITY_COLORS) — do not re-declare inline style objects
+- Persist small UI state via `persistToStore(key, value)` (utils/store.ts)
+- Slot ids/order/labels come from `utils/slots.ts` — single source of truth
+- Build save/analyze go through `characters/build-actions.ts` (saveActiveBuild,
+  runBuildAnalysis) — do not hand-construct ActiveBuild objects
 
 ## PoE-Specific
 
 - **Client.txt paths**: PoE1 `...\Path of Exile\logs\Client.txt`, PoE2 `...\Path of Exile 2\logs\Client.txt`. Both scanned for character history; the most-recently-modified one is watched live.
 - **Auto-detect**: Checks C:\, D:\, E:\, F:\ SteamLibrary paths + GGG standalone, picks newest mtime
 - **Current league**: Mirage (hardcoded PoE1 league in DEFAULT_SETTINGS + usePriceCheck fallback). NOTE: still PoE1-only — per-game league default is an open gap.
-- **User's account**: yurikoeth#5030. PoE1: witchtimee (Elementalist). PoE2: xYuriko (Witch, log-mined — not in GGG API).
+- **User's account**: yurikoeth#5030. PoE1: witchtimee (Elementalist). PoE2: xYuriko (Witch).
 - **Item text format**: Sections split by "--------", starts with "Item Class:" (PoE2) or "Rarity:" (PoE1)
 
 ## Not Yet Implemented
 
-- **GGG OAuth2 integration** — APPROVED 2026-05-28 (email from GGG enabled `account:characters` and `account:profile`; `account:stashes` NOT enabled — stash scope is not yet available for PoE2). Implementation pending. Until built, the legacy `character-window/get-characters` and `get-items` calls have been disabled in `oauth.rs` per the GGG email warning that those endpoints are TOS breaches. PoE2 still uses log-mining + gear capture (see PoE2 architecture section).
+- Settings UI (settings-store + SQLite persistence exist but nothing edits them;
+  the old placeholder settings window/tray item were removed 2026-07-21)
 - Per-game league default (DEFAULT_SETTINGS league is hardcoded PoE1 "Mirage")
 - POE2_LEVELING data (LevelingGuide is PoE1-only)
 - MapTimer — not yet game-aware audited for PoE2
-- AtlasHelper — removed 2026-05-28; rebuild plan in `oauth-migration-affected-features.txt` (scoped: curated library + pick-and-track + clipboard integration + profit tracking)
+- AtlasHelper — removed 2026-05-28; rebuild plan in `docs/oauth-migration-affected-features.txt` (scoped: curated library + pick-and-track + clipboard integration + profit tracking)
 - Tauri Windows packaging/installer (.msi/.exe)
 - Snipe alerts (background trade polling)
 - GGG Trade API for rare pricing (currently mod-tier estimation only)
+- tauri-plugin-opener migration (oauth_flow.rs uses deprecated Shell::open — works, one warning)
+
+## GGG API notes (OAuth2 — IMPLEMENTED 2026-07-21)
+
+- Approved 2026-05-28: scopes `account:characters` + `account:profile`
+  (`account:stashes` NOT enabled — stash scope not yet available for PoE2).
+- The legacy `character-window/get-characters` / `get-items` endpoints are a
+  TOS breach per the GGG email — never call them again.

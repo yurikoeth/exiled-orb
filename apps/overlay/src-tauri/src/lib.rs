@@ -1,6 +1,7 @@
 mod ai;
 mod clipboard;
 mod log_watcher;
+mod ninja;
 mod oauth;
 mod oauth_flow;
 mod settings;
@@ -9,15 +10,6 @@ use std::path::PathBuf;
 use tauri::Manager;
 use tauri::tray::TrayIconBuilder;
 use tauri::menu::{MenuBuilder, MenuItemBuilder};
-
-/// Tauri command: show the settings window
-#[tauri::command]
-fn show_settings(app: tauri::AppHandle) {
-    if let Some(window) = app.get_webview_window("settings") {
-        let _ = window.show();
-        let _ = window.set_focus();
-    }
-}
 
 /// Tauri command: set the Client.txt log path and start watching it
 #[tauri::command]
@@ -52,7 +44,6 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             set_log_path,
             get_default_log_paths,
-            show_settings,
             log_watcher::get_initial_game_state,
             log_watcher::scan_character_history,
             ai::ask_poe_question,
@@ -61,8 +52,8 @@ pub fn run() {
             ai::analyze_trade_whisper,
             ai::analyze_market_trends,
             ai::analyze_build,
+            ninja::fetch_ninja,
             oauth::fetch_characters,
-            oauth::fetch_ninja,
             oauth::fetch_character_items,
             oauth_flow::start_oauth_flow,
             oauth_flow::is_authenticated,
@@ -71,9 +62,8 @@ pub fn run() {
         .setup(|app| {
             // Build system tray
             let show = MenuItemBuilder::with_id("show", "Show").build(app)?;
-            let settings = MenuItemBuilder::with_id("settings", "Settings").build(app)?;
             let quit = MenuItemBuilder::with_id("quit", "Quit").build(app)?;
-            let menu = MenuBuilder::new(app).items(&[&show, &settings, &quit]).build()?;
+            let menu = MenuBuilder::new(app).items(&[&show, &quit]).build()?;
 
             TrayIconBuilder::new()
                 .icon(app.default_window_icon().expect("app icon must be set in tauri.conf.json").clone())
@@ -83,12 +73,6 @@ pub fn run() {
                     match event.id().as_ref() {
                         "show" => {
                             if let Some(window) = app.get_webview_window("overlay") {
-                                let _ = window.show();
-                                let _ = window.set_focus();
-                            }
-                        }
-                        "settings" => {
-                            if let Some(window) = app.get_webview_window("settings") {
                                 let _ = window.show();
                                 let _ = window.set_focus();
                             }

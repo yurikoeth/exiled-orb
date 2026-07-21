@@ -26,36 +26,20 @@ Voice examples:
 - "I've not known fear since I became the Godslayer. This map mod, though... even I'd reroll that."
 "#;
 
-/// Call Claude API with a system prompt and user message.
-async fn call_claude(
-    api_key: &str,
-    model: &str,
-    system: &str,
-    user_message: &str,
-    max_tokens: u32,
-) -> Result<String, String> {
+/// POST a prepared request body to the Claude API and extract the first
+/// text block from the response. Shared by the text and vision paths.
+async fn send_claude(api_key: &str, body: &Value) -> Result<String, String> {
     let client = reqwest::Client::builder()
         .timeout(std::time::Duration::from_secs(60))
         .build()
         .map_err(|e| format!("Failed to create HTTP client: {}", e))?;
-
-    let body = json!({
-        "model": model,
-        "max_tokens": max_tokens,
-        "system": system,
-        "messages": [
-            { "role": "user", "content": user_message }
-        ]
-    });
-
-    eprintln!("[ExiledOrb] Calling Claude API: model={}, max_tokens={}, msg_len={}", model, max_tokens, user_message.len());
 
     let response = client
         .post(CLAUDE_API_URL)
         .header("x-api-key", api_key)
         .header("anthropic-version", "2023-06-01")
         .header("content-type", "application/json")
-        .json(&body)
+        .json(body)
         .send()
         .await
         .map_err(|e| format!("Request failed: {} (source: {:?})", e, e.source()))?;
@@ -78,6 +62,28 @@ async fn call_claude(
         .ok_or("No text content in response")?;
 
     Ok(content.to_string())
+}
+
+/// Call Claude API with a system prompt and user message.
+async fn call_claude(
+    api_key: &str,
+    model: &str,
+    system: &str,
+    user_message: &str,
+    max_tokens: u32,
+) -> Result<String, String> {
+    let body = json!({
+        "model": model,
+        "max_tokens": max_tokens,
+        "system": system,
+        "messages": [
+            { "role": "user", "content": user_message }
+        ]
+    });
+
+    eprintln!("[ExiledOrb] Calling Claude API: model={}, max_tokens={}, msg_len={}", model, max_tokens, user_message.len());
+
+    send_claude(api_key, &body).await
 }
 
 /// Helper: build a system prompt with the Witch persona + task instructions
@@ -164,8 +170,6 @@ pub async fn ask_poe_with_image(
         "Answer Path of Exile questions IN CHARACTER as the Witch. The exile has sent you a screenshot or image. Analyze it and provide helpful advice about what you see — items, passive trees, atlas, maps, currency, whatever is in the image. Be helpful with real game knowledge but deliver it in your darkly sardonic voice."
     );
 
-    let client = reqwest::Client::new();
-
     let body = json!({
         "model": CLAUDE_MODEL_FAST,
         "max_tokens": 1024,
@@ -191,34 +195,7 @@ pub async fn ask_poe_with_image(
         ]
     });
 
-    let response = client
-        .post(CLAUDE_API_URL)
-        .header("x-api-key", &api_key)
-        .header("anthropic-version", "2023-06-01")
-        .header("content-type", "application/json")
-        .json(&body)
-        .send()
-        .await
-        .map_err(|e| format!("Request failed: {}", e))?;
-
-    if !response.status().is_success() {
-        let status = response.status();
-        let text = response.text().await.unwrap_or_default();
-        return Err(format!("Claude API error {}: {}", status, text));
-    }
-
-    let data: Value = response
-        .json()
-        .await
-        .map_err(|e| format!("Failed to parse response: {}", e))?;
-
-    let content = data["content"]
-        .as_array()
-        .and_then(|arr| arr.first())
-        .and_then(|block| block["text"].as_str())
-        .ok_or("No text content in response")?;
-
-    Ok(content.to_string())
+    send_claude(&api_key, &body).await
 }
 
 /// Analyze a character's build and gear in the Witch's voice.

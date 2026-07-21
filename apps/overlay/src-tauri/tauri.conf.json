@@ -29,14 +29,6 @@
         "height": 800,
         "x": 20,
         "y": 20
-      },
-      {
-        "label": "settings",
-        "title": "ExiledOrb Settings",
-        "visible": false,
-        "width": 900,
-        "height": 700,
-        "center": true
       }
     ],
     "security": {

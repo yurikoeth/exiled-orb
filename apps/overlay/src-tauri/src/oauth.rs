@@ -155,7 +155,7 @@ pub async fn fetch_character_items(
     let token = oauth_flow::get_access_token(&app).await?;
     let client = reqwest::Client::new();
 
-    let encoded_name = urlencode(&character);
+    let encoded_name = oauth_flow::urlencode(&character);
     let url = if game == "poe2" {
         format!("{}/poe2/{}", CHAR_API_BASE, encoded_name)
     } else {
@@ -259,39 +259,3 @@ pub async fn fetch_character_items(
     Ok(items)
 }
 
-/// Proxy fetch for poe.ninja API (avoids CORS)
-#[tauri::command]
-pub async fn fetch_ninja(url: String) -> Result<String, String> {
-    let client = reqwest::Client::builder()
-        .timeout(std::time::Duration::from_secs(10))
-        .build()
-        .map_err(|e| format!("Failed to create HTTP client: {}", e))?;
-    let res = client
-        .get(&url)
-        .header("User-Agent", "exiled-orb/0.1.0")
-        .send()
-        .await
-        .map_err(|e| format!("Request failed: {}", e))?;
-
-    if !res.status().is_success() {
-        return Err(format!("API error: {}", res.status()));
-    }
-
-    res.text().await.map_err(|e| format!("Read error: {}", e))
-}
-
-fn urlencode(s: &str) -> String {
-    let mut result = String::with_capacity(s.len() * 2);
-    for c in s.chars() {
-        match c {
-            'A'..='Z' | 'a'..='z' | '0'..='9' | '-' | '_' | '.' | '~' => result.push(c),
-            ' ' => result.push_str("%20"),
-            _ => {
-                for b in c.to_string().as_bytes() {
-                    result.push_str(&format!("%{:02X}", b));
-                }
-            }
-        }
-    }
-    result
-}
