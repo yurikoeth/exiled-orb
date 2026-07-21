@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useSpeedrunStore } from "../stores/speedrun-store";
 import { formatDuration } from "@exiled-orb/shared";
+import { Btn, SectionTitle } from "./ui";
 
 /** Session stats HUD: maps/hour, avg time, deaths, goals, export, pause */
 export default function SpeedrunStats() {
@@ -72,45 +73,21 @@ export default function SpeedrunStats() {
     >
       {/* Header: controls */}
       <div className="flex items-center justify-between mb-1">
-        <span className="text-xs font-bold uppercase tracking-wide" style={{ color: "var(--accent)" }}>
-          Session{!tracking && " (Paused)"}
-        </span>
+        <SectionTitle>Session{!tracking && " (Paused)"}</SectionTitle>
         <div className="flex items-center gap-1.5">
           {exportMsg && (
             <span className="text-xs text-green-400">{exportMsg}</span>
           )}
-          <button
-            onClick={() => handleExport("csv")}
-            className="text-xs px-1 py-0.5 rounded hover:opacity-80"
-            style={{ background: "rgba(255,255,255,0.08)", color: "var(--text-secondary)" }}
-            title="Export CSV"
-          >
-            CSV
-          </button>
-          <button
-            onClick={() => handleExport("json")}
-            className="text-xs px-1 py-0.5 rounded hover:opacity-80"
-            style={{ background: "rgba(255,255,255,0.08)", color: "var(--text-secondary)" }}
-            title="Export JSON"
-          >
-            JSON
-          </button>
-          <button
-            onClick={() => setShowGoalEditor(!showGoalEditor)}
-            className="text-xs px-1 py-0.5 rounded hover:opacity-80"
-            style={{ background: "rgba(255,255,255,0.08)", color: "var(--text-secondary)" }}
-            title="Set goals"
-          >
-            &#9881;
-          </button>
-          <button
+          <Btn className="px-1" onClick={() => handleExport("csv")} title="Export CSV">CSV</Btn>
+          <Btn className="px-1" onClick={() => handleExport("json")} title="Export JSON">JSON</Btn>
+          <Btn className="px-1" onClick={() => setShowGoalEditor(!showGoalEditor)} title="Set goals">&#9881;</Btn>
+          <Btn
             onClick={handlePauseToggle}
-            className="text-xs px-1.5 py-0.5 rounded hover:opacity-80"
-            style={{ background: tracking ? "rgba(255,255,255,0.08)" : "rgba(34,197,94,0.2)", color: tracking ? "var(--text-secondary)" : "#22c55e" }}
+            style={tracking ? {} : { background: "rgba(34,197,94,0.2)", color: "#22c55e" }}
             title={tracking ? "Pause tracking" : "Resume tracking"}
           >
             {tracking ? "⏸" : "▶"}
-          </button>
+          </Btn>
         </div>
       </div>
 

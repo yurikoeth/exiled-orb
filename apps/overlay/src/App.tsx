@@ -12,7 +12,7 @@ import RunHistory from "./components/RunHistory";
 import RunTimeChart from "./components/RunTimeChart";
 import MapLeaderboard from "./components/MapLeaderboard";
 import MapCountStats from "./components/MapCountStats";
-import GggAccount from "./components/GggAccount";
+import GggAccount from "./components/characters/GggAccount";
 import AskAi from "./components/AskAi";
 import MarketTab from "./components/MarketTab";
 import { useClipboard } from "./hooks/useClipboard";
@@ -23,6 +23,7 @@ import { useOverlayStore } from "./stores/overlay-store";
 import { useSettingsStore } from "./stores/settings-store";
 import { useSpeedrunStore } from "./stores/speedrun-store";
 import { useBuildStore } from "./stores/build-store";
+import { Btn, Panel, SectionTitle } from "./components/ui";
 
 import menuMarket from "./assets/menu/market.png";
 import menuLeveling from "./assets/menu/leveling.png";
@@ -97,14 +98,10 @@ export default function App() {
           className="rounded border p-0 relative"
           style={{ background: "rgba(10,10,14,0.98)", borderColor: "var(--border-color)", zIndex: 50 }}
         >
-          <button
-            onClick={() => useOverlayStore.getState().dismissPanel()}
-            className="absolute top-1 right-1 text-xs px-1.5 py-0.5 rounded hover:opacity-80"
-            style={{ background: "rgba(255,255,255,0.08)", color: "var(--text-secondary)", zIndex: 51 }}
-            title="Dismiss (Esc)"
-          >
+          <Btn className="absolute top-1 right-1" style={{ zIndex: 51 }}
+            onClick={() => useOverlayStore.getState().dismissPanel()} title="Dismiss (Esc)">
             ✕
-          </button>
+          </Btn>
           <PriceCheck />
           <AiPriceInsight />
         </div>
@@ -190,23 +187,13 @@ export default function App() {
 
 function HintPanel({ title, lines }: { title?: string; lines: string[] }) {
   return (
-    <div
-      className="rounded border px-3 py-2"
-      style={{
-        background: "linear-gradient(180deg, rgba(24,24,28,0.9) 0%, rgba(14,14,18,0.9) 100%)",
-        borderColor: "var(--border-color)",
-      }}
-    >
-      {title && (
-        <div className="text-xs font-bold mb-1 uppercase tracking-wide" style={{ color: "var(--accent)" }}>
-          {title}
-        </div>
-      )}
+    <Panel bg="dim" className="px-3 py-2">
+      {title && <SectionTitle className="mb-1">{title}</SectionTitle>}
       <div className="text-xs space-y-0.5" style={{ color: "var(--text-secondary)" }}>
         {lines.map((line, i) => (
           <div key={i}>{line}</div>
         ))}
       </div>
-    </div>
+    </Panel>
   );
 }

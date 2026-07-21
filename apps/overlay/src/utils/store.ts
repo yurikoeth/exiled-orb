@@ -12,6 +12,20 @@ export async function getStore(): Promise<Store> {
   return storeInstance;
 }
 
+/**
+ * Persist a value to the shared store (set + save). Errors are logged, not
+ * thrown — persistence failures should never break UI state updates.
+ */
+export async function persistToStore(key: string, value: unknown): Promise<void> {
+  try {
+    const store = await getStore();
+    await store.set(key, value);
+    await store.save();
+  } catch (err) {
+    console.error(`[ExiledOrb] Failed to persist "${key}":`, err);
+  }
+}
+
 /** Get the Claude API key from the store */
 export async function getApiKey(): Promise<string | null> {
   try {

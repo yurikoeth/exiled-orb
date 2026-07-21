@@ -5,6 +5,7 @@ import type { Game } from "@exiled-orb/shared";
 import { buildNinjaUrl, NINJA_CURRENCY_CATEGORIES } from "@exiled-orb/shared";
 import poe1Logo from "../assets/poe1-logo.png";
 import poe2Logo from "../assets/poe2-logo.png";
+import { COLORS, Panel } from "./ui";
 
 interface NinjaItem {
   name: string;
@@ -80,16 +81,9 @@ function MarketItem({ item }: { item: NinjaItem }) {
   const [expanded, setExpanded] = useState(false);
 
   return (
-    <div
-      className="rounded border cursor-pointer hover:opacity-90 transition-opacity"
-      style={{
-        background: expanded
-          ? "linear-gradient(180deg, rgba(30,30,36,0.95) 0%, rgba(18,18,22,0.95) 100%)"
-          : "linear-gradient(180deg, rgba(24,24,28,0.9) 0%, rgba(14,14,18,0.9) 100%)",
-        borderColor: expanded ? "var(--border-gold)" : "var(--border-color)",
-      }}
-      onClick={() => setExpanded(!expanded)}
-    >
+    <Panel bg={expanded ? "raised" : "dim"} gold={expanded}
+      className="cursor-pointer hover:opacity-90 transition-opacity"
+      onClick={() => setExpanded(!expanded)}>
       <div className="px-2 py-1.5 flex items-center justify-between">
         <div className="flex items-center gap-2 min-w-0">
           {item.icon && (
@@ -106,7 +100,7 @@ function MarketItem({ item }: { item: NinjaItem }) {
           {item.change !== 0 && (
             <span
               className="text-xs"
-              style={{ color: item.change > 0 ? "#44cc44" : "#ff4444", fontSize: "0.65rem" }}
+              style={{ color: item.change > 0 ? COLORS.green : COLORS.red, fontSize: "0.65rem" }}
             >
               {item.change > 0 ? "+" : ""}{item.change.toFixed(1)}%
             </span>
@@ -124,14 +118,14 @@ function MarketItem({ item }: { item: NinjaItem }) {
           <div className="text-xs" style={{ color: "var(--text-secondary)" }}>
             Chaos value: {item.chaosValue.toFixed(1)}c
           </div>
-          <div className="text-xs flex items-center gap-1" style={{ color: item.change > 0 ? "#44cc44" : item.change < 0 ? "#ff4444" : "var(--text-secondary)" }}>
+          <div className="text-xs flex items-center gap-1" style={{ color: item.change > 0 ? COLORS.green : item.change < 0 ? COLORS.red : "var(--text-secondary)" }}>
             7-day trend: {item.change > 0 ? "+" : ""}{item.change.toFixed(1)}%
             {item.change > 5 && " — Rising fast"}
             {item.change < -5 && " — Dropping"}
           </div>
         </div>
       )}
-    </div>
+    </Panel>
   );
 }
 

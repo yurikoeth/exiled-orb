@@ -4,6 +4,7 @@ import { useOverlayStore } from "../stores/overlay-store";
 import { formatDuration } from "@exiled-orb/shared";
 import poe1Logo from "../assets/poe1-logo.png";
 import poe2Logo from "../assets/poe2-logo.png";
+import { Btn, Panel } from "./ui";
 
 const gameLogos = { poe1: poe1Logo, poe2: poe2Logo } as const;
 
@@ -107,14 +108,7 @@ export default function ZoneTracker() {
   };
 
   return (
-    <div
-      className="rounded border px-3 py-3 relative overflow-hidden"
-      style={{
-        background: "linear-gradient(180deg, rgba(24,24,28,0.95) 0%, rgba(14,14,18,0.95) 100%)",
-        borderColor: "var(--border-gold)",
-        minHeight: 56,
-      }}
-    >
+    <Panel gold className="px-3 py-3 relative overflow-hidden" style={{ minHeight: 56 }}>
       {/* Class art background */}
       {classImage && (
         <div
@@ -159,14 +153,7 @@ export default function ZoneTracker() {
                 {formatDuration(elapsed)}
               </span>
             )}
-            <button
-              onClick={refresh}
-              className="text-xs px-1 py-0.5 rounded hover:opacity-80 transition-opacity"
-              style={{ color: "var(--text-secondary)", background: "rgba(255,255,255,0.06)" }}
-              title="Refresh game state"
-            >
-              ↻
-            </button>
+            <Btn className="px-1" onClick={refresh} title="Refresh game state">↻</Btn>
           </div>
         </div>
 
@@ -192,6 +179,6 @@ export default function ZoneTracker() {
           </span>
         </div>
       </div>
-    </div>
+    </Panel>
   );
 }

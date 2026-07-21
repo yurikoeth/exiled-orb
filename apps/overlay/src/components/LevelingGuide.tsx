@@ -4,7 +4,7 @@ import { useOverlayStore } from "../stores/overlay-store";
 import { useBuildStore } from "../stores/build-store";
 import { getLevelingGuide } from "@exiled-orb/shared";
 import type { LevelingStep } from "@exiled-orb/shared";
-import { getStore } from "../utils/store";
+import { getStore, persistToStore } from "../utils/store";
 import poe1Logo from "../assets/poe1-logo.png";
 import poe2Logo from "../assets/poe2-logo.png";
 
@@ -19,11 +19,7 @@ async function loadChecked(charName: string): Promise<Set<string>> {
 
 /** Save checked steps for a character to store */
 async function saveChecked(charName: string, checked: Set<string>) {
-  try {
-    const store = await getStore();
-    await store.set(`checklist_${charName}`, [...checked]);
-    await store.save();
-  } catch (err) { console.error("[ExiledOrb] Store error:", err); }
+  await persistToStore(`checklist_${charName}`, [...checked]);
 }
 
 export default function LevelingGuide() {

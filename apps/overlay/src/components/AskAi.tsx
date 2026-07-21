@@ -3,6 +3,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { getApiKey, getStore } from "../utils/store";
 import { useBuildStore } from "../stores/build-store";
 import WitchSays from "./WitchSays";
+import { Btn } from "./ui";
 
 interface Message {
   role: "user" | "ai";
@@ -184,28 +185,16 @@ export default function AskAi() {
     <div className="flex flex-col" style={{ height: 420 }}>
       {/* Chat controls */}
       <div className="flex items-center gap-1 mb-2">
-        <button
-          onClick={newChat}
-          className="px-2 py-1 rounded text-xs hover:opacity-80"
-          style={{ background: "rgba(255,255,255,0.06)", color: "var(--accent)", border: "1px solid var(--border-color)" }}
-        >
+        <Btn variant="outline" size="sm" style={{ color: "var(--accent)" }} onClick={newChat}>
           + New
-        </button>
-        <button
-          onClick={() => setShowChatList(!showChatList)}
-          className="px-2 py-1 rounded text-xs hover:opacity-80"
-          style={{ background: "rgba(255,255,255,0.06)", color: "var(--text-secondary)", border: "1px solid var(--border-color)" }}
-        >
+        </Btn>
+        <Btn variant="outline" size="sm" style={{ color: "var(--text-secondary)" }} onClick={() => setShowChatList(!showChatList)}>
           History ({savedChats.length})
-        </button>
+        </Btn>
         {messages.length > 0 && (
-          <button
-            onClick={saveCurrentChat}
-            className="px-2 py-1 rounded text-xs hover:opacity-80"
-            style={{ background: "rgba(255,255,255,0.06)", color: "var(--text-secondary)", border: "1px solid var(--border-color)" }}
-          >
+          <Btn variant="outline" size="sm" style={{ color: "var(--text-secondary)" }} onClick={saveCurrentChat}>
             Save
-          </button>
+          </Btn>
         )}
       </div>
 
@@ -231,13 +220,9 @@ export default function AskAi() {
                   {chat.messages.length} messages — {new Date(chat.timestamp).toLocaleDateString()}
                 </div>
               </div>
-              <button
-                onClick={(e) => { e.stopPropagation(); deleteChat(chat.id); }}
-                className="text-xs px-1 rounded hover:opacity-80 shrink-0 ml-1"
-                style={{ color: "var(--text-secondary)" }}
-              >
+              <Btn variant="text" className="px-1 py-0 shrink-0 ml-1" onClick={(e) => { e.stopPropagation(); deleteChat(chat.id); }}>
                 ✕
-              </button>
+              </Btn>
             </div>
           ))}
         </div>
@@ -304,13 +289,7 @@ export default function AskAi() {
       {pendingImage && (
         <div className="flex items-center gap-2 mb-1">
           <img src={pendingImage.dataUrl} alt="" className="h-10 rounded object-contain" />
-          <button
-            onClick={() => setPendingImage(null)}
-            className="text-xs px-1.5 py-0.5 rounded hover:opacity-80"
-            style={{ background: "rgba(255,255,255,0.06)", color: "var(--text-secondary)" }}
-          >
-            ✕
-          </button>
+          <Btn onClick={() => setPendingImage(null)}>✕</Btn>
         </div>
       )}
 
@@ -327,18 +306,13 @@ export default function AskAi() {
           className="hidden"
           onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
         />
-        <button
+        <Btn variant="outline" className="px-2 py-1.5"
+          style={{ background: "rgba(255,255,255,0.04)", color: pendingImage ? "var(--accent)" : "var(--text-secondary)" }}
           onClick={() => fileInputRef.current?.click()}
-          className="px-2 py-1.5 rounded text-xs transition-opacity hover:opacity-80"
-          style={{
-            background: "rgba(255,255,255,0.04)",
-            border: "1px solid var(--border-color)",
-            color: pendingImage ? "var(--accent)" : "var(--text-secondary)",
-          }}
           title="Upload image (or paste/drop)"
         >
           📷
-        </button>
+        </Btn>
         <input
           type="text"
           value={input}
@@ -353,18 +327,10 @@ export default function AskAi() {
           }}
           disabled={loading}
         />
-        <button
-          onClick={ask}
-          disabled={loading || (!input.trim() && !pendingImage)}
-          className="px-3 py-1.5 rounded text-xs font-bold transition-opacity hover:opacity-80 disabled:opacity-50"
-          style={{
-            background: "rgba(255,255,255,0.06)",
-            border: "1px solid var(--border-gold)",
-            color: "var(--accent)",
-          }}
-        >
+        <Btn variant="gold" className="px-3 py-1.5 font-bold" style={{ background: "rgba(255,255,255,0.06)" }}
+          onClick={ask} disabled={loading || (!input.trim() && !pendingImage)}>
           Ask
-        </button>
+        </Btn>
       </div>
     </div>
   );

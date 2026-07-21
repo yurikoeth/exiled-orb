@@ -1,16 +1,11 @@
 import type { ReactNode } from "react";
 import witchImg from "../assets/classes/elementalist.png";
+import { Panel } from "./ui";
 
 /** Wraps AI-generated content in a "Witch is speaking" style card */
 export default function WitchSays({ children, title }: { children: ReactNode; title?: string }) {
   return (
-    <div
-      className="rounded border relative overflow-hidden"
-      style={{
-        background: "linear-gradient(180deg, rgba(24,24,28,0.95) 0%, rgba(14,14,18,0.95) 100%)",
-        borderColor: "var(--border-gold)",
-      }}
-    >
+    <Panel gold className="relative overflow-hidden">
       {/* Witch portrait + speech area */}
       <div className="flex">
         {/* Portrait */}
@@ -47,6 +42,6 @@ export default function WitchSays({ children, title }: { children: ReactNode; ti
           </div>
         </div>
       </div>
-    </div>
+    </Panel>
   );
 }

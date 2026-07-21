@@ -1,5 +1,6 @@
 import { useSpeedrunStore } from "../stores/speedrun-store";
 import { formatDuration } from "@exiled-orb/shared";
+import { SectionTitle } from "./ui";
 
 const WIDTH = 280;
 const HEIGHT = 80;
@@ -48,9 +49,7 @@ export default function RunTimeChart() {
       className="rounded-lg border px-2 py-1.5 backdrop-blur-sm"
       style={{ backgroundColor: "var(--bg-panel)", borderColor: "var(--border-color)" }}
     >
-      <div className="text-xs font-bold uppercase tracking-wide mb-1" style={{ color: "var(--accent)" }}>
-        Run Times ({runs.length} recent)
-      </div>
+      <SectionTitle className="mb-1">Run Times ({runs.length} recent)</SectionTitle>
 
       <svg width={WIDTH} height={HEIGHT} className="w-full" viewBox={`0 0 ${WIDTH} ${HEIGHT}`} preserveAspectRatio="none">
         {/* Average line */}

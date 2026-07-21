@@ -3,6 +3,7 @@ import { useOverlayStore } from "../stores/overlay-store";
 import { formatPrice, formatPriceRange, evaluateItem } from "@exiled-orb/shared";
 import { checkPrice, getDivineRateCached } from "../hooks/usePriceCheck";
 import type { ItemEvaluation } from "@exiled-orb/shared";
+import { Btn, Panel, RARITY_COLORS } from "./ui";
 
 const confidenceColors: Record<string, string> = {
   exact: "bg-green-600",
@@ -60,42 +61,17 @@ export default function PriceCheck() {
 
   if (!currentItem) return null;
 
-  const rarityColors: Record<string, string> = {
-    Normal: "#c8c8c8",
-    Magic: "#8888ff",
-    Rare: "#ffff77",
-    Unique: "#af6025",
-    Currency: "#aa9e82",
-    Gem: "#1ba29b",
-    "Divination Card": "#66cccc",
-  };
-
-  const rarityColor = rarityColors[currentItem.rarity] || "#c8c8c8";
+  const rarityColor = RARITY_COLORS[currentItem.rarity] || "#c8c8c8";
 
   return (
-    <div
-      className="rounded border p-3"
-      style={{
-        background: "linear-gradient(180deg, rgba(24,24,28,0.95) 0%, rgba(14,14,18,0.95) 100%)",
-        borderColor: "var(--border-color)",
-        borderLeft: `3px solid ${rarityColor}`,
-      }}
-    >
+    <Panel className="p-3" style={{ borderLeft: `3px solid ${rarityColor}` }}>
       {/* Item header */}
       <div className="mb-2">
         <div className="flex items-center justify-between">
           <div className="text-sm font-bold" style={{ color: rarityColor }}>
             {currentItem.name || currentItem.baseType}
           </div>
-          <button
-            onClick={recheck}
-            disabled={priceLoading}
-            className="text-xs px-1.5 py-0.5 rounded hover:opacity-80 shrink-0 disabled:opacity-50"
-            style={{ background: "rgba(255,255,255,0.06)", color: "var(--text-secondary)" }}
-            title="Re-check price"
-          >
-            ↻
-          </button>
+          <Btn className="shrink-0" onClick={recheck} disabled={priceLoading} title="Re-check price">↻</Btn>
         </div>
         {currentItem.name && (
           <div className="text-xs" style={{ color: "var(--text-secondary)" }}>
@@ -265,19 +241,15 @@ export default function PriceCheck() {
                         : `Lookup failed via ${priceResult.source}`}
                     </div>
                   </div>
-                  <button
-                    onClick={recheck}
-                    className="ml-auto text-xs px-2 py-1 rounded hover:opacity-80 shrink-0"
-                    style={{ background: "rgba(255,255,255,0.08)", color: "var(--text-secondary)" }}
-                  >
+                  <Btn size="sm" className="ml-auto shrink-0" style={{ background: "rgba(255,255,255,0.08)" }} onClick={recheck}>
                     Retry
-                  </button>
+                  </Btn>
                 </div>
               )}
             </div>
           )}
         </div>
       ) : null}
-    </div>
+    </Panel>
   );
 }

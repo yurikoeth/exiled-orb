@@ -3,6 +3,7 @@ import { useSpeedrunStore } from "../stores/speedrun-store";
 import { loadRunHistory, type RunHistoryOpts } from "../stores/speedrun-db";
 import { formatDuration } from "@exiled-orb/shared";
 import type { MapRun } from "@exiled-orb/shared";
+import { Btn, SectionTitle } from "./ui";
 
 interface RunHistoryProps {
   onSelectMap?: (mapName: string, game: string) => void;
@@ -68,9 +69,7 @@ export default function RunHistory({ onSelectMap }: RunHistoryProps) {
     >
       {/* Header */}
       <div className="flex items-center justify-between px-3 py-1.5 border-b" style={{ borderColor: "var(--border-color)" }}>
-        <span className="text-xs font-bold uppercase tracking-wide" style={{ color: "var(--accent)" }}>
-          Run History
-        </span>
+        <SectionTitle>Run History</SectionTitle>
         <div className="flex items-center gap-1">
           <button
             onClick={() => setFilter("session")}
@@ -195,14 +194,9 @@ export default function RunHistory({ onSelectMap }: RunHistoryProps) {
       {/* Load more for DB mode */}
       {filter === "all" && hasMore && (
         <div className="px-3 py-1.5 text-center border-t" style={{ borderColor: "var(--border-color)" }}>
-          <button
-            onClick={loadMore}
-            disabled={loading}
-            className="text-xs px-3 py-0.5 rounded hover:opacity-80"
-            style={{ background: "rgba(255,255,255,0.08)", color: "var(--text-secondary)" }}
-          >
+          <Btn className="px-3" onClick={loadMore} disabled={loading}>
             {loading ? "Loading..." : "Load more"}
-          </button>
+          </Btn>
         </div>
       )}
     </div>

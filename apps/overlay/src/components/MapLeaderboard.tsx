@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { getMapLeaderboard } from "../stores/speedrun-db";
 import { formatDuration } from "@exiled-orb/shared";
 import type { MapRun } from "@exiled-orb/shared";
+import { Btn, SectionTitle } from "./ui";
 
 interface MapLeaderboardProps {
   mapName: string;
@@ -30,18 +31,10 @@ export default function MapLeaderboard({ mapName, game, onClose }: MapLeaderboar
       {/* Header */}
       <div className="flex items-center justify-between px-3 py-1.5 border-b" style={{ borderColor: "var(--border-color)" }}>
         <div className="flex items-center gap-1.5">
-          <span className="text-xs font-bold uppercase tracking-wide" style={{ color: "var(--accent)" }}>
-            Best Times
-          </span>
+          <SectionTitle>Best Times</SectionTitle>
           <span className="text-xs" style={{ color: "var(--text-primary)" }}>{mapName}</span>
         </div>
-        <button
-          onClick={onClose}
-          className="text-xs px-1.5 py-0.5 rounded hover:opacity-80"
-          style={{ background: "rgba(255,255,255,0.08)", color: "var(--text-secondary)" }}
-        >
-          ✕
-        </button>
+        <Btn onClick={onClose}>✕</Btn>
       </div>
 
       {loading ? (

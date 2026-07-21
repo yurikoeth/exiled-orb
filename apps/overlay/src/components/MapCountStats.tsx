@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { getOutcomeCounts, type GroupedOutcomeCounts, type OutcomeCounts } from "../stores/speedrun-db";
 import { useSpeedrunStore } from "../stores/speedrun-store";
 import { useSettingsStore } from "../stores/settings-store";
+import { SectionTitle } from "./ui";
 
 type ViewMode = "session" | "today" | "total" | "character" | "league";
 
@@ -54,9 +55,7 @@ export default function MapCountStats() {
     >
       {/* Header + view tabs */}
       <div className="flex items-center justify-between px-3 py-1.5 border-b" style={{ borderColor: "var(--border-color)" }}>
-        <span className="text-xs font-bold uppercase tracking-wide" style={{ color: "var(--accent)" }}>
-          Map Outcomes
-        </span>
+        <SectionTitle>Map Outcomes</SectionTitle>
         <div className="flex items-center gap-0.5">
           {views.map((v) => (
             <button

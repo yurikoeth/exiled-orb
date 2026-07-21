@@ -1,37 +1,6 @@
 import { create } from "zustand";
 import type { ParsedItem, Game } from "@exiled-orb/shared";
-
-/**
- * Slot ids match GGG's `inventory_id` field so captured builds line up with
- * GGG-fetched ones (same slot keys flow through build-store + AI prompts).
- */
-export const CAPTURE_SLOTS = [
-  "Helm",
-  "Amulet",
-  "Weapon",
-  "Offhand",
-  "BodyArmour",
-  "Gloves",
-  "Ring",
-  "Ring2",
-  "Belt",
-  "Boots",
-] as const;
-
-export type CaptureSlot = (typeof CAPTURE_SLOTS)[number];
-
-export const SLOT_LABELS: Record<CaptureSlot, string> = {
-  Helm: "Helmet",
-  Amulet: "Amulet",
-  Weapon: "Weapon",
-  Offhand: "Off-hand",
-  BodyArmour: "Body",
-  Gloves: "Gloves",
-  Ring: "Ring 1",
-  Ring2: "Ring 2",
-  Belt: "Belt",
-  Boots: "Boots",
-};
+import type { CaptureSlot } from "../utils/slots";
 
 const WEAPON_KEYWORDS = [
   "sword", "axe", "mace", "bow", "claw", "dagger",
