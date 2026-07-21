@@ -91,7 +91,8 @@
       "Bash(xargs wc:*)",
       "Bash(pnpm dev:desktop)",
       "Bash(wc -l \"c:\\\\Users\\\\mangi\\\\poe-helper\\\\apps\\\\overlay\\\\src\\\\components\"/*.tsx)",
-      "Bash(git commit -q -m 'Tidy Rust modules, remove dead settings window, re-sync docs *)"
+      "Bash(git commit -q -m 'Tidy Rust modules, remove dead settings window, re-sync docs *)",
+      "Bash(pnpm run *)"
     ]
   }
 }

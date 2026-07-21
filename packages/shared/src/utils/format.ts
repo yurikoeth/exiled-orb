@@ -23,6 +23,20 @@ export function formatPriceRange(
   return `${formatPrice(range[0], divineRate)} - ${formatPrice(range[1], divineRate)}`;
 }
 
+/**
+ * Format a long duration as days + hours ("23d 14h"), for season-length
+ * countdowns. Under a day drops to hours ("14h"); under an hour → "<1h".
+ * Negative input is treated as 0.
+ */
+export function formatDaysHours(ms: number): string {
+  const totalHours = Math.floor(Math.max(0, ms) / 3_600_000);
+  const days = Math.floor(totalHours / 24);
+  const hours = totalHours % 24;
+  if (days > 0) return `${days}d ${hours}h`;
+  if (hours > 0) return `${hours}h`;
+  return "<1h";
+}
+
 /** Format duration in ms to human readable */
 export function formatDuration(ms: number): string {
   const seconds = Math.floor(ms / 1000);

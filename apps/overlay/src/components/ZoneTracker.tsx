@@ -4,7 +4,9 @@ import { useOverlayStore } from "../stores/overlay-store";
 import { formatDuration } from "@exiled-orb/shared";
 import poe1Logo from "../assets/poe1-logo.png";
 import poe2Logo from "../assets/poe2-logo.png";
-import { Btn, Panel } from "./ui";
+import { useSettingsStore } from "../stores/settings-store";
+import { Btn, COLORS, Panel } from "./ui";
+import { seasonLabel, useMinuteNow } from "./SeasonTimers";
 
 const gameLogos = { poe1: poe1Logo, poe2: poe2Logo } as const;
 
@@ -95,6 +97,12 @@ export default function ZoneTracker() {
 
   const classImage = useClassImage(characterClass);
 
+  // Season line for the active game (falls back to the configured game when
+  // no Client.txt has been detected yet).
+  const settingsGame = useSettingsStore((s) => s.settings.game);
+  const now = useMinuteNow();
+  const season = seasonLabel(detectedGame ?? settingsGame, now);
+
   const refresh = () => {
     invoke<{ character_name: string | null; zone: string | null; area_level: number | null; game: string | null }>(
       "get_initial_game_state"
@@ -177,6 +185,15 @@ export default function ZoneTracker() {
           >
             {sessionDeaths > 0 ? `${sessionDeaths} death${sessionDeaths !== 1 ? "s" : ""}` : "Deathless"}
           </span>
+        </div>
+
+        {/* Season line for the active game */}
+        <div
+          className="pt-0.5 truncate"
+          style={{ color: season.urgent ? COLORS.orange : "var(--text-secondary)", fontSize: "0.6rem" }}
+          title="Season status (see Season tile on home for both games)"
+        >
+          {season.name} · {season.detail}
         </div>
       </div>
     </Panel>

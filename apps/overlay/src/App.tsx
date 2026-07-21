@@ -13,6 +13,7 @@ import RunTimeChart from "./components/RunTimeChart";
 import MapLeaderboard from "./components/MapLeaderboard";
 import MapCountStats from "./components/MapCountStats";
 import GggAccount from "./components/characters/GggAccount";
+import SeasonTimers from "./components/SeasonTimers";
 import AskAi from "./components/AskAi";
 import MarketTab from "./components/MarketTab";
 import { useClipboard } from "./hooks/useClipboard";
@@ -114,6 +115,7 @@ export default function App() {
           <MapSplitDisplay />
           <SpeedrunStats />
           <TradeAssistant />
+          <SeasonTimers />
 
           {/* Menu grid */}
           <div className="grid grid-cols-2 gap-2 mt-1">
