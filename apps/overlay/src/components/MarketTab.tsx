@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { invoke } from "@tauri-apps/api/core";
 import { useSettingsStore } from "../stores/settings-store";
+import { fetchNinjaCached } from "../utils/ninja-cache";
 import type { Game } from "@exiled-orb/shared";
 import { buildNinjaUrl, NINJA_CURRENCY_CATEGORIES } from "@exiled-orb/shared";
 import poe1Logo from "../assets/poe1-logo.png";
@@ -48,7 +48,7 @@ async function fetchCategory(game: Game, league: string, category: Category): Pr
 
   let raw: string;
   try {
-    raw = await invoke("fetch_ninja", { url });
+    raw = await fetchNinjaCached(url);
   } catch (err) {
     throw new Error(`Fetch failed: ${err}`);
   }

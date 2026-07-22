@@ -393,9 +393,24 @@ fn scan_for_characters(log_path: &PathBuf) -> Vec<DetectedCharacter> {
             return vec![];
         }
     };
-    let reader = BufReader::new(file);
+    let mut reader = BufReader::with_capacity(1 << 20, file);
 
-    for line in reader.lines().filter_map(|l| l.ok()) {
+    // Reuse one line buffer for the whole file (BufReader::lines allocates a
+    // fresh String per line — measurable on multi-hundred-MB logs).
+    let mut line = String::new();
+    loop {
+        line.clear();
+        match reader.read_line(&mut line) {
+            Ok(0) => break,
+            Ok(_) => {}
+            Err(_) => continue, // skip non-UTF8 chunks
+        }
+
+        // Cheap pre-filter: only level-up and death lines matter here.
+        if !line.contains(" is now level ") && !line.contains(" has been slain.") {
+            continue;
+        }
+
         let timestamp = extract_timestamp(&line).map(|s| s.to_string());
 
         if let Some((name, class, level)) = parse_levelup_for_history(&line) {
@@ -441,8 +456,21 @@ fn scan_for_characters(log_path: &PathBuf) -> Vec<DetectedCharacter> {
 /// Tauri command: scan every existing Client.txt file (PoE1 + PoE2 across
 /// drives), aggregate detected characters, return sorted by level descending.
 /// Frontend invokes this on the Characters tab; results are cached client-side.
+///
+/// MUST stay async: sync Tauri commands run on the main thread, and this scan
+/// reads entire (potentially huge) log files — as a sync command it froze the
+/// whole UI. spawn_blocking moves the file IO to a blocking worker thread.
 #[tauri::command]
-pub fn scan_character_history() -> Vec<DetectedCharacter> {
+pub async fn scan_character_history() -> Vec<DetectedCharacter> {
+    tauri::async_runtime::spawn_blocking(scan_character_history_blocking)
+        .await
+        .unwrap_or_else(|e| {
+            eprintln!("[ExiledOrb] scan_character_history join error: {e}");
+            Vec::new()
+        })
+}
+
+fn scan_character_history_blocking() -> Vec<DetectedCharacter> {
     use std::collections::HashSet;
 
     let mut all: Vec<DetectedCharacter> = Vec::new();

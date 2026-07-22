@@ -11,7 +11,10 @@ const tierColors: Record<number, string> = {
 
 /** AI-powered or local mod-tier price insight panel */
 export default function AiPriceInsight() {
-  const { currentAnalysis, analysisLoading } = useAiStore();
+  // Individual selectors — destructuring the whole store re-renders on every
+  // unrelated store write (see CLAUDE.md Zustand convention).
+  const currentAnalysis = useAiStore((s) => s.currentAnalysis);
+  const analysisLoading = useAiStore((s) => s.analysisLoading);
 
   if (analysisLoading) {
     return (

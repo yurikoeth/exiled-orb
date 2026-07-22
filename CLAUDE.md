@@ -91,6 +91,23 @@ target-dir = "E:\\rust-target"
 ```
 If C: runs out of space, `cargo clean` only helps if target is still on C:. Check config.toml first.
 
+### Sync Tauri Commands Block the Main Thread
+A `#[tauri::command]` WITHOUT `async` runs on the main thread — heavy work in
+one freezes the entire UI. `scan_character_history` did exactly this (whole-
+file log scan → window froze). Any command doing file IO / network / heavy CPU
+must be `async` (+ `tauri::async_runtime::spawn_blocking` for blocking work).
+
+### poe.ninja Responses Are Cached
+`utils/ninja-cache.ts` caches raw responses 5 min per URL (a category is
+megabytes of JSON). ALL ninja fetches must go through `fetchNinjaCached` —
+calling `invoke("fetch_ninja")` directly reintroduces multi-second Ctrl+C
+price checks. `clearNinjaCache()` exists for league/settings changes.
+
+### Dev Build Optimization
+Cargo.toml sets `[profile.dev] opt-level = 1` + deps at opt 3 (one-time ~7 min
+rebuild, cached in E:ust-target). Without this, log scanning/parsing runs
+10-50x slower in dev. Incremental rebuilds are ~30s (was ~10s at opt 0).
+
 ### Rust Rebuilds During Dev
 Tauri's file watcher triggers Rust rebuilds when `src-tauri/` files change. If it double-rebuilds and runs out of space, kill the process and restart manually. Only the overlay crate recompiles (~8-20s), not all 500+ deps.
 

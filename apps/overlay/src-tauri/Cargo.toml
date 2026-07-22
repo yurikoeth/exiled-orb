@@ -35,3 +35,12 @@ strip = true
 lto = true
 codegen-units = 1
 panic = "abort"
+
+# Dev builds: without optimization the full-log character scan and log parsing
+# run 10-50x slower. Deps compile at opt 3 ONCE (cached in E:\rust-target);
+# our own crate stays at opt 1 so incremental rebuilds remain fast.
+[profile.dev]
+opt-level = 1
+
+[profile.dev.package."*"]
+opt-level = 3

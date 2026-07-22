@@ -1,7 +1,7 @@
-import { invoke } from "@tauri-apps/api/core";
 import type { ParsedItem, PriceResult, PoeNinjaCategory, Game } from "@exiled-orb/shared";
 import { buildNinjaUrl } from "@exiled-orb/shared";
 import { useSettingsStore } from "../stores/settings-store";
+import { fetchNinjaCached } from "../utils/ninja-cache";
 
 /** Map item class/rarity to poe.ninja category */
 function getCategory(item: ParsedItem): PoeNinjaCategory | null {
@@ -42,21 +42,18 @@ interface NinjaLine {
   count?: number;
 }
 
-/** Fetch from poe.ninja via Rust proxy to avoid CORS */
+/** Fetch from poe.ninja via Rust proxy (CORS) — cached 5 min per URL. */
 async function ninjaFetch(game: Game, league: string, category: string): Promise<NinjaLine[]> {
   const url = buildNinjaUrl(game, league, category);
 
   try {
-    console.log("[ExiledOrb] poe.ninja fetch:", url);
-    const raw: string = await invoke("fetch_ninja", { url });
+    const raw = await fetchNinjaCached(url);
     if (raw.trimStart().startsWith("<!")) {
       console.warn("[ExiledOrb] poe.ninja returned HTML (possibly wrong league or API error)");
       return [];
     }
     const data = JSON.parse(raw);
-    const lines = data.lines || [];
-    console.log(`[ExiledOrb] poe.ninja returned ${lines.length} items for ${category}`);
-    return lines;
+    return data.lines || [];
   } catch (err) {
     console.error("[ExiledOrb] poe.ninja fetch failed:", err);
     return [];
