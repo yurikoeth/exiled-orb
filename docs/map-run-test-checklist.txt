@@ -1,0 +1,70 @@
+EXILEDORB — PoE2 MAP RUN SMOKE TEST CHECKLIST
+==============================================
+Run one map with the overlay up. Check items off in order — they're
+sequenced by when they happen during a run. Items marked [AI] only
+apply if a Claude API key is set.
+
+
+0. BEFORE YOU START (in hideout)
+--------------------------------
+[ ] ZoneTracker shows: GRANDCATHEDRAL, current hideout name, area level
+[ ] ZoneTracker season line: "Return of the Ancients · day 54 · end TBA"
+[ ] Home Season tile shows BOTH games:
+      PoE1: "Mirage · ended · next league in ~2d" (orange)
+      PoE2: "Return of the Ancients · day 54 · end TBA" (grey)
+[ ] F5 toggles overlay visibility; Esc from a page returns home
+
+
+1. WAYSTONE CHECK (before opening the map)
+------------------------------------------
+[ ] Ctrl+C the waystone → Map Mod Warnings panel appears
+[ ] Overall danger badge (SAFE/CAUTION/DANGER/DEADLY) looks sane
+[ ] Each dangerous mod is flagged with a description; safe mods listed plain
+[ ] Tier shown matches the waystone
+[ ] Esc dismisses the panel
+
+
+2. ENTERING THE MAP
+-------------------
+[ ] Zone change detected within ~1-2s of loading in (PoE2 SCENE parsing)
+[ ] MapTimer replaces ZoneTracker: map name + tier + ticking timer
+[ ] Area level updates (check it matches the waystone level)
+
+
+3. DURING THE MAP
+-----------------
+[ ] Ctrl+C a rare drop → PriceCheck panel:
+      [ ] correct name + rarity color
+      [ ] mod tier bars (T1-T5) with roll % for recognized mods
+      [ ] verdict badge (GODLY/GREAT/GOOD/DECENT/VENDOR)
+      [ ] price or "estimate via mod tier analysis"
+[ ] Ctrl+C a currency/unique drop → poe.ninja price with divine conversion
+[ ] [AI] Witch price insight appears below the price check
+[ ] Panel dismisses with Esc; next Ctrl+C opens a fresh one
+[ ] If you die (let's not): death counter increments on the timer tile
+[ ] [AI] Incoming trade whisper → TradeAssistant card with suggested reply
+
+
+4. FINISHING THE MAP
+--------------------
+[ ] Back in hideout → "cleared or bricked?" panel with the run time
+[ ] PB comparison shown if you've run this map before
+[ ] Click Clear → panel resolves, PB chime if it's a new best
+[ ] SpeedrunStats session panel updates: maps/hr, avg time, fastest
+[ ] Maps page → Run History lists the run; Map Outcomes bar updates
+[ ] Click the run → per-map leaderboard opens
+
+
+5. AFTER (sanity)
+-----------------
+[ ] ZoneTracker back to hideout, session time still ticking
+[ ] If you leveled: character level updated in overlay
+[ ] No red error banners anywhere; dev console free of [ExiledOrb] errors
+    (right-click overlay → Inspect, or check the pnpm tauri dev output)
+
+
+NOTES / BUGS FOUND
+------------------
+-
+-
+-

@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import { getApiKey, getStore } from "../utils/store";
+import { getApiKey, getStore, persistToStore } from "../utils/store";
 import { useBuildStore } from "../stores/build-store";
 import WitchSays from "./WitchSays";
 import { Btn } from "./ui";
@@ -44,9 +44,7 @@ export default function AskAi() {
       ...c,
       messages: c.messages.map((m) => ({ ...m, image: undefined })),
     }));
-    const store = await getStore();
-    await store.set("ai_chats", stripped);
-    await store.save();
+    await persistToStore("ai_chats", stripped);
   };
 
   const saveCurrentChat = async () => {

@@ -1,4 +1,4 @@
-import type { ButtonHTMLAttributes, HTMLAttributes } from "react";
+import type { ButtonHTMLAttributes, CSSProperties, HTMLAttributes } from "react";
 
 /**
  * Shared UI primitives — the handful of visual patterns repeated across the
@@ -95,7 +95,7 @@ const BTN_SIZE: Record<BtnSize, string> = {
   action: "text-xs py-1.5 px-2 font-bold uppercase tracking-wide",
 };
 
-function btnStyle(variant: BtnVariant, active: boolean): React.CSSProperties {
+function btnStyle(variant: BtnVariant, active: boolean): CSSProperties {
   switch (variant) {
     case "gold":
       return {

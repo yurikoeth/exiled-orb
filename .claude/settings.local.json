@@ -92,7 +92,14 @@
       "Bash(pnpm dev:desktop)",
       "Bash(wc -l \"c:\\\\Users\\\\mangi\\\\poe-helper\\\\apps\\\\overlay\\\\src\\\\components\"/*.tsx)",
       "Bash(git commit -q -m 'Tidy Rust modules, remove dead settings window, re-sync docs *)",
-      "Bash(pnpm run *)"
+      "Bash(pnpm run *)",
+      "Skill(run)",
+      "Skill(run:*)",
+      "Bash(pnpm tauri *)",
+      "Bash(mkdir -p /c/Users/mangi/AppData/Local/Temp/claude/f--dev-poe-helper/eef1346b-c8d8-4c2b-a5c3-cb2bb3eec351/scratchpad)",
+      "Bash(git show *)",
+      "Read(//c/Users/mangi/AppData/Local/Temp/claude/f--dev-poe-helper/eef1346b-c8d8-4c2b-a5c3-cb2bb3eec351/scratchpad/**)",
+      "Read(//f//**)"
     ]
   }
 }
