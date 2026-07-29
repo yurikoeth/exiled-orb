@@ -16,7 +16,7 @@ All-in-one Path of Exile companion — desktop overlay for PoE1 & PoE2.
 ## Project Layout
 
 ```
-poe-helper/
+exiled-orb/
 ├── packages/shared/src/
 │   ├── types/          # Item, Character, Currency, Map, Session, Settings, Speedrun, AI
 │   ├── parsers/        # item-parser.ts (clipboard), client-log.ts (Client.txt)
@@ -26,7 +26,7 @@ poe-helper/
 │   └── utils/          # format.ts, constants.ts
 ├── apps/overlay/
 │   ├── src-tauri/
-│   │   ├── .cargo/config.toml   # target-dir = "E:\\rust-target" (avoids C: disk space issues)
+│   │   ├── .cargo/config.toml   # OPTIONAL, untracked — local target-dir override for disk space
 │   │   ├── capabilities/        # Tauri v2 permissions (MUST include core:event:allow-listen)
 │   │   └── src/                 # ai.rs, clipboard.rs, log_watcher.rs, ninja.rs (poe.ninja proxy),
 │   │                            # oauth.rs (GGG API), oauth_flow.rs (PKCE flow), settings.rs, lib.rs
@@ -45,8 +45,7 @@ poe-helper/
 │       ├── utils/       # store.ts (getStore/persistToStore/getApiKey), slots.ts
 │       │                # (slot order/labels — single source), parseAiJson.ts
 │       └── assets/      # classes/, menu/, poe1/poe2 logos, wallpaper
-├── docs/                # ggg-developer-application, oauth-migration-affected-features,
-│                        # recent-changes-2026-05-28 (rebuild plans + migration notes)
+├── docs/                # ARCHITECTURE.md (public architecture documentation)
 └── run.bat              # Launch script
 ```
 
@@ -84,12 +83,14 @@ reqwest = { version = "0.12", default-features = false, features = ["json", "rus
 ```
 
 ### Disk Space
-Rust debug builds consume ~6-7GB. Build target is on **E: drive** via `src-tauri/.cargo/config.toml`:
+Rust debug builds consume ~6-7GB. An **untracked, optional** `src-tauri/.cargo/config.toml`
+can redirect the build target to another drive:
 ```toml
 [build]
 target-dir = "E:\\rust-target"
 ```
-If C: runs out of space, `cargo clean` only helps if target is still on C:. Check config.toml first.
+If the system drive runs out of space, check whether such an override exists before
+assuming `cargo clean` in the repo will help.
 
 ### Sync Tauri Commands Block the Main Thread
 A `#[tauri::command]` WITHOUT `async` runs on the main thread — heavy work in
@@ -233,7 +234,6 @@ Esc → back to home. No settings window — settings UI not built yet
 - **Auto-detect**: Checks C:\, D:\, E:\, F:\ SteamLibrary paths + GGG standalone, picks newest mtime
 - **Current league**: Mirage (hardcoded PoE1 league in DEFAULT_SETTINGS + usePriceCheck fallback). NOTE: still PoE1-only — per-game league default is an open gap. Mirage ENDED 2026-07-20; 3.29 (name TBA) launches 2026-07-24 — league default needs renaming at launch.
 - **Season dates**: `packages/shared/src/data/seasons.ts` — MANUAL config, update once per league. GGG APIs can't provide end dates (verified 2026-07-21: legacy /api/leagues ignores realm=poe2, omits challenge leagues, endAt always null; OAuth /league needs service:leagues + confidential client). Rendered by SeasonTimers (home tile) + a ZoneTracker line via getSeasonState/seasonLabel.
-- **User's account**: yurikoeth#5030. PoE1: witchtimee (Elementalist). PoE2: xYuriko (Witch).
 - **Item text format**: Sections split by "--------", starts with "Item Class:" (PoE2) or "Rarity:" (PoE1)
 
 ## Not Yet Implemented
@@ -241,9 +241,8 @@ Esc → back to home. No settings window — settings UI not built yet
 - Settings UI (settings-store + SQLite persistence exist but nothing edits them;
   the old placeholder settings window/tray item were removed 2026-07-21)
 - Per-game league default (DEFAULT_SETTINGS league is hardcoded PoE1 "Mirage")
-- POE2_LEVELING data (LevelingGuide is PoE1-only)
 - MapTimer — not yet game-aware audited for PoE2
-- AtlasHelper — removed 2026-05-28; rebuild plan in `docs/oauth-migration-affected-features.txt` (scoped: curated library + pick-and-track + clipboard integration + profit tracking)
+- AtlasHelper — removed 2026-05-28; rebuild scoped in README roadmap (curated library + pick-and-track + clipboard integration + profit tracking); old implementation in git history pre-2026-05-28
 - Tauri Windows packaging/installer (.msi/.exe)
 - Snipe alerts (background trade polling)
 - GGG Trade API for rare pricing (currently mod-tier estimation only)
