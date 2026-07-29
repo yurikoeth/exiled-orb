@@ -31,7 +31,16 @@ interface NinjaItemLine {
   sparkline?: { totalChange?: number };
 }
 
-type Category = "Currency" | "Fragment" | "DivinationCard" | "UniqueWeapon" | "UniqueArmour" | "SkillGem" | "Map" | "Essence" | "Scarab";
+type Category =
+  | "Currency"
+  | "Fragment"
+  | "DivinationCard"
+  | "UniqueWeapon"
+  | "UniqueArmour"
+  | "SkillGem"
+  | "Map"
+  | "Essence"
+  | "Scarab";
 
 const CATEGORIES: { id: Category; label: string }[] = [
   { id: "Currency", label: "Currency" },
@@ -59,36 +68,41 @@ async function fetchCategory(game: Game, league: string, category: Category): Pr
   const data = JSON.parse(raw);
 
   if (NINJA_CURRENCY_CATEGORIES.has(category)) {
-    return (data.lines || []).map((line: NinjaCurrencyLine) => ({
-      name: line.currencyTypeName,
-      chaosValue: line.chaosEquivalent ?? line.receive?.value ?? 0,
-      divineValue: 0,
-      icon: line.currencyTypeName === "Divine Orb" ? "" : "",
-      change: line.receiveSparkLine?.totalChange ?? 0,
-    })).sort((a: NinjaItem, b: NinjaItem) => b.chaosValue - a.chaosValue);
+    return (data.lines || [])
+      .map((line: NinjaCurrencyLine) => ({
+        name: line.currencyTypeName,
+        chaosValue: line.chaosEquivalent ?? line.receive?.value ?? 0,
+        divineValue: 0,
+        icon: line.currencyTypeName === "Divine Orb" ? "" : "",
+        change: line.receiveSparkLine?.totalChange ?? 0,
+      }))
+      .sort((a: NinjaItem, b: NinjaItem) => b.chaosValue - a.chaosValue);
   }
 
-  return (data.lines || []).map((line: NinjaItemLine) => ({
-    name: line.name || line.currencyTypeName,
-    chaosValue: line.chaosValue ?? 0,
-    divineValue: line.divineValue ?? 0,
-    icon: line.icon || "",
-    change: line.sparkline?.totalChange ?? 0,
-  })).sort((a: NinjaItem, b: NinjaItem) => b.chaosValue - a.chaosValue);
+  return (data.lines || [])
+    .map((line: NinjaItemLine) => ({
+      name: line.name || line.currencyTypeName,
+      chaosValue: line.chaosValue ?? 0,
+      divineValue: line.divineValue ?? 0,
+      icon: line.icon || "",
+      change: line.sparkline?.totalChange ?? 0,
+    }))
+    .sort((a: NinjaItem, b: NinjaItem) => b.chaosValue - a.chaosValue);
 }
 
 function MarketItem({ item }: { item: NinjaItem }) {
   const [expanded, setExpanded] = useState(false);
 
   return (
-    <Panel bg={expanded ? "raised" : "dim"} gold={expanded}
+    <Panel
+      bg={expanded ? "raised" : "dim"}
+      gold={expanded}
       className="cursor-pointer hover:opacity-90 transition-opacity"
-      onClick={() => setExpanded(!expanded)}>
+      onClick={() => setExpanded(!expanded)}
+    >
       <div className="px-2 py-1.5 flex items-center justify-between">
         <div className="flex items-center gap-2 min-w-0">
-          {item.icon && (
-            <img src={item.icon} alt="" className="w-5 h-5 shrink-0 object-contain" />
-          )}
+          {item.icon && <img src={item.icon} alt="" className="w-5 h-5 shrink-0 object-contain" />}
           <span className="text-xs truncate" style={{ color: "var(--text-primary)" }}>
             {item.name}
           </span>
@@ -102,14 +116,18 @@ function MarketItem({ item }: { item: NinjaItem }) {
               className="text-xs"
               style={{ color: item.change > 0 ? COLORS.green : COLORS.red, fontSize: "0.65rem" }}
             >
-              {item.change > 0 ? "+" : ""}{item.change.toFixed(1)}%
+              {item.change > 0 ? "+" : ""}
+              {item.change.toFixed(1)}%
             </span>
           )}
         </div>
       </div>
 
       {expanded && (
-        <div className="px-2 pb-2 pt-1 border-t space-y-1" style={{ borderColor: "rgba(255,255,255,0.05)" }}>
+        <div
+          className="px-2 pb-2 pt-1 border-t space-y-1"
+          style={{ borderColor: "rgba(255,255,255,0.05)" }}
+        >
           {item.divineValue > 0 && (
             <div className="text-xs" style={{ color: "var(--text-secondary)" }}>
               Divine value: {item.divineValue.toFixed(2)} div
@@ -118,9 +136,19 @@ function MarketItem({ item }: { item: NinjaItem }) {
           <div className="text-xs" style={{ color: "var(--text-secondary)" }}>
             Chaos value: {item.chaosValue.toFixed(1)}c
           </div>
-          <div className="text-xs flex items-center gap-1" style={{ color: item.change > 0 ? COLORS.green : item.change < 0 ? COLORS.red : "var(--text-secondary)" }}>
-            7-day trend: {item.change > 0 ? "+" : ""}{item.change.toFixed(1)}%
-            {item.change > 5 && " — Rising fast"}
+          <div
+            className="text-xs flex items-center gap-1"
+            style={{
+              color:
+                item.change > 0
+                  ? COLORS.green
+                  : item.change < 0
+                    ? COLORS.red
+                    : "var(--text-secondary)",
+            }}
+          >
+            7-day trend: {item.change > 0 ? "+" : ""}
+            {item.change.toFixed(1)}%{item.change > 5 && " — Rising fast"}
             {item.change < -5 && " — Dropping"}
           </div>
         </div>
@@ -189,7 +217,8 @@ export default function MarketTab() {
             className="px-2 py-1 rounded text-xs transition-all"
             style={{
               background: category === cat.id ? "rgba(255,255,255,0.08)" : "transparent",
-              border: category === cat.id ? "1px solid var(--border-gold)" : "1px solid transparent",
+              border:
+                category === cat.id ? "1px solid var(--border-gold)" : "1px solid transparent",
               color: category === cat.id ? "var(--accent)" : "var(--text-secondary)",
             }}
           >
@@ -214,7 +243,9 @@ export default function MarketTab() {
 
       {/* Items list */}
       {loading && (
-        <div className="text-xs text-center py-3" style={{ color: "var(--text-secondary)" }}>Loading prices...</div>
+        <div className="text-xs text-center py-3" style={{ color: "var(--text-secondary)" }}>
+          Loading prices...
+        </div>
       )}
       {error && <div className="text-xs text-red-400">{error}</div>}
 

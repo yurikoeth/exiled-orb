@@ -51,7 +51,9 @@ export async function loadPersonalBests(game?: string): Promise<Map<string, numb
   const pbs = new Map<string, number>();
   try {
     const db = await getDb();
-    const where = game ? "WHERE completed = 1 AND total_ms IS NOT NULL AND game = $1" : "WHERE completed = 1 AND total_ms IS NOT NULL";
+    const where = game
+      ? "WHERE completed = 1 AND total_ms IS NOT NULL AND game = $1"
+      : "WHERE completed = 1 AND total_ms IS NOT NULL";
     const params = game ? [game] : [];
     const rows = await db.select<{ map_name: string; best_ms: number }[]>(
       `SELECT map_name, MIN(total_ms) as best_ms FROM map_runs ${where} GROUP BY map_name`,
@@ -111,7 +113,11 @@ export async function loadRunHistory(opts: RunHistoryOpts = {}): Promise<MapRun[
 }
 
 /** Get top N fastest times for a specific map */
-export async function getMapLeaderboard(mapName: string, game: string, limit = 10): Promise<MapRun[]> {
+export async function getMapLeaderboard(
+  mapName: string,
+  game: string,
+  limit = 10
+): Promise<MapRun[]> {
   try {
     const db = await getDb();
     const rows = await db.select<DbMapRun[]>(
@@ -174,7 +180,13 @@ export interface GroupedOutcomeCounts {
 
 /** Get outcome counts grouped by total, today, character, and league */
 export async function getOutcomeCounts(game?: string): Promise<GroupedOutcomeCounts> {
-  const empty = (): OutcomeCounts => ({ completed: 0, bricked: 0, abandoned: 0, total: 0, deaths: 0 });
+  const empty = (): OutcomeCounts => ({
+    completed: 0,
+    bricked: 0,
+    abandoned: 0,
+    total: 0,
+    deaths: 0,
+  });
   const result: GroupedOutcomeCounts = {
     total: empty(),
     today: empty(),
@@ -211,7 +223,9 @@ export async function getOutcomeCounts(game?: string): Promise<GroupedOutcomeCou
     }
 
     // By character
-    const charRows = await db.select<{ character_name: string; outcome: string; cnt: number; death_sum: number }[]>(
+    const charRows = await db.select<
+      { character_name: string; outcome: string; cnt: number; death_sum: number }[]
+    >(
       `SELECT COALESCE(character_name, 'Unknown') as character_name, outcome, COUNT(*) as cnt, SUM(deaths) as death_sum FROM map_runs WHERE 1=1${gameFilter} GROUP BY character_name, outcome`,
       params
     );
@@ -221,7 +235,9 @@ export async function getOutcomeCounts(game?: string): Promise<GroupedOutcomeCou
     }
 
     // By league
-    const leagueRows = await db.select<{ league: string; outcome: string; cnt: number; death_sum: number }[]>(
+    const leagueRows = await db.select<
+      { league: string; outcome: string; cnt: number; death_sum: number }[]
+    >(
       `SELECT league, outcome, COUNT(*) as cnt, SUM(deaths) as death_sum FROM map_runs WHERE 1=1${gameFilter} GROUP BY league, outcome`,
       params
     );

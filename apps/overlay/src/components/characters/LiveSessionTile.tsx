@@ -39,7 +39,7 @@ export default function LiveSessionTile({ gggCharacters }: { gggCharacters: GggC
   // every render of the parent (gear is small but parent re-renders often).
   const sortedActiveGear = useMemo(
     () => (activeBuildGear ? sortBySlot(activeBuildGear) : null),
-    [activeBuildGear],
+    [activeBuildGear]
   );
 
   const storeKey = characterName && detectedGame ? `${detectedGame}::${characterName}` : null;
@@ -68,7 +68,7 @@ export default function LiveSessionTile({ gggCharacters }: { gggCharacters: GggC
   // existing tile covers it — skip to avoid duplication. PoE2 shows here
   // until the OAuth-fetched list includes it.
   const inGggList = gggCharacters.some(
-    (c) => c.name.toLowerCase() === characterName.toLowerCase() && c.game === detectedGame,
+    (c) => c.name.toLowerCase() === characterName.toLowerCase() && c.game === detectedGame
   );
   if (inGggList) return null;
 
@@ -97,7 +97,9 @@ export default function LiveSessionTile({ gggCharacters }: { gggCharacters: GggC
     }
     const apiKey = await getApiKey();
     if (!apiKey) {
-      setAnalyzeError("Add your Claude API key in Settings > AI to use build analysis. Get one at console.anthropic.com.");
+      setAnalyzeError(
+        "Add your Claude API key in Settings > AI to use build analysis. Get one at console.anthropic.com."
+      );
       return;
     }
     setAnalyzing(true);
@@ -122,9 +124,9 @@ export default function LiveSessionTile({ gggCharacters }: { gggCharacters: GggC
   const setAsActiveBuild = async () => {
     if (!characterName || !detectedGame || !characterClass) return;
     const resolvedLevel =
-      resolveCharacterLevel(characterName, detectedGame)
-      ?? useBuildStore.getState().activeBuild?.level
-      ?? 1;
+      resolveCharacterLevel(characterName, detectedGame) ??
+      useBuildStore.getState().activeBuild?.level ??
+      1;
     await saveActiveBuild({
       characterName,
       characterClass,
@@ -135,7 +137,8 @@ export default function LiveSessionTile({ gggCharacters }: { gggCharacters: GggC
   };
 
   const showOauthNote = detectedGame === "poe2";
-  const hasGearSummary = activeBuildGearSummary && !activeBuildGearSummary.startsWith("(no gear data");
+  const hasGearSummary =
+    activeBuildGearSummary && !activeBuildGearSummary.startsWith("(no gear data");
 
   return (
     <Panel bg="purple" gold className="px-3 py-2 space-y-1.5">
@@ -166,7 +169,12 @@ export default function LiveSessionTile({ gggCharacters }: { gggCharacters: GggC
       </div>
 
       {!characterClass && !picking && (
-        <Btn variant="outline" size="sm" style={{ background: "rgba(255,255,255,0.08)" }} onClick={() => setPicking(true)}>
+        <Btn
+          variant="outline"
+          size="sm"
+          style={{ background: "rgba(255,255,255,0.08)" }}
+          onClick={() => setPicking(true)}
+        >
           Set class…
         </Btn>
       )}
@@ -178,50 +186,75 @@ export default function LiveSessionTile({ gggCharacters }: { gggCharacters: GggC
               {cls}
             </Btn>
           ))}
-          <Btn variant="text" onClick={() => setPicking(false)}>✕</Btn>
+          <Btn variant="text" onClick={() => setPicking(false)}>
+            ✕
+          </Btn>
         </div>
       )}
 
       {characterClass && (
         <div className="flex items-center gap-1.5 flex-wrap">
-          <Btn variant="gold" active={isActiveBuild} size="sm" onClick={setAsActiveBuild}
-            style={isActiveBuild ? {} : { background: "rgba(255,255,255,0.08)", border: "1px solid var(--border-color)", color: "var(--text-primary)" }}>
+          <Btn
+            variant="gold"
+            active={isActiveBuild}
+            size="sm"
+            onClick={setAsActiveBuild}
+            style={
+              isActiveBuild
+                ? {}
+                : {
+                    background: "rgba(255,255,255,0.08)",
+                    border: "1px solid var(--border-color)",
+                    color: "var(--text-primary)",
+                  }
+            }
+          >
             {isActiveBuild ? "Active build ✓" : "Set as active build"}
           </Btn>
           {detectedGame === "poe2" && (
-            <Btn variant="outline" size="sm" style={{ background: "rgba(255,255,255,0.08)" }}
+            <Btn
+              variant="outline"
+              size="sm"
+              style={{ background: "rgba(255,255,255,0.08)" }}
               onClick={() => useGearCaptureStore.getState().start(detectedGame)}
-              title="Open inventory in PoE and Ctrl+C each equipped piece">
+              title="Open inventory in PoE and Ctrl+C each equipped piece"
+            >
               Capture gear
             </Btn>
           )}
           {isActiveBuild && activeBuildGear && activeBuildGear.length > 0 && (
-            <Btn variant="gold" size="sm" style={{ background: "rgba(255,255,255,0.06)" }}
-              onClick={analyzeCapturedBuild} disabled={analyzing}
-              title="Send build + gear to Claude (Witch persona) for analysis">
+            <Btn
+              variant="gold"
+              size="sm"
+              style={{ background: "rgba(255,255,255,0.06)" }}
+              onClick={analyzeCapturedBuild}
+              disabled={analyzing}
+              title="Send build + gear to Claude (Witch persona) for analysis"
+            >
               {analyzing ? "Analyzing…" : "Analyze build"}
             </Btn>
           )}
-          <Btn variant="text" onClick={() => setPicking(true)} title="Change class">↻</Btn>
+          <Btn variant="text" onClick={() => setPicking(true)} title="Change class">
+            ↻
+          </Btn>
         </div>
       )}
 
       {/* Build goal editor — same component the GGG flow uses, keyed on
           the active build's character name so the goal persists alongside
           the saved build. */}
-      {isActiveBuild && characterName && (
-        <BuildGoalEditor characterName={characterName} />
-      )}
+      {isActiveBuild && characterName && <BuildGoalEditor characterName={characterName} />}
 
       {analyzeError && (
-        <div className="text-xs px-2 py-1 rounded" style={{ background: "rgba(255,68,68,0.08)", color: "#ff6666", fontSize: "0.65rem" }}>
+        <div
+          className="text-xs px-2 py-1 rounded"
+          style={{ background: "rgba(255,68,68,0.08)", color: "#ff6666", fontSize: "0.65rem" }}
+        >
           {analyzeError}
         </div>
       )}
 
-      {analysis && (
-        <BuildAnalysisCard analysis={analysis} onClose={() => setAnalysis(null)} />
-      )}
+      {analysis && <BuildAnalysisCard analysis={analysis} onClose={() => setAnalysis(null)} />}
 
       {/* Captured-build gear viewer: shown when this character is the
           active build AND that build has structured gear data. Falls
@@ -229,11 +262,25 @@ export default function LiveSessionTile({ gggCharacters }: { gggCharacters: GggC
           structured gear existed. */}
       {isActiveBuild && ((activeBuildGear && activeBuildGear.length > 0) || hasGearSummary) && (
         <div className="pt-1">
-          <Btn variant="outline" className="py-0.5"
-            style={{ background: "rgba(255,255,255,0.04)", color: "var(--text-secondary)", fontSize: "0.65rem" }}
-            onClick={() => setGearOpen((v) => !v)}>
-            {gearOpen ? "▾" : "▸"} Gear ({activeBuildGear?.length ?? activeBuildGearSummary?.split("\n").filter((l) => l.startsWith("[")).length ?? 0} items
-            {activeBuildKeyItems.length > 0 ? `, ${activeBuildKeyItems.length} unique${activeBuildKeyItems.length === 1 ? "" : "s"}` : ""})
+          <Btn
+            variant="outline"
+            className="py-0.5"
+            style={{
+              background: "rgba(255,255,255,0.04)",
+              color: "var(--text-secondary)",
+              fontSize: "0.65rem",
+            }}
+            onClick={() => setGearOpen((v) => !v)}
+          >
+            {gearOpen ? "▾" : "▸"} Gear (
+            {activeBuildGear?.length ??
+              activeBuildGearSummary?.split("\n").filter((l) => l.startsWith("[")).length ??
+              0}{" "}
+            items
+            {activeBuildKeyItems.length > 0
+              ? `, ${activeBuildKeyItems.length} unique${activeBuildKeyItems.length === 1 ? "" : "s"}`
+              : ""}
+            )
           </Btn>
           {gearOpen && (
             <div className="mt-1 space-y-0.5">
@@ -264,12 +311,22 @@ export default function LiveSessionTile({ gggCharacters }: { gggCharacters: GggC
       )}
 
       {showOauthNote && (
-        <div className="text-xs pt-1" style={{ color: "var(--text-secondary)", fontSize: "0.65rem", lineHeight: 1.3 }}>
+        <div
+          className="text-xs pt-1"
+          style={{ color: "var(--text-secondary)", fontSize: "0.65rem", lineHeight: 1.3 }}
+        >
           PoE2 character data requires GGG OAuth.
           {!hasGearSummary ? (
-            <> Live-detected from Client.txt — no gear data captured yet. Use Capture gear above to record your kit.</>
+            <>
+              {" "}
+              Live-detected from Client.txt — no gear data captured yet. Use Capture gear above to
+              record your kit.
+            </>
           ) : (
-            <> Live-detected from Client.txt — gear captured via clipboard (expand above to view).</>
+            <>
+              {" "}
+              Live-detected from Client.txt — gear captured via clipboard (expand above to view).
+            </>
           )}
         </div>
       )}

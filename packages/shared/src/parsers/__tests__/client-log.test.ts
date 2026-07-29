@@ -28,7 +28,7 @@ describe("parseLogLine", () => {
 
   it("parses incoming whispers", () => {
     const line =
-      '2024/03/15 14:30:00 12345678 abc [INFO Client 1234] : @From TradeBot: Hi, I\'d like to buy your Chaos Orb';
+      "2024/03/15 14:30:00 12345678 abc [INFO Client 1234] : @From TradeBot: Hi, I'd like to buy your Chaos Orb";
     const event = parseLogLine(line);
 
     expect(event).not.toBeNull();

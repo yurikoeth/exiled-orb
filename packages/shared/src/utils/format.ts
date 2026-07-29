@@ -16,10 +16,7 @@ export function formatPrice(chaos: number, divineRate: number): string {
 }
 
 /** Format a price range */
-export function formatPriceRange(
-  range: [number, number],
-  divineRate: number
-): string {
+export function formatPriceRange(range: [number, number], divineRate: number): string {
   return `${formatPrice(range[0], divineRate)} - ${formatPrice(range[1], divineRate)}`;
 }
 

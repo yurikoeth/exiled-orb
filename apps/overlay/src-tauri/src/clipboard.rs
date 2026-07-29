@@ -82,7 +82,10 @@ pub fn start_clipboard_watcher(app: AppHandle) {
             let mut last = last_content.lock().unwrap();
             if text != *last {
                 if is_poe_item(&text) {
-                    eprintln!("[ExiledOrb] Clipboard: detected PoE item ({} chars)", text.len());
+                    eprintln!(
+                        "[ExiledOrb] Clipboard: detected PoE item ({} chars)",
+                        text.len()
+                    );
                     *last = text.clone();
                     drop(last);
 

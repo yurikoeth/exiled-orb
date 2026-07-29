@@ -11,9 +11,30 @@ function getCategory(item: ParsedItem): PoeNinjaCategory | null {
 
   if (item.rarity === "Unique") {
     const cls = item.itemClass.toLowerCase();
-    if (cls.includes("weapon") || cls.includes("bow") || cls.includes("wand") || cls.includes("staff") || cls.includes("dagger") || cls.includes("sceptre") || cls.includes("mace") || cls.includes("axe") || cls.includes("sword") || cls.includes("claw")) return "UniqueWeapon";
-    if (cls.includes("armour") || cls.includes("helmet") || cls.includes("glove") || cls.includes("boot") || cls.includes("body") || cls.includes("shield")) return "UniqueArmour";
-    if (cls.includes("ring") || cls.includes("amulet") || cls.includes("belt")) return "UniqueAccessory";
+    if (
+      cls.includes("weapon") ||
+      cls.includes("bow") ||
+      cls.includes("wand") ||
+      cls.includes("staff") ||
+      cls.includes("dagger") ||
+      cls.includes("sceptre") ||
+      cls.includes("mace") ||
+      cls.includes("axe") ||
+      cls.includes("sword") ||
+      cls.includes("claw")
+    )
+      return "UniqueWeapon";
+    if (
+      cls.includes("armour") ||
+      cls.includes("helmet") ||
+      cls.includes("glove") ||
+      cls.includes("boot") ||
+      cls.includes("body") ||
+      cls.includes("shield")
+    )
+      return "UniqueArmour";
+    if (cls.includes("ring") || cls.includes("amulet") || cls.includes("belt"))
+      return "UniqueAccessory";
     if (cls.includes("flask")) return "UniqueFlask";
     if (cls.includes("jewel")) return "UniqueJewel";
     if (cls.includes("map") || cls.includes("waystone")) return "UniqueMap";
@@ -112,15 +133,14 @@ export function getDivineRateCached(): number {
  * Check the price of a parsed item.
  * Routes to poe.ninja for known categories.
  */
-export async function checkPrice(
-  item: ParsedItem,
-  league?: string
-): Promise<PriceResult> {
+export async function checkPrice(item: ParsedItem, league?: string): Promise<PriceResult> {
   if (!league) {
     league = useSettingsStore.getState().settings.league || "Allflame";
   }
   const category = getCategory(item);
-  console.log(`[ExiledOrb] Price check: "${item.name || item.baseType}" category=${category} league=${league} game=${item.game}`);
+  console.log(
+    `[ExiledOrb] Price check: "${item.name || item.baseType}" category=${category} league=${league} game=${item.game}`
+  );
 
   if (category) {
     try {

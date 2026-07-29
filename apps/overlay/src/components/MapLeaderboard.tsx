@@ -29,10 +29,15 @@ export default function MapLeaderboard({ mapName, game, onClose }: MapLeaderboar
       style={{ backgroundColor: "var(--bg-panel)", borderColor: "var(--border-color)" }}
     >
       {/* Header */}
-      <div className="flex items-center justify-between px-3 py-1.5 border-b" style={{ borderColor: "var(--border-color)" }}>
+      <div
+        className="flex items-center justify-between px-3 py-1.5 border-b"
+        style={{ borderColor: "var(--border-color)" }}
+      >
         <div className="flex items-center gap-1.5">
           <SectionTitle>Best Times</SectionTitle>
-          <span className="text-xs" style={{ color: "var(--text-primary)" }}>{mapName}</span>
+          <span className="text-xs" style={{ color: "var(--text-primary)" }}>
+            {mapName}
+          </span>
         </div>
         <Btn onClick={onClose}>✕</Btn>
       </div>
@@ -59,18 +64,21 @@ export default function MapLeaderboard({ mapName, game, onClose }: MapLeaderboar
               <div className="flex items-center gap-2">
                 <span
                   className="text-xs font-bold w-4 text-center"
-                  style={{ color: i === 0 ? "#22c55e" : i < 3 ? "var(--accent)" : "var(--text-secondary)" }}
+                  style={{
+                    color: i === 0 ? "#22c55e" : i < 3 ? "var(--accent)" : "var(--text-secondary)",
+                  }}
                 >
                   #{i + 1}
                 </span>
-                <span className="text-xs font-mono font-bold" style={{ color: "var(--text-primary)" }}>
+                <span
+                  className="text-xs font-mono font-bold"
+                  style={{ color: "var(--text-primary)" }}
+                >
                   {run.totalMs != null ? formatDuration(run.totalMs) : "—"}
                 </span>
               </div>
               <div className="flex items-center gap-2">
-                {run.deaths > 0 && (
-                  <span className="text-xs text-red-400">{run.deaths}d</span>
-                )}
+                {run.deaths > 0 && <span className="text-xs text-red-400">{run.deaths}d</span>}
                 <span className="text-xs" style={{ color: "var(--text-secondary)" }}>
                   {new Date(run.startedAt).toLocaleDateString()}
                 </span>

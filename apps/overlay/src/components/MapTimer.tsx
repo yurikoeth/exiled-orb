@@ -45,7 +45,10 @@ export default function MapTimer() {
         </div>
 
         {/* Timer */}
-        <div className="text-sm font-mono font-bold tabular-nums shrink-0" style={{ color: "var(--accent)" }}>
+        <div
+          className="text-sm font-mono font-bold tabular-nums shrink-0"
+          style={{ color: "var(--accent)" }}
+        >
           {formatDuration(elapsed)}
         </div>
       </div>

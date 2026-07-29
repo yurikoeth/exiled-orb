@@ -1,5 +1,5 @@
-use std::error::Error;
 use serde_json::{json, Value};
+use std::error::Error;
 
 const CLAUDE_API_URL: &str = "https://api.anthropic.com/v1/messages";
 const CLAUDE_MODEL_FAST: &str = "claude-haiku-4-5-20251001";
@@ -81,7 +81,12 @@ async fn call_claude(
         ]
     });
 
-    eprintln!("[ExiledOrb] Calling Claude API: model={}, max_tokens={}, msg_len={}", model, max_tokens, user_message.len());
+    eprintln!(
+        "[ExiledOrb] Calling Claude API: model={}, max_tokens={}, msg_len={}",
+        model,
+        max_tokens,
+        user_message.len()
+    );
 
     send_claude(api_key, &body).await
 }
@@ -98,7 +103,8 @@ pub async fn analyze_item_price(
     item_json: String,
     market_context: String,
 ) -> Result<String, String> {
-    let system = witch_system(r#"Analyze this item and provide pricing guidance IN CHARACTER as the Witch.
+    let system = witch_system(
+        r#"Analyze this item and provide pricing guidance IN CHARACTER as the Witch.
 IMPORTANT: Respond with ONLY a valid JSON object. No markdown, no code fences, no extra text.
 The "itemSummary" and "reasoning" fields should be written in your Witch voice.
 {
@@ -108,7 +114,8 @@ The "itemSummary" and "reasoning" fields should be written in your Witch voice.
   "craftAdvice": "crafting suggestion in character or null",
   "buyOrCraft": "buy|craft|either",
   "buyOrCraftReason": "explanation in character"
-}"#);
+}"#,
+    );
 
     let user_msg = format!(
         "Analyze this Path of Exile item.\n\nItem:\n{}\n\nMarket Context:\n{}",
@@ -125,7 +132,8 @@ pub async fn analyze_trade_whisper(
     whisper_text: String,
     item_context: String,
 ) -> Result<String, String> {
-    let system = witch_system(r#"Analyze this trade whisper and suggest a response IN CHARACTER as the Witch.
+    let system = witch_system(
+        r#"Analyze this trade whisper and suggest a response IN CHARACTER as the Witch.
 IMPORTANT: Respond with ONLY a valid JSON object. No markdown, no code fences.
 The "suggestedResponse" should be a normal polite trade response (not in character — the exile needs to actually send it).
 But "suspiciousReason" should be in your Witch voice if applicable.
@@ -135,7 +143,8 @@ But "suspiciousReason" should be in your Witch voice if applicable.
   "suggestedResponse": "polite response text to copy-paste",
   "isSuspiciousPrice": true/false,
   "suspiciousReason": "witchy warning or null"
-}"#);
+}"#,
+    );
 
     let user_msg = format!(
         "Analyze this trade whisper:\n\"{}\"\n\nContext:\n{}",
@@ -147,10 +156,7 @@ But "suspiciousReason" should be in your Witch voice if applicable.
 
 /// General PoE Q&A — answer any question in the Witch's voice
 #[tauri::command]
-pub async fn ask_poe_question(
-    api_key: String,
-    question: String,
-) -> Result<String, String> {
+pub async fn ask_poe_question(api_key: String, question: String) -> Result<String, String> {
     let system = witch_system(
         "Answer Path of Exile questions IN CHARACTER as the Witch. Be helpful with real game knowledge but deliver it in your darkly sardonic voice. Keep answers concise. If the question is about builds, mechanics, crafting, economy, bosses, or anything PoE — answer it accurately but in character."
     );
@@ -205,7 +211,8 @@ pub async fn analyze_build(
     character_json: String,
     items_json: String,
 ) -> Result<String, String> {
-    let system = witch_system(r#"Analyze this exile's build and gear. Judge it as only the Witch would — with dark humor, genuine expertise, and withering criticism for bad items.
+    let system = witch_system(
+        r#"Analyze this exile's build and gear. Judge it as only the Witch would — with dark humor, genuine expertise, and withering criticism for bad items.
 IMPORTANT: Respond with ONLY a valid JSON object. No markdown, no code fences, no extra text.
 Write "buildSummary", "strengths", "weaknesses", and "nextSteps" in your Witch voice.
 {
@@ -223,7 +230,8 @@ Write "buildSummary", "strengths", "weaknesses", and "nextSteps" in your Witch v
   ],
   "overallRating": "1-10 rating",
   "nextSteps": "what the exile should focus on next, in character"
-}"#);
+}"#,
+    );
 
     let user_msg = format!(
         "Analyze this exile's build.\n\nCharacter:\n{}\n\nEquipped Items:\n{}",
@@ -235,11 +243,9 @@ Write "buildSummary", "strengths", "weaknesses", and "nextSteps" in your Witch v
 
 /// Analyze market trends from poe.ninja data.
 #[tauri::command]
-pub async fn analyze_market_trends(
-    api_key: String,
-    ninja_data: String,
-) -> Result<String, String> {
-    let system = witch_system(r#"Analyze these market trends IN CHARACTER as the Witch.
+pub async fn analyze_market_trends(api_key: String, ninja_data: String) -> Result<String, String> {
+    let system = witch_system(
+        r#"Analyze these market trends IN CHARACTER as the Witch.
 IMPORTANT: Respond with ONLY a valid JSON object. No markdown, no code fences.
 {
   "itemCategory": "category name",
@@ -247,12 +253,10 @@ IMPORTANT: Respond with ONLY a valid JSON object. No markdown, no code fences.
   "changePercent": number,
   "summary": "witchy market commentary",
   "topMovers": [{"name": "item name", "change": percent_change}]
-}"#);
-
-    let user_msg = format!(
-        "Analyze these Path of Exile market trends:\n{}",
-        ninja_data
+}"#,
     );
+
+    let user_msg = format!("Analyze these Path of Exile market trends:\n{}", ninja_data);
 
     call_claude(&api_key, CLAUDE_MODEL_DEEP, &system, &user_msg, 1024).await
 }

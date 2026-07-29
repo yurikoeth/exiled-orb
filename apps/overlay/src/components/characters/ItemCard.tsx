@@ -4,11 +4,18 @@ import { SLOT_LABELS } from "../../utils/slots";
 import { RARITY_COLORS } from "../ui";
 
 const socketColors: Record<string, string> = {
-  R: "#e44", G: "#4b4", B: "#66f", W: "#ddd", A: "#888",
+  R: "#e44",
+  G: "#4b4",
+  B: "#66f",
+  W: "#ddd",
+  A: "#888",
 };
 
 const socketNames: Record<string, string> = {
-  R: "Red", G: "Green", B: "Blue", W: "White",
+  R: "Red",
+  G: "Green",
+  B: "Blue",
+  W: "White",
 };
 
 function SocketDisplay({ sockets }: { sockets: BuildSocket[] }) {
@@ -63,7 +70,12 @@ export default function ItemCard({ item }: { item: BuildItem }) {
       <div className="flex items-center gap-2">
         {/* Item icon */}
         {item.icon && (
-          <img src={item.icon} alt="" className="w-6 h-6 shrink-0 object-contain" style={{ imageRendering: "pixelated" }} />
+          <img
+            src={item.icon}
+            alt=""
+            className="w-6 h-6 shrink-0 object-contain"
+            style={{ imageRendering: "pixelated" }}
+          />
         )}
 
         <div className="flex-1 min-w-0">
@@ -80,24 +92,37 @@ export default function ItemCard({ item }: { item: BuildItem }) {
             </div>
             <div className="flex items-center gap-1.5 shrink-0 ml-1">
               {item.corrupted && (
-                <span className="text-xs px-1 rounded" style={{ background: "rgba(255,68,68,0.15)", color: "#ff4444", fontSize: "0.55rem" }}>Corrupted</span>
+                <span
+                  className="text-xs px-1 rounded"
+                  style={{
+                    background: "rgba(255,68,68,0.15)",
+                    color: "#ff4444",
+                    fontSize: "0.55rem",
+                  }}
+                >
+                  Corrupted
+                </span>
               )}
-              <span className="text-xs" style={{ color: "var(--text-secondary)", fontSize: "0.6rem" }}>
+              <span
+                className="text-xs"
+                style={{ color: "var(--text-secondary)", fontSize: "0.6rem" }}
+              >
                 {slotLabel}
               </span>
             </div>
           </div>
 
           {/* Socket display */}
-          {item.socket_details.length > 0 && (
-            <SocketDisplay sockets={item.socket_details} />
-          )}
+          {item.socket_details.length > 0 && <SocketDisplay sockets={item.socket_details} />}
         </div>
       </div>
 
       {/* Expanded mods */}
       {showMods && item.mods.length > 0 && (
-        <div className="mt-1 pt-1 border-t space-y-0.5" style={{ borderColor: "rgba(255,255,255,0.05)" }}>
+        <div
+          className="mt-1 pt-1 border-t space-y-0.5"
+          style={{ borderColor: "rgba(255,255,255,0.05)" }}
+        >
           {item.mods.map((mod, i) => (
             <div key={i} className="text-xs" style={{ color: "#8888cc" }}>
               {mod}

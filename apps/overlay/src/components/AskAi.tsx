@@ -22,7 +22,11 @@ export default function AskAi() {
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
-  const [pendingImage, setPendingImage] = useState<{ base64: string; mediaType: string; dataUrl: string } | null>(null);
+  const [pendingImage, setPendingImage] = useState<{
+    base64: string;
+    mediaType: string;
+    dataUrl: string;
+  } | null>(null);
   const [savedChats, setSavedChats] = useState<SavedChat[]>([]);
   const [currentChatId, setCurrentChatId] = useState<string | null>(null);
   const [showChatList, setShowChatList] = useState(false);
@@ -31,11 +35,13 @@ export default function AskAi() {
 
   // Load saved chats on mount
   useEffect(() => {
-    getStore().then((store) => {
-      store.get<SavedChat[]>("ai_chats").then((chats) => {
-        if (chats) setSavedChats(chats);
-      });
-    }).catch((err) => console.error("[ExiledOrb]", err));
+    getStore()
+      .then((store) => {
+        store.get<SavedChat[]>("ai_chats").then((chats) => {
+          if (chats) setSavedChats(chats);
+        });
+      })
+      .catch((err) => console.error("[ExiledOrb]", err));
   }, []);
 
   const saveChatsToStore = async (chats: SavedChat[]) => {
@@ -114,11 +120,14 @@ export default function AskAi() {
   }, [handleFile]);
 
   // Handle drop
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    const file = e.dataTransfer.files[0];
-    if (file) handleFile(file);
-  }, [handleFile]);
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      const file = e.dataTransfer.files[0];
+      if (file) handleFile(file);
+    },
+    [handleFile]
+  );
 
   const ask = async () => {
     const question = input.trim();
@@ -127,13 +136,22 @@ export default function AskAi() {
     const apiKey = await getApiKey();
 
     if (!apiKey) {
-      setMessages((prev) => [...prev, { role: "ai", text: "No API key set. To chat with the Witch, add your Claude API key in Settings > AI. You can get one at console.anthropic.com. Price checking and mod analysis still work without it." }]);
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "ai",
+          text: "No API key set. To chat with the Witch, add your Claude API key in Settings > AI. You can get one at console.anthropic.com. Price checking and mod analysis still work without it.",
+        },
+      ]);
       setLoading(false);
       return;
     }
 
     const currentImage = pendingImage;
-    setMessages((prev) => [...prev, { role: "user", text: question, image: currentImage?.dataUrl }]);
+    setMessages((prev) => [
+      ...prev,
+      { role: "user", text: question, image: currentImage?.dataUrl },
+    ]);
     setInput("");
     setPendingImage(null);
     setLoading(true);
@@ -147,7 +165,10 @@ export default function AskAi() {
         buildContext = `\n\n[Active Build Context]\nCharacter: ${ab.characterName} (${ab.characterClass}, Lv.${ab.level}, ${ab.game})\nDamage: ${ab.damageTypes.join(", ") || "unknown"}\nDefense: ${ab.defenseTypes.join(", ") || "unknown"}\nRecovery: ${ab.recoveryTypes.join(", ") || "unknown"}\nKey Uniques: ${ab.keyItems.join(", ") || "none"}${ab.goal ? `\nBuild Goal: ${ab.goal.buildName} (Focus: ${ab.goal.focus.join(", ")}, Budget: ${ab.goal.budget})${ab.goal.notes ? `\nNotes: ${ab.goal.notes}` : ""}` : ""}${hasGearDetail ? `\n\n[Gear Snapshot]\n${ab.gearSummary}` : ""}`;
       }
 
-      const history = messages.slice(-6).map((m) => `${m.role === "user" ? "User" : "Assistant"}: ${m.text}`).join("\n");
+      const history = messages
+        .slice(-6)
+        .map((m) => `${m.role === "user" ? "User" : "Assistant"}: ${m.text}`)
+        .join("\n");
       const fullQuestion = (history ? `${history}\nUser: ${question}` : question) + buildContext;
 
       let result: string;
@@ -186,11 +207,21 @@ export default function AskAi() {
         <Btn variant="outline" size="sm" style={{ color: "var(--accent)" }} onClick={newChat}>
           + New
         </Btn>
-        <Btn variant="outline" size="sm" style={{ color: "var(--text-secondary)" }} onClick={() => setShowChatList(!showChatList)}>
+        <Btn
+          variant="outline"
+          size="sm"
+          style={{ color: "var(--text-secondary)" }}
+          onClick={() => setShowChatList(!showChatList)}
+        >
           History ({savedChats.length})
         </Btn>
         {messages.length > 0 && (
-          <Btn variant="outline" size="sm" style={{ color: "var(--text-secondary)" }} onClick={saveCurrentChat}>
+          <Btn
+            variant="outline"
+            size="sm"
+            style={{ color: "var(--text-secondary)" }}
+            onClick={saveCurrentChat}
+          >
             Save
           </Btn>
         )}
@@ -200,25 +231,41 @@ export default function AskAi() {
       {showChatList && (
         <div className="mb-2 space-y-0.5 max-h-40 overflow-y-auto">
           {savedChats.length === 0 && (
-            <div className="text-xs text-center py-2" style={{ color: "var(--text-secondary)" }}>No saved chats</div>
+            <div className="text-xs text-center py-2" style={{ color: "var(--text-secondary)" }}>
+              No saved chats
+            </div>
           )}
           {savedChats.map((chat) => (
             <div
               key={chat.id}
               className="flex items-center justify-between rounded border px-2 py-1 cursor-pointer hover:opacity-80"
               style={{
-                background: currentChatId === chat.id ? "rgba(255,255,255,0.06)" : "rgba(255,255,255,0.02)",
-                borderColor: currentChatId === chat.id ? "var(--border-gold)" : "var(--border-color)",
+                background:
+                  currentChatId === chat.id ? "rgba(255,255,255,0.06)" : "rgba(255,255,255,0.02)",
+                borderColor:
+                  currentChatId === chat.id ? "var(--border-gold)" : "var(--border-color)",
               }}
               onClick={() => loadChat(chat)}
             >
               <div className="min-w-0">
-                <div className="text-xs truncate" style={{ color: "var(--text-primary)" }}>{chat.title}</div>
-                <div className="text-xs" style={{ color: "var(--text-secondary)", fontSize: "0.6rem" }}>
+                <div className="text-xs truncate" style={{ color: "var(--text-primary)" }}>
+                  {chat.title}
+                </div>
+                <div
+                  className="text-xs"
+                  style={{ color: "var(--text-secondary)", fontSize: "0.6rem" }}
+                >
                   {chat.messages.length} messages — {new Date(chat.timestamp).toLocaleDateString()}
                 </div>
               </div>
-              <Btn variant="text" className="px-1 py-0 shrink-0 ml-1" onClick={(e) => { e.stopPropagation(); deleteChat(chat.id); }}>
+              <Btn
+                variant="text"
+                className="px-1 py-0 shrink-0 ml-1"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  deleteChat(chat.id);
+                }}
+              >
                 ✕
               </Btn>
             </div>
@@ -233,8 +280,8 @@ export default function AskAi() {
           style={{ background: "rgba(255,255,255,0.03)", borderColor: "var(--border-color)" }}
         >
           <div className="text-xs" style={{ color: "var(--text-secondary)" }}>
-            Context: <span style={{ color: "var(--accent)" }}>{activeBuild.characterName}</span>
-            {" "}— {activeBuild.characterClass} Lv.{activeBuild.level}
+            Context: <span style={{ color: "var(--accent)" }}>{activeBuild.characterName}</span> —{" "}
+            {activeBuild.characterClass} Lv.{activeBuild.level}
             {activeBuild.goal && <span> ({activeBuild.goal.buildName})</span>}
           </div>
         </div>
@@ -248,7 +295,8 @@ export default function AskAi() {
       >
         {messages.length === 0 && (
           <div className="text-xs text-center py-4" style={{ color: "var(--text-secondary)" }}>
-            Ask anything about Path of Exile — builds, mechanics, crafting, economy, boss strategies...
+            Ask anything about Path of Exile — builds, mechanics, crafting, economy, boss
+            strategies...
           </div>
         )}
 
@@ -292,11 +340,7 @@ export default function AskAi() {
       )}
 
       {/* Input */}
-      <div
-        className="flex gap-1.5"
-        onDrop={handleDrop}
-        onDragOver={(e) => e.preventDefault()}
-      >
+      <div className="flex gap-1.5" onDrop={handleDrop} onDragOver={(e) => e.preventDefault()}>
         <input
           ref={fileInputRef}
           type="file"
@@ -304,8 +348,13 @@ export default function AskAi() {
           className="hidden"
           onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
         />
-        <Btn variant="outline" className="px-2 py-1.5"
-          style={{ background: "rgba(255,255,255,0.04)", color: pendingImage ? "var(--accent)" : "var(--text-secondary)" }}
+        <Btn
+          variant="outline"
+          className="px-2 py-1.5"
+          style={{
+            background: "rgba(255,255,255,0.04)",
+            color: pendingImage ? "var(--accent)" : "var(--text-secondary)",
+          }}
           onClick={() => fileInputRef.current?.click()}
           title="Upload image (or paste/drop)"
         >
@@ -316,7 +365,9 @@ export default function AskAi() {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && ask()}
-          placeholder={pendingImage ? "Ask about this image..." : "Ask about PoE... (paste images too)"}
+          placeholder={
+            pendingImage ? "Ask about this image..." : "Ask about PoE... (paste images too)"
+          }
           className="flex-1 px-2 py-1.5 rounded text-xs"
           style={{
             background: "rgba(255,255,255,0.04)",
@@ -325,8 +376,13 @@ export default function AskAi() {
           }}
           disabled={loading}
         />
-        <Btn variant="gold" className="px-3 py-1.5 font-bold" style={{ background: "rgba(255,255,255,0.06)" }}
-          onClick={ask} disabled={loading || (!input.trim() && !pendingImage)}>
+        <Btn
+          variant="gold"
+          className="px-3 py-1.5 font-bold"
+          style={{ background: "rgba(255,255,255,0.06)" }}
+          onClick={ask}
+          disabled={loading || (!input.trim() && !pendingImage)}
+        >
           Ask
         </Btn>
       </div>

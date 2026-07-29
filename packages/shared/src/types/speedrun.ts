@@ -76,7 +76,21 @@ const MAX_GAP_MS = 120_000;
 export function computeSessionStats(
   maps: MapRun[],
   sessionStartedAt: number
-): Pick<SpeedrunSession, "totalMaps" | "completedMaps" | "brickedMaps" | "abandonedMaps" | "totalDeaths" | "totalTimeMs" | "effectiveTimeMs" | "mapsPerHour" | "avgMapTimeMs" | "fastestMapMs" | "slowestMapMs" | "fastestMapName"> {
+): Pick<
+  SpeedrunSession,
+  | "totalMaps"
+  | "completedMaps"
+  | "brickedMaps"
+  | "abandonedMaps"
+  | "totalDeaths"
+  | "totalTimeMs"
+  | "effectiveTimeMs"
+  | "mapsPerHour"
+  | "avgMapTimeMs"
+  | "fastestMapMs"
+  | "slowestMapMs"
+  | "fastestMapName"
+> {
   const completed = maps.filter((m) => m.outcome === "completed" && m.totalMs != null);
   const bricked = maps.filter((m) => m.outcome === "bricked");
   const abandoned = maps.filter((m) => m.outcome === "abandoned");

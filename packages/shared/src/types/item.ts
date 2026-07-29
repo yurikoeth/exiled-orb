@@ -2,16 +2,11 @@
 export type Game = "poe1" | "poe2";
 
 /** Item rarity levels */
-export type Rarity = "Normal" | "Magic" | "Rare" | "Unique" | "Currency" | "Gem" | "Divination Card";
+export type Rarity =
+  "Normal" | "Magic" | "Rare" | "Unique" | "Currency" | "Gem" | "Divination Card";
 
 /** Influence types (PoE1 primarily) */
-export type Influence =
-  | "Shaper"
-  | "Elder"
-  | "Crusader"
-  | "Hunter"
-  | "Redeemer"
-  | "Warlord";
+export type Influence = "Shaper" | "Elder" | "Crusader" | "Hunter" | "Redeemer" | "Warlord";
 
 /** A single mod on an item */
 export interface ItemMod {

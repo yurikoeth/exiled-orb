@@ -21,28 +21,31 @@ export function buildNinjaUrl(game: Game, league: string, category: string): str
 }
 
 /** Map category names to poe.ninja API endpoints */
-const CATEGORY_ENDPOINTS: Record<PoeNinjaCategory, { type: "currency" | "item"; overview: string }> = {
-  Currency:        { type: "currency", overview: "currencyoverview" },
-  Fragment:        { type: "currency", overview: "currencyoverview" },
-  DivinationCard:  { type: "item",    overview: "itemoverview" },
-  Artifact:        { type: "item",    overview: "itemoverview" },
-  Oil:             { type: "item",    overview: "itemoverview" },
-  Incubator:       { type: "item",    overview: "itemoverview" },
-  UniqueWeapon:    { type: "item",    overview: "itemoverview" },
-  UniqueArmour:    { type: "item",    overview: "itemoverview" },
-  UniqueAccessory: { type: "item",    overview: "itemoverview" },
-  UniqueFlask:     { type: "item",    overview: "itemoverview" },
-  UniqueJewel:     { type: "item",    overview: "itemoverview" },
-  UniqueMap:       { type: "item",    overview: "itemoverview" },
-  SkillGem:        { type: "item",    overview: "itemoverview" },
-  BaseType:        { type: "item",    overview: "itemoverview" },
-  Map:             { type: "item",    overview: "itemoverview" },
-  Essence:         { type: "item",    overview: "itemoverview" },
-  Fossil:          { type: "item",    overview: "itemoverview" },
-  Resonator:       { type: "item",    overview: "itemoverview" },
-  Scarab:          { type: "item",    overview: "itemoverview" },
-  Tattoo:          { type: "item",    overview: "itemoverview" },
-  Omen:            { type: "item",    overview: "itemoverview" },
+const CATEGORY_ENDPOINTS: Record<
+  PoeNinjaCategory,
+  { type: "currency" | "item"; overview: string }
+> = {
+  Currency: { type: "currency", overview: "currencyoverview" },
+  Fragment: { type: "currency", overview: "currencyoverview" },
+  DivinationCard: { type: "item", overview: "itemoverview" },
+  Artifact: { type: "item", overview: "itemoverview" },
+  Oil: { type: "item", overview: "itemoverview" },
+  Incubator: { type: "item", overview: "itemoverview" },
+  UniqueWeapon: { type: "item", overview: "itemoverview" },
+  UniqueArmour: { type: "item", overview: "itemoverview" },
+  UniqueAccessory: { type: "item", overview: "itemoverview" },
+  UniqueFlask: { type: "item", overview: "itemoverview" },
+  UniqueJewel: { type: "item", overview: "itemoverview" },
+  UniqueMap: { type: "item", overview: "itemoverview" },
+  SkillGem: { type: "item", overview: "itemoverview" },
+  BaseType: { type: "item", overview: "itemoverview" },
+  Map: { type: "item", overview: "itemoverview" },
+  Essence: { type: "item", overview: "itemoverview" },
+  Fossil: { type: "item", overview: "itemoverview" },
+  Resonator: { type: "item", overview: "itemoverview" },
+  Scarab: { type: "item", overview: "itemoverview" },
+  Tattoo: { type: "item", overview: "itemoverview" },
+  Omen: { type: "item", overview: "itemoverview" },
 };
 
 /** In-memory price cache */

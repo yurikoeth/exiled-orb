@@ -24,13 +24,16 @@ export async function loadCharacterHistory(force = false): Promise<DetectedChara
  * tail-scan often misses old characters who haven't leveled in a while,
  * so this fallback prevents accidentally saving builds at level 1.
  */
-export function resolveCharacterLevel(name: string | null, game: "poe1" | "poe2" | null): number | null {
+export function resolveCharacterLevel(
+  name: string | null,
+  game: "poe1" | "poe2" | null
+): number | null {
   if (!name) return null;
   const fromStore = useOverlayStore.getState().characterLevel;
   if (fromStore != null && fromStore > 0) return fromStore;
   if (!game || !detectedCharsCache) return null;
   const match = detectedCharsCache.find(
-    (d) => d.name.toLowerCase() === name.toLowerCase() && d.game === game,
+    (d) => d.name.toLowerCase() === name.toLowerCase() && d.game === game
   );
   return match && match.level > 0 ? match.level : null;
 }

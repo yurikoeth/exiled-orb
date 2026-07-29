@@ -29,7 +29,11 @@ pub struct GggCharacter {
 /// Fetch a single realm's characters via the documented OAuth endpoint.
 /// Path is `/character` for PoE1 (default) and `/character/poe2` for PoE2.
 /// Response shape: `{ "characters": [...] }` (per developer docs).
-async fn fetch_realm(client: &reqwest::Client, token: &str, realm: Option<&str>) -> Vec<GggCharacter> {
+async fn fetch_realm(
+    client: &reqwest::Client,
+    token: &str,
+    realm: Option<&str>,
+) -> Vec<GggCharacter> {
     let url = match realm {
         Some(r) => format!("{}/{}", CHAR_API_BASE, r),
         None => CHAR_API_BASE.to_string(),
@@ -58,7 +62,10 @@ async fn fetch_realm(client: &reqwest::Client, token: &str, realm: Option<&str>)
     if !res.status().is_success() {
         let status = res.status();
         let body = res.text().await.unwrap_or_default();
-        eprintln!("[ExiledOrb] fetch_realm {:?} HTTP {}: {}", realm, status, body);
+        eprintln!(
+            "[ExiledOrb] fetch_realm {:?} HTTP {}: {}",
+            realm, status, body
+        );
         return vec![];
     }
 
@@ -254,7 +261,8 @@ pub async fn fetch_character_items(
             let mut socket_details: Vec<SocketInfo> = Vec::new();
             let (socket_count, max_links) = if let Some(sockets) = item["sockets"].as_array() {
                 let count = sockets.len() as u32;
-                let mut groups: std::collections::HashMap<u64, u32> = std::collections::HashMap::new();
+                let mut groups: std::collections::HashMap<u64, u32> =
+                    std::collections::HashMap::new();
                 for s in sockets {
                     let group = s["group"].as_u64().unwrap_or(0) as u32;
                     *groups.entry(group as u64).or_insert(0) += 1;
@@ -291,7 +299,11 @@ pub async fn fetch_character_items(
 
             let mods: Vec<String> = item["explicitMods"]
                 .as_array()
-                .map(|arr| arr.iter().filter_map(|m| m.as_str().map(|s| s.to_string())).collect())
+                .map(|arr| {
+                    arr.iter()
+                        .filter_map(|m| m.as_str().map(|s| s.to_string()))
+                        .collect()
+                })
                 .unwrap_or_default();
 
             Some(GggItem {
@@ -312,4 +324,3 @@ pub async fn fetch_character_items(
 
     Ok(items)
 }
-

@@ -24,9 +24,7 @@ export default function TradeAssistant() {
 
         {/* Suspicious warning */}
         {analysis.isSuspiciousPrice && analysis.suspiciousReason && (
-          <div className="text-red-400">
-            {analysis.suspiciousReason}
-          </div>
+          <div className="text-red-400">{analysis.suspiciousReason}</div>
         )}
 
         {/* Suggested response */}
@@ -40,9 +38,7 @@ export default function TradeAssistant() {
         >
           {analysis.suggestedResponse}
         </div>
-        <div style={{ color: "var(--text-secondary)", fontSize: "0.6rem" }}>
-          Click to copy
-        </div>
+        <div style={{ color: "var(--text-secondary)", fontSize: "0.6rem" }}>Click to copy</div>
       </div>
     </WitchSays>
   );

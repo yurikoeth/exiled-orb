@@ -57,7 +57,7 @@ export default function GggAccount() {
     const ov = useOverlayStore.getState();
     if (ov.characterLevel != null || !ov.characterName || !ov.detectedGame) return;
     const match = detectedChars.find(
-      (d) => d.name.toLowerCase() === ov.characterName!.toLowerCase() && d.game === ov.detectedGame,
+      (d) => d.name.toLowerCase() === ov.characterName!.toLowerCase() && d.game === ov.detectedGame
     );
     if (match && match.level > 0) {
       ov.setCharacterLevel(match.level);
@@ -103,9 +103,7 @@ export default function GggAccount() {
   const dismissDetectedChar = (char: DetectedCharacter) => {
     const key = detectedKey(char.game, char.name);
     const nextHidden = hiddenChars.filter((k) => k !== key);
-    const nextDismissed = dismissedChars.includes(key)
-      ? dismissedChars
-      : [...dismissedChars, key];
+    const nextDismissed = dismissedChars.includes(key) ? dismissedChars : [...dismissedChars, key];
     setHiddenChars(nextHidden);
     setDismissedChars(nextDismissed);
     void persistToStore(HIDDEN_DETECTED_KEY, nextHidden);
@@ -176,7 +174,7 @@ export default function GggAccount() {
   };
 
   const setAsActiveBuild = async (char: GggCharacter) => {
-    const items = charItems[char.name] ?? await loadItems(char.name);
+    const items = charItems[char.name] ?? (await loadItems(char.name));
 
     // Infer build tags from all gear mods
     const tags = inferBuildTags(items.flatMap((i) => i.mods));
@@ -204,7 +202,7 @@ export default function GggAccount() {
   const analyzeBuild = async (char: GggCharacter) => {
     setError(null);
 
-    const items = charItems[char.name] ?? await loadItems(char.name);
+    const items = charItems[char.name] ?? (await loadItems(char.name));
     if (items.length === 0) {
       setError("No gear loaded for this character. Try Refresh Gear first.");
       return;
@@ -212,13 +210,17 @@ export default function GggAccount() {
 
     const apiKey = await getApiKey();
     if (!apiKey) {
-      setError("Add your Claude API key in Settings > AI to use build analysis. Get one at console.anthropic.com — gear viewing and price checks work without it.");
+      setError(
+        "Add your Claude API key in Settings > AI to use build analysis. Get one at console.anthropic.com — gear viewing and price checks work without it."
+      );
       return;
     }
 
     setAnalyzingBuild(char.name);
     try {
-      const goal = useBuildStore.getState().savedBuilds.find((b) => b.characterName === char.name)?.goal;
+      const goal = useBuildStore
+        .getState()
+        .savedBuilds.find((b) => b.characterName === char.name)?.goal;
       const analysis = await runBuildAnalysis({
         apiKey,
         name: char.name,
@@ -290,22 +292,24 @@ export default function GggAccount() {
   // grouping (filter + Set + filter) doesn't re-run on every render.
   const sections = useMemo(() => {
     const dismissedSet = new Set(dismissedChars);
-    const order: ("poe1" | "poe2")[] = detectedGame === "poe1" ? ["poe1", "poe2"] : ["poe2", "poe1"];
+    const order: ("poe1" | "poe2")[] =
+      detectedGame === "poe1" ? ["poe1", "poe2"] : ["poe2", "poe1"];
     return order.map((sectionGame) => {
       const sectionChars = characters.filter((c) => c.game === sectionGame);
       const gggNamesLower = new Set(sectionChars.map((c) => c.name.toLowerCase()));
       // Dismissed chars are filtered out completely — never visible, never
       // in the hidden manager. Hidden-but-not-dismissed are split next.
-      const detectedAll = sectionGame === "poe2"
-        ? detectedChars.filter(
-            (d) =>
-              d.game === "poe2"
-              && !gggNamesLower.has(d.name.toLowerCase())
-              && !dismissedSet.has(detectedKey(d.game, d.name)),
-          )
-        : [];
+      const detectedAll =
+        sectionGame === "poe2"
+          ? detectedChars.filter(
+              (d) =>
+                d.game === "poe2" &&
+                !gggNamesLower.has(d.name.toLowerCase()) &&
+                !dismissedSet.has(detectedKey(d.game, d.name))
+            )
+          : [];
       const detectedSection = detectedAll.filter(
-        (d) => !hiddenChars.includes(detectedKey(d.game, d.name)),
+        (d) => !hiddenChars.includes(detectedKey(d.game, d.name))
       );
       return {
         sectionGame,
@@ -325,9 +329,9 @@ export default function GggAccount() {
         <Panel className="px-3 py-3 space-y-2">
           <SectionTitle>GGG Account</SectionTitle>
           <div className="text-xs" style={{ color: "var(--text-secondary)", lineHeight: 1.4 }}>
-            Connect to GGG via OAuth to load your PoE1 and PoE2 characters with
-            gear. A browser window will open for you to sign in. Tokens are
-            stored locally on your machine; no data is sent anywhere else.
+            Connect to GGG via OAuth to load your PoE1 and PoE2 characters with gear. A browser
+            window will open for you to sign in. Tokens are stored locally on your machine; no data
+            is sent anywhere else.
           </div>
           {error && <div className="text-xs text-red-400">{error}</div>}
           <Btn variant="gold" size="action" className="w-full" onClick={connect} disabled={loading}>
@@ -343,17 +347,27 @@ export default function GggAccount() {
       {/* Account header */}
       <Panel gold className="px-3 py-2">
         <div className="flex items-center justify-between">
-          <div className="text-xs font-bold" style={{ color: "var(--accent)" }}>Connected to GGG</div>
+          <div className="text-xs font-bold" style={{ color: "var(--accent)" }}>
+            Connected to GGG
+          </div>
           <div className="flex gap-1">
-            <Btn onClick={() => loadCharacters()} title="Refresh characters">↻</Btn>
-            <Btn onClick={disconnect} title="Disconnect (deletes local tokens)">✕</Btn>
+            <Btn onClick={() => loadCharacters()} title="Refresh characters">
+              ↻
+            </Btn>
+            <Btn onClick={disconnect} title="Disconnect (deletes local tokens)">
+              ✕
+            </Btn>
           </div>
         </div>
       </Panel>
 
       <ApiKeyInline />
 
-      {loading && <div className="text-xs text-center py-2" style={{ color: "var(--text-secondary)" }}>Loading...</div>}
+      {loading && (
+        <div className="text-xs text-center py-2" style={{ color: "var(--text-secondary)" }}>
+          Loading...
+        </div>
+      )}
       {error && <div className="text-xs text-red-400 px-2">{error}</div>}
 
       <BuildCapturePanel />
@@ -371,26 +385,40 @@ export default function GggAccount() {
               className="flex items-center gap-2 px-1 pt-1 text-xs font-bold uppercase tracking-wide"
               style={{ color: "var(--text-secondary)" }}
             >
-              <img src={sectionGame === "poe2" ? poe2Logo : poe1Logo} alt={sectionGame} className="h-3 shrink-0" style={{ opacity: 0.7 }} />
+              <img
+                src={sectionGame === "poe2" ? poe2Logo : poe1Logo}
+                alt={sectionGame}
+                className="h-3 shrink-0"
+                style={{ opacity: 0.7 }}
+              />
               <span>{sectionGame === "poe2" ? "Path of Exile 2" : "Path of Exile 1"}</span>
               <span style={{ opacity: 0.7 }}>· {totalCount}</span>
               {sectionGame === "poe2" && (
-                <Btn className="ml-auto" style={{ background: "rgba(255,255,255,0.04)", fontSize: "0.6rem" }}
-                  onClick={() => refreshHistory(true)} disabled={scanningHistory}
-                  title="Re-scan PoE2 Client.txt for character history">
+                <Btn
+                  className="ml-auto"
+                  style={{ background: "rgba(255,255,255,0.04)", fontSize: "0.6rem" }}
+                  onClick={() => refreshHistory(true)}
+                  disabled={scanningHistory}
+                  title="Re-scan PoE2 Client.txt for character history"
+                >
                   {scanningHistory ? "…" : "↻ history"}
                 </Btn>
               )}
             </div>
 
-            {sectionChars.length === 0 && detectedSection.length === 0 && sectionGame === "poe2" && (
-              <Panel bg="faint" dashed className="text-xs px-2 py-1.5"
-                style={{ color: "var(--text-secondary)", fontSize: "0.65rem", lineHeight: 1.3 }}>
-                No PoE2 characters found — connect with GGG OAuth above, or play
-                a PoE2 character and re-scan the local Client.txt history. See
-                also the Live Session tile above.
-              </Panel>
-            )}
+            {sectionChars.length === 0 &&
+              detectedSection.length === 0 &&
+              sectionGame === "poe2" && (
+                <Panel
+                  bg="faint"
+                  dashed
+                  className="text-xs px-2 py-1.5"
+                  style={{ color: "var(--text-secondary)", fontSize: "0.65rem", lineHeight: 1.3 }}
+                >
+                  No PoE2 characters found — connect with GGG OAuth above, or play a PoE2 character
+                  and re-scan the local Client.txt history. See also the Live Session tile above.
+                </Panel>
+              )}
 
             {detectedSection.length > 0 && (
               <div className="space-y-1">
@@ -430,11 +458,13 @@ export default function GggAccount() {
                 onSetActive={() => setAsActiveBuild(char)}
                 onRefresh={() => loadItems(char.name, true)}
                 onAnalyze={() => analyzeBuild(char)}
-                onCloseAnalysis={() => setBuildAnalysis((prev) => {
-                  const copy = { ...prev };
-                  delete copy[char.name];
-                  return copy;
-                })}
+                onCloseAnalysis={() =>
+                  setBuildAnalysis((prev) => {
+                    const copy = { ...prev };
+                    delete copy[char.name];
+                    return copy;
+                  })
+                }
               />
             ))}
           </div>

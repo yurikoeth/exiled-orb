@@ -49,7 +49,13 @@ export default function PriceCheck() {
       ...currentItem.implicits.map((m) => m.text),
     ];
     const socketCount = currentItem.sockets ? currentItem.sockets.split(/[-\s]/).length : null;
-    return evaluateItem(allMods, currentItem.itemLevel, socketCount, currentItem.links, currentItem.game);
+    return evaluateItem(
+      allMods,
+      currentItem.itemLevel,
+      socketCount,
+      currentItem.links,
+      currentItem.game
+    );
   }, [currentItem]);
 
   const recheck = async () => {
@@ -71,18 +77,32 @@ export default function PriceCheck() {
           <div className="text-sm font-bold" style={{ color: rarityColor }}>
             {currentItem.name || currentItem.baseType}
           </div>
-          <Btn className="shrink-0" onClick={recheck} disabled={priceLoading} title="Re-check price">↻</Btn>
+          <Btn
+            className="shrink-0"
+            onClick={recheck}
+            disabled={priceLoading}
+            title="Re-check price"
+          >
+            ↻
+          </Btn>
         </div>
         {currentItem.name && (
           <div className="text-xs" style={{ color: "var(--text-secondary)" }}>
             {currentItem.baseType}
           </div>
         )}
-        <div className="flex items-center gap-2 mt-1 text-xs" style={{ color: "var(--text-secondary)" }}>
-          <span style={{ color: "var(--accent)", opacity: 0.7 }}>1 div = {getDivineRateCached()}c</span>
+        <div
+          className="flex items-center gap-2 mt-1 text-xs"
+          style={{ color: "var(--text-secondary)" }}
+        >
+          <span style={{ color: "var(--accent)", opacity: 0.7 }}>
+            1 div = {getDivineRateCached()}c
+          </span>
           <span style={{ opacity: 0.3 }}>|</span>
           {currentItem.itemLevel && <span>iLvl {currentItem.itemLevel}</span>}
-          {currentItem.sockets && currentItem.sockets.length >= 5 && !currentItem.links && <span>{currentItem.sockets.split(/[-\s]/).length}S</span>}
+          {currentItem.sockets && currentItem.sockets.length >= 5 && !currentItem.links && (
+            <span>{currentItem.sockets.split(/[-\s]/).length}S</span>
+          )}
           {currentItem.links && currentItem.links >= 4 && <span>{currentItem.links}L</span>}
           {currentItem.corrupted && <span style={{ color: "#ff4444" }}>Corrupted</span>}
           {currentItem.gemLevel && <span>Lv.{currentItem.gemLevel}</span>}
@@ -98,7 +118,10 @@ export default function PriceCheck() {
             <div className="flex items-center gap-2">
               <span
                 className="text-xs font-bold px-1.5 py-0.5 rounded uppercase"
-                style={{ background: `${verdictColors[evaluation.verdict]}20`, color: verdictColors[evaluation.verdict] }}
+                style={{
+                  background: `${verdictColors[evaluation.verdict]}20`,
+                  color: verdictColors[evaluation.verdict],
+                }}
               >
                 {verdictLabels[evaluation.verdict]}
               </span>
@@ -125,23 +148,41 @@ export default function PriceCheck() {
                   <span className="flex-1 truncate" style={{ color: "var(--text-primary)" }}>
                     {mod.modText}
                   </span>
-                  <span className="shrink-0" style={{ color: "var(--text-secondary)", fontSize: "0.6rem" }}>
+                  <span
+                    className="shrink-0"
+                    style={{ color: "var(--text-secondary)", fontSize: "0.6rem" }}
+                  >
                     {mod.tierMin}–{mod.tierMax}
                   </span>
                 </div>
                 {/* Roll quality bar */}
                 {mod.tier > 0 && (
                   <div className="flex items-center gap-1.5 ml-7">
-                    <div className="flex-1 h-1 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.06)" }}>
+                    <div
+                      className="flex-1 h-1 rounded-full overflow-hidden"
+                      style={{ background: "rgba(255,255,255,0.06)" }}
+                    >
                       <div
                         className="h-full rounded-full"
                         style={{
                           width: `${mod.rollPercent}%`,
-                          background: mod.rollPercent >= 80 ? "#ffd700" : mod.rollPercent >= 50 ? "#44cc44" : "#6688ff",
+                          background:
+                            mod.rollPercent >= 80
+                              ? "#ffd700"
+                              : mod.rollPercent >= 50
+                                ? "#44cc44"
+                                : "#6688ff",
                         }}
                       />
                     </div>
-                    <span style={{ color: "var(--text-secondary)", fontSize: "0.55rem", width: 28, textAlign: "right" }}>
+                    <span
+                      style={{
+                        color: "var(--text-secondary)",
+                        fontSize: "0.55rem",
+                        width: 28,
+                        textAlign: "right",
+                      }}
+                    >
                       {mod.rollPercent}%
                     </span>
                   </div>
@@ -153,23 +194,44 @@ export default function PriceCheck() {
               .filter((m) => !evaluation.mods.some((em) => em.modText === m.text))
               .map((m, i) => (
                 <div key={`u${i}`} className="flex items-center gap-2 text-xs">
-                  <span className="shrink-0 w-5 text-center" style={{ color: "#333" }}>—</span>
-                  <span className="truncate" style={{ color: "var(--text-secondary)" }}>{m.text}</span>
+                  <span className="shrink-0 w-5 text-center" style={{ color: "#333" }}>
+                    —
+                  </span>
+                  <span className="truncate" style={{ color: "var(--text-secondary)" }}>
+                    {m.text}
+                  </span>
                 </div>
               ))}
           </div>
 
           {/* Combo flags */}
-          {(evaluation.hasTripleRes || evaluation.hasLifePlusRes || evaluation.hasSpeedPlusDamage) && (
+          {(evaluation.hasTripleRes ||
+            evaluation.hasLifePlusRes ||
+            evaluation.hasSpeedPlusDamage) && (
             <div className="flex gap-1 mt-1">
               {evaluation.hasTripleRes && (
-                <span className="text-xs px-1 rounded" style={{ background: "rgba(68,204,68,0.15)", color: "#44cc44" }}>Triple Res</span>
+                <span
+                  className="text-xs px-1 rounded"
+                  style={{ background: "rgba(68,204,68,0.15)", color: "#44cc44" }}
+                >
+                  Triple Res
+                </span>
               )}
               {evaluation.hasLifePlusRes && (
-                <span className="text-xs px-1 rounded" style={{ background: "rgba(255,215,0,0.15)", color: "#ffd700" }}>Life+Res</span>
+                <span
+                  className="text-xs px-1 rounded"
+                  style={{ background: "rgba(255,215,0,0.15)", color: "#ffd700" }}
+                >
+                  Life+Res
+                </span>
               )}
               {evaluation.hasSpeedPlusDamage && (
-                <span className="text-xs px-1 rounded" style={{ background: "rgba(102,136,255,0.15)", color: "#6688ff" }}>Speed+DMG</span>
+                <span
+                  className="text-xs px-1 rounded"
+                  style={{ background: "rgba(102,136,255,0.15)", color: "#6688ff" }}
+                >
+                  Speed+DMG
+                </span>
               )}
             </div>
           )}
@@ -178,8 +240,14 @@ export default function PriceCheck() {
 
       {/* Price result */}
       {priceLoading ? (
-        <div className="flex items-center gap-2 text-sm py-2" style={{ color: "var(--text-secondary)" }}>
-          <div className="w-4 h-4 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: "var(--accent)" }} />
+        <div
+          className="flex items-center gap-2 text-sm py-2"
+          style={{ color: "var(--text-secondary)" }}
+        >
+          <div
+            className="w-4 h-4 border-2 border-t-transparent rounded-full animate-spin"
+            style={{ borderColor: "var(--accent)" }}
+          />
           Checking poe.ninja...
         </div>
       ) : priceResult ? (
@@ -195,7 +263,9 @@ export default function PriceCheck() {
                 </div>
               )}
               <div className="flex items-center gap-2 mt-1">
-                <span className={`text-xs px-1.5 py-0.5 rounded ${confidenceColors[priceResult.confidence]}`}>
+                <span
+                  className={`text-xs px-1.5 py-0.5 rounded ${confidenceColors[priceResult.confidence]}`}
+                >
                   {priceResult.confidence}
                 </span>
                 <span className="text-xs" style={{ color: "var(--text-secondary)" }}>
@@ -212,7 +282,9 @@ export default function PriceCheck() {
             <div>
               {currentItem.rarity === "Rare" && evaluation ? (
                 <>
-                  <div className="text-xs mb-0.5" style={{ color: "var(--text-secondary)" }}>Estimated (based on mod tiers)</div>
+                  <div className="text-xs mb-0.5" style={{ color: "var(--text-secondary)" }}>
+                    Estimated (based on mod tiers)
+                  </div>
                   <div className="text-lg font-bold" style={{ color: "var(--text-primary)" }}>
                     {evaluation.estimatedChaos.min === evaluation.estimatedChaos.max
                       ? `${evaluation.estimatedChaos.min}c`
@@ -228,7 +300,10 @@ export default function PriceCheck() {
               ) : (
                 <div
                   className="flex items-center gap-2 py-2 px-2 rounded mt-1"
-                  style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.2)" }}
+                  style={{
+                    background: "rgba(239,68,68,0.1)",
+                    border: "1px solid rgba(239,68,68,0.2)",
+                  }}
                 >
                   <span style={{ color: "#ef4444", fontSize: "1rem" }}>&#x2717;</span>
                   <div>
@@ -241,7 +316,12 @@ export default function PriceCheck() {
                         : `Lookup failed via ${priceResult.source}`}
                     </div>
                   </div>
-                  <Btn size="sm" className="ml-auto shrink-0" style={{ background: "rgba(255,255,255,0.08)" }} onClick={recheck}>
+                  <Btn
+                    size="sm"
+                    className="ml-auto shrink-0"
+                    style={{ background: "rgba(255,255,255,0.08)" }}
+                    onClick={recheck}
+                  >
                     Retry
                   </Btn>
                 </div>

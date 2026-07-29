@@ -40,9 +40,18 @@ describe("getSeasonState", () => {
   it("running-open: no endAt announced → day number since launch", () => {
     const season: SeasonInfo = { ...base, endAt: null, next: { name: null, startAt: null } };
     // Launch day counts as day 1
-    expect(getSeasonState(season, t("2026-01-01T12:00:00Z"))).toEqual({ kind: "running-open", dayNumber: 1 });
-    expect(getSeasonState(season, t("2026-01-02T00:00:00Z"))).toEqual({ kind: "running-open", dayNumber: 2 });
-    expect(getSeasonState(season, t("2026-02-22T12:00:00Z"))).toEqual({ kind: "running-open", dayNumber: 53 });
+    expect(getSeasonState(season, t("2026-01-01T12:00:00Z"))).toEqual({
+      kind: "running-open",
+      dayNumber: 1,
+    });
+    expect(getSeasonState(season, t("2026-01-02T00:00:00Z"))).toEqual({
+      kind: "running-open",
+      dayNumber: 2,
+    });
+    expect(getSeasonState(season, t("2026-02-22T12:00:00Z"))).toEqual({
+      kind: "running-open",
+      dayNumber: 53,
+    });
   });
 
   it("exact endAt boundary counts as ended", () => {

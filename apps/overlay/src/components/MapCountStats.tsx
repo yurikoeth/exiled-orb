@@ -1,5 +1,9 @@
 import { useState, useEffect } from "react";
-import { getOutcomeCounts, type GroupedOutcomeCounts, type OutcomeCounts } from "../stores/speedrun-db";
+import {
+  getOutcomeCounts,
+  type GroupedOutcomeCounts,
+  type OutcomeCounts,
+} from "../stores/speedrun-db";
 import { useSpeedrunStore } from "../stores/speedrun-store";
 import { useSettingsStore } from "../stores/settings-store";
 import { SectionTitle } from "./ui";
@@ -30,13 +34,15 @@ export default function MapCountStats() {
   }, [mapCount]);
 
   // Session counts from in-memory store
-  const sessionCounts: OutcomeCounts | null = session ? {
-    completed: session.completedMaps,
-    bricked: session.brickedMaps,
-    abandoned: session.abandonedMaps,
-    total: session.totalMaps,
-    deaths: session.totalDeaths,
-  } : null;
+  const sessionCounts: OutcomeCounts | null = session
+    ? {
+        completed: session.completedMaps,
+        bricked: session.brickedMaps,
+        abandoned: session.abandonedMaps,
+        total: session.totalMaps,
+        deaths: session.totalDeaths,
+      }
+    : null;
 
   if (!sessionCounts && !dbCounts) return null;
 
@@ -54,7 +60,10 @@ export default function MapCountStats() {
       style={{ backgroundColor: "var(--bg-panel)", borderColor: "var(--border-color)" }}
     >
       {/* Header + view tabs */}
-      <div className="flex items-center justify-between px-3 py-1.5 border-b" style={{ borderColor: "var(--border-color)" }}>
+      <div
+        className="flex items-center justify-between px-3 py-1.5 border-b"
+        style={{ borderColor: "var(--border-color)" }}
+      >
         <SectionTitle>Map Outcomes</SectionTitle>
         <div className="flex items-center gap-0.5">
           {views.map((v) => (
@@ -75,17 +84,11 @@ export default function MapCountStats() {
       </div>
 
       <div className="px-3 py-2">
-        {view === "session" && sessionCounts && (
-          <OutcomeBar counts={sessionCounts} />
-        )}
+        {view === "session" && sessionCounts && <OutcomeBar counts={sessionCounts} />}
 
-        {view === "today" && dbCounts && (
-          <OutcomeBar counts={dbCounts.today} />
-        )}
+        {view === "today" && dbCounts && <OutcomeBar counts={dbCounts.today} />}
 
-        {view === "total" && dbCounts && (
-          <OutcomeBar counts={dbCounts.total} />
-        )}
+        {view === "total" && dbCounts && <OutcomeBar counts={dbCounts.total} />}
 
         {view === "character" && dbCounts && (
           <GroupedView groups={dbCounts.byCharacter} emptyMsg="No character data yet" />
@@ -95,8 +98,10 @@ export default function MapCountStats() {
           <GroupedView groups={dbCounts.byLeague} emptyMsg="No league data yet" />
         )}
 
-        {(view !== "session" && !dbCounts) && (
-          <div className="text-xs text-center py-1" style={{ color: "var(--text-secondary)" }}>Loading...</div>
+        {view !== "session" && !dbCounts && (
+          <div className="text-xs text-center py-1" style={{ color: "var(--text-secondary)" }}>
+            Loading...
+          </div>
         )}
       </div>
     </div>
@@ -105,7 +110,11 @@ export default function MapCountStats() {
 
 function OutcomeBar({ counts }: { counts: OutcomeCounts }) {
   if (counts.total === 0) {
-    return <div className="text-xs text-center" style={{ color: "var(--text-secondary)" }}>No maps yet</div>;
+    return (
+      <div className="text-xs text-center" style={{ color: "var(--text-secondary)" }}>
+        No maps yet
+      </div>
+    );
   }
 
   const pctComplete = (counts.completed / counts.total) * 100;
@@ -114,12 +123,21 @@ function OutcomeBar({ counts }: { counts: OutcomeCounts }) {
   return (
     <div>
       {/* Visual bar */}
-      <div className="flex rounded overflow-hidden h-3 mb-1.5" style={{ background: "rgba(255,255,255,0.1)" }}>
+      <div
+        className="flex rounded overflow-hidden h-3 mb-1.5"
+        style={{ background: "rgba(255,255,255,0.1)" }}
+      >
         {counts.completed > 0 && (
-          <div style={{ width: `${pctComplete}%`, background: "#22c55e" }} title={`${counts.completed} completed`} />
+          <div
+            style={{ width: `${pctComplete}%`, background: "#22c55e" }}
+            title={`${counts.completed} completed`}
+          />
         )}
         {counts.bricked > 0 && (
-          <div style={{ width: `${pctBricked}%`, background: "#ef4444" }} title={`${counts.bricked} bricked`} />
+          <div
+            style={{ width: `${pctBricked}%`, background: "#ef4444" }}
+            title={`${counts.bricked} bricked`}
+          />
         )}
         {/* Abandoned fills the rest via background */}
       </div>
@@ -127,35 +145,49 @@ function OutcomeBar({ counts }: { counts: OutcomeCounts }) {
       {/* Numbers */}
       <div className="flex items-center justify-between text-xs">
         <div className="flex items-center gap-3">
-          <span style={{ color: "#22c55e" }}>{counts.completed} <span style={{ color: "var(--text-secondary)" }}>clear</span></span>
-          <span style={{ color: "#ef4444" }}>{counts.bricked} <span style={{ color: "var(--text-secondary)" }}>brick</span></span>
+          <span style={{ color: "#22c55e" }}>
+            {counts.completed} <span style={{ color: "var(--text-secondary)" }}>clear</span>
+          </span>
+          <span style={{ color: "#ef4444" }}>
+            {counts.bricked} <span style={{ color: "var(--text-secondary)" }}>brick</span>
+          </span>
           {counts.abandoned > 0 && (
             <span style={{ color: "var(--text-secondary)" }}>{counts.abandoned} left</span>
           )}
         </div>
         <div className="flex items-center gap-2">
           <span style={{ color: "var(--text-secondary)" }}>{counts.total} total</span>
-          {counts.deaths > 0 && (
-            <span className="text-red-400">{counts.deaths}d</span>
-          )}
+          {counts.deaths > 0 && <span className="text-red-400">{counts.deaths}d</span>}
         </div>
       </div>
     </div>
   );
 }
 
-function GroupedView({ groups, emptyMsg }: { groups: Record<string, OutcomeCounts>; emptyMsg: string }) {
+function GroupedView({
+  groups,
+  emptyMsg,
+}: {
+  groups: Record<string, OutcomeCounts>;
+  emptyMsg: string;
+}) {
   const entries = Object.entries(groups).sort((a, b) => b[1].total - a[1].total);
 
   if (entries.length === 0) {
-    return <div className="text-xs text-center" style={{ color: "var(--text-secondary)" }}>{emptyMsg}</div>;
+    return (
+      <div className="text-xs text-center" style={{ color: "var(--text-secondary)" }}>
+        {emptyMsg}
+      </div>
+    );
   }
 
   return (
     <div className="space-y-2 max-h-40 overflow-y-auto">
       {entries.map(([name, counts]) => (
         <div key={name}>
-          <div className="text-xs font-bold mb-0.5" style={{ color: "var(--text-primary)" }}>{name}</div>
+          <div className="text-xs font-bold mb-0.5" style={{ color: "var(--text-primary)" }}>
+            {name}
+          </div>
           <OutcomeBar counts={counts} />
         </div>
       ))}

@@ -8,9 +8,9 @@ mod rate_limit;
 mod settings;
 
 use std::path::PathBuf;
-use tauri::Manager;
-use tauri::tray::TrayIconBuilder;
 use tauri::menu::{MenuBuilder, MenuItemBuilder};
+use tauri::tray::TrayIconBuilder;
+use tauri::Manager;
 
 /// Tauri command: set the Client.txt log path and start watching it
 #[tauri::command]
@@ -67,22 +67,24 @@ pub fn run() {
             let menu = MenuBuilder::new(app).items(&[&show, &quit]).build()?;
 
             TrayIconBuilder::new()
-                .icon(app.default_window_icon().expect("app icon must be set in tauri.conf.json").clone())
+                .icon(
+                    app.default_window_icon()
+                        .expect("app icon must be set in tauri.conf.json")
+                        .clone(),
+                )
                 .tooltip("ExiledOrb")
                 .menu(&menu)
-                .on_menu_event(|app, event| {
-                    match event.id().as_ref() {
-                        "show" => {
-                            if let Some(window) = app.get_webview_window("overlay") {
-                                let _ = window.show();
-                                let _ = window.set_focus();
-                            }
+                .on_menu_event(|app, event| match event.id().as_ref() {
+                    "show" => {
+                        if let Some(window) = app.get_webview_window("overlay") {
+                            let _ = window.show();
+                            let _ = window.set_focus();
                         }
-                        "quit" => {
-                            app.exit(0);
-                        }
-                        _ => {}
                     }
+                    "quit" => {
+                        app.exit(0);
+                    }
+                    _ => {}
                 })
                 .build(app)?;
 

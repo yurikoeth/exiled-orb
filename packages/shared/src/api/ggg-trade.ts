@@ -77,10 +77,7 @@ function listingToChaos(price: { amount: number; currency: string }, divineRate:
 }
 
 /** Search the GGG Trade API for item prices */
-export async function searchTrade(
-  item: ParsedItem,
-  league: string
-): Promise<PriceResult> {
+export async function searchTrade(item: ParsedItem, league: string): Promise<PriceResult> {
   const baseApiUrl = TRADE_API_URLS[item.game];
   const baseSiteUrl = TRADE_SITE_URLS[item.game];
 

@@ -12,8 +12,8 @@
 //! All API calls that need a token go through `get_access_token()` which
 //! transparently refreshes when the access token is near expiry.
 
-use base64::Engine as _;
 use base64::engine::general_purpose::URL_SAFE_NO_PAD;
+use base64::Engine as _;
 use rand::Rng;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -84,8 +84,7 @@ fn delete_tokens(app: &AppHandle) -> Result<(), String> {
 
 // --- PKCE helpers ----------------------------------------------------------
 
-const VERIFIER_CHARS: &[u8] =
-    b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~";
+const VERIFIER_CHARS: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~";
 const STATE_CHARS: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 
 fn generate_code_verifier() -> String {
@@ -149,13 +148,17 @@ async fn accept_callback(listener: TcpListener, expected_state: &str) -> Result<
     )
     .await
     .map_err(|_| {
-        "Authorization timed out (5 min). Click Connect again and complete the GGG sign-in.".to_string()
+        "Authorization timed out (5 min). Click Connect again and complete the GGG sign-in."
+            .to_string()
     })?
     .map_err(|e| format!("Accept failed: {e}"))?;
 
     // Read the request — we only need the request line for the query string.
     let mut buf = [0u8; 8192];
-    let n = stream.read(&mut buf).await.map_err(|e| format!("Read callback: {e}"))?;
+    let n = stream
+        .read(&mut buf)
+        .await
+        .map_err(|e| format!("Read callback: {e}"))?;
     let req = String::from_utf8_lossy(&buf[..n]);
     let first_line = req.lines().next().unwrap_or("");
 
@@ -290,10 +293,9 @@ pub async fn get_access_token(app: &AppHandle) -> Result<String, String> {
     if stored.expires_at > now_secs() + 60 {
         return Ok(stored.access_token);
     }
-    let refresh = stored
-        .refresh_token
-        .clone()
-        .ok_or_else(|| "Access token expired and no refresh token. Reconnect with GGG.".to_string())?;
+    let refresh = stored.refresh_token.clone().ok_or_else(|| {
+        "Access token expired and no refresh token. Reconnect with GGG.".to_string()
+    })?;
     let fresh = refresh_tokens(&refresh).await?;
     save_tokens(app, &fresh)?;
     Ok(fresh.access_token)

@@ -1,10 +1,30 @@
 import { useOverlayStore } from "../stores/overlay-store";
 
 const dangerStyles = {
-  deadly: { bg: "bg-red-900/60", border: "border-red-500/50", text: "text-red-300", label: "DEADLY" },
-  dangerous: { bg: "bg-orange-900/60", border: "border-orange-500/50", text: "text-orange-300", label: "DANGER" },
-  caution: { bg: "bg-yellow-900/40", border: "border-yellow-500/40", text: "text-yellow-300", label: "CAUTION" },
-  safe: { bg: "bg-green-900/30", border: "border-green-500/30", text: "text-green-300", label: "SAFE" },
+  deadly: {
+    bg: "bg-red-900/60",
+    border: "border-red-500/50",
+    text: "text-red-300",
+    label: "DEADLY",
+  },
+  dangerous: {
+    bg: "bg-orange-900/60",
+    border: "border-orange-500/50",
+    text: "text-orange-300",
+    label: "DANGER",
+  },
+  caution: {
+    bg: "bg-yellow-900/40",
+    border: "border-yellow-500/40",
+    text: "text-yellow-300",
+    label: "CAUTION",
+  },
+  safe: {
+    bg: "bg-green-900/30",
+    border: "border-green-500/30",
+    text: "text-green-300",
+    label: "SAFE",
+  },
 };
 
 export default function MapModWarnings() {
@@ -33,7 +53,9 @@ export default function MapModWarnings() {
             </div>
           )}
         </div>
-        <div className={`text-xs font-bold px-2 py-1 rounded ${overallStyle.bg} ${overallStyle.text}`}>
+        <div
+          className={`text-xs font-bold px-2 py-1 rounded ${overallStyle.bg} ${overallStyle.text}`}
+        >
           {overallStyle.label}
         </div>
       </div>
@@ -43,10 +65,7 @@ export default function MapModWarnings() {
         {mapAnalysis.mods.map((mod, i) => {
           const style = dangerStyles[mod.danger];
           return (
-            <div
-              key={i}
-              className={`rounded px-2 py-1.5 border ${style.bg} ${style.border}`}
-            >
+            <div key={i} className={`rounded px-2 py-1.5 border ${style.bg} ${style.border}`}>
               <div className="flex items-start gap-2">
                 {mod.danger !== "safe" && (
                   <span className={`text-xs font-bold shrink-0 mt-0.5 ${style.text}`}>

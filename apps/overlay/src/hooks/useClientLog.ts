@@ -12,17 +12,19 @@ import type { LogEventPayload, InitialGameState } from "@exiled-orb/shared";
 export function useClientLog() {
   // Fetch initial state from Rust on mount (no race condition)
   useEffect(() => {
-    invoke<InitialGameState>("get_initial_game_state").then((state) => {
-      const store = useOverlayStore.getState();
-      if (state.character_name) store.setCharacterName(state.character_name);
-      if (state.character_level) store.setCharacterLevel(state.character_level);
-      if (state.zone) store.setZone(state.zone);
-      if (state.area_level) store.setAreaLevel(state.area_level);
-      if (state.game === "poe1" || state.game === "poe2") store.setDetectedGame(state.game);
-      console.log("[ExiledOrb] Initial state loaded:", state);
-    }).catch((err) => {
-      console.error("[ExiledOrb] Failed to load initial state:", err);
-    });
+    invoke<InitialGameState>("get_initial_game_state")
+      .then((state) => {
+        const store = useOverlayStore.getState();
+        if (state.character_name) store.setCharacterName(state.character_name);
+        if (state.character_level) store.setCharacterLevel(state.character_level);
+        if (state.zone) store.setZone(state.zone);
+        if (state.area_level) store.setAreaLevel(state.area_level);
+        if (state.game === "poe1" || state.game === "poe2") store.setDetectedGame(state.game);
+        console.log("[ExiledOrb] Initial state loaded:", state);
+      })
+      .catch((err) => {
+        console.error("[ExiledOrb] Failed to load initial state:", err);
+      });
   }, []);
 
   // Listen for live events

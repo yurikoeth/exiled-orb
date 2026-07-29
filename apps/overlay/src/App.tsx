@@ -50,11 +50,14 @@ export default function App() {
 
   // Load settings, builds, and speedrun data on startup
   useEffect(() => {
-    useSettingsStore.getState().loadSettings().then(() => {
-      const game = useSettingsStore.getState().settings.game;
-      useSpeedrunStore.getState().loadPBsFromDB(game);
-      useSpeedrunStore.getState().loadGoals();
-    });
+    useSettingsStore
+      .getState()
+      .loadSettings()
+      .then(() => {
+        const game = useSettingsStore.getState().settings.game;
+        useSpeedrunStore.getState().loadPBsFromDB(game);
+        useSpeedrunStore.getState().loadGoals();
+      });
     useBuildStore.getState().loadBuilds();
   }, []);
 
@@ -92,15 +95,22 @@ export default function App() {
         {currentRun ? <MapTimer /> : <ZoneTracker />}
       </div>
 
-
       {/* Price check overlay — floats on top of any page */}
       {activePanel === "price" && (
         <div
           className="rounded border p-0 relative"
-          style={{ background: "rgba(10,10,14,0.98)", borderColor: "var(--border-color)", zIndex: 50 }}
+          style={{
+            background: "rgba(10,10,14,0.98)",
+            borderColor: "var(--border-color)",
+            zIndex: 50,
+          }}
         >
-          <Btn className="absolute top-1 right-1" style={{ zIndex: 51 }}
-            onClick={() => useOverlayStore.getState().dismissPanel()} title="Dismiss (Esc)">
+          <Btn
+            className="absolute top-1 right-1"
+            style={{ zIndex: 51 }}
+            onClick={() => useOverlayStore.getState().dismissPanel()}
+            title="Dismiss (Esc)"
+          >
             ✕
           </Btn>
           <PriceCheck />
@@ -125,7 +135,8 @@ export default function App() {
                 onClick={() => setPage(item.id)}
                 className="rounded border px-3 py-4 text-left hover:brightness-125 transition-all relative overflow-hidden group"
                 style={{
-                  background: "linear-gradient(180deg, rgba(24,24,28,0.95) 0%, rgba(14,14,18,0.95) 100%)",
+                  background:
+                    "linear-gradient(180deg, rgba(24,24,28,0.95) 0%, rgba(14,14,18,0.95) 100%)",
                   borderColor: "var(--border-color)",
                 }}
               >
@@ -170,14 +181,17 @@ export default function App() {
           )}
           <RunHistory onSelectMap={(name, game) => setLeaderboardMap({ name, game })} />
           {!currentRun && !useSpeedrunStore.getState().session && (
-            <HintPanel title="Map Grinding Tracker" lines={[
-              "Enter a map to start tracking automatically.",
-              "• Live timer + maps/hour + avg clear time",
-              "• Personal bests + split comparisons",
-              "• Run history + per-map leaderboards",
-              "• Set goals + track improvement over time",
-              "• Export session data as CSV/JSON",
-            ]} />
+            <HintPanel
+              title="Map Grinding Tracker"
+              lines={[
+                "Enter a map to start tracking automatically.",
+                "• Live timer + maps/hour + avg clear time",
+                "• Personal bests + split comparisons",
+                "• Run history + per-map leaderboards",
+                "• Set goals + track improvement over time",
+                "• Export session data as CSV/JSON",
+              ]}
+            />
           )}
         </>
       )}

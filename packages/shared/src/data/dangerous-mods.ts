@@ -10,7 +10,8 @@ export const DANGEROUS_MODS: DangerousMod[] = [
     pattern: /Monsters reflect (\d+)% of Elemental Damage/i,
     shortName: "Ele Reflect",
     danger: "deadly",
-    description: "Monsters reflect elemental damage back to you. Instant death for elemental builds.",
+    description:
+      "Monsters reflect elemental damage back to you. Instant death for elemental builds.",
     dangerousFor: ["elemental", "spell", "ignite", "cold DoT", "lightning"],
     safeFor: ["physical", "chaos DoT", "minion", "totem", "trap", "mine"],
     games: ["poe1", "poe2"],
@@ -28,7 +29,8 @@ export const DANGEROUS_MODS: DangerousMod[] = [
     pattern: /Players cannot Regenerate Life, Mana or Energy Shield/i,
     shortName: "No Regen",
     danger: "deadly",
-    description: "Disables all regeneration. Deadly for builds relying on life/mana regen or ES recharge.",
+    description:
+      "Disables all regeneration. Deadly for builds relying on life/mana regen or ES recharge.",
     dangerousFor: ["regen", "RF", "ES recharge", "mana regen"],
     safeFor: ["leech", "life on hit", "life flask", "blood magic"],
     games: ["poe1", "poe2"],
@@ -37,7 +39,8 @@ export const DANGEROUS_MODS: DangerousMod[] = [
     pattern: /Monsters have (\d+)% chance to Avoid Poison, Impale, and Bleeding/i,
     shortName: "Avoid Ailments",
     danger: "deadly",
-    description: "Monsters resist poison, impale, and bleed. Cripples builds relying on these mechanics.",
+    description:
+      "Monsters resist poison, impale, and bleed. Cripples builds relying on these mechanics.",
     dangerousFor: ["poison", "bleed", "impale"],
     safeFor: ["hit-based", "elemental", "minion"],
     games: ["poe1"],
@@ -57,7 +60,8 @@ export const DANGEROUS_MODS: DangerousMod[] = [
     pattern: /Players have (\d+)% reduced Maximum Resistances/i,
     shortName: "-Max Res",
     danger: "dangerous",
-    description: "Lowers your maximum elemental resistances. You take significantly more elemental damage.",
+    description:
+      "Lowers your maximum elemental resistances. You take significantly more elemental damage.",
     dangerousFor: ["low EHP", "CI"],
     safeFor: ["high max res", "physical mitigation"],
     games: ["poe1"],
@@ -66,7 +70,8 @@ export const DANGEROUS_MODS: DangerousMod[] = [
     pattern: /Monsters fire (\d+) additional Projectiles/i,
     shortName: "Extra Proj",
     danger: "dangerous",
-    description: "Monsters shoot extra projectiles. Ranged enemies become much more deadly, especially shotgunning.",
+    description:
+      "Monsters shoot extra projectiles. Ranged enemies become much more deadly, especially shotgunning.",
     dangerousFor: ["melee", "low evasion", "low block"],
     safeFor: ["high evasion", "max block", "ranged"],
     games: ["poe1", "poe2"],
@@ -84,7 +89,8 @@ export const DANGEROUS_MODS: DangerousMod[] = [
     pattern: /Monsters' skills Chain (\d+) additional times/i,
     shortName: "Chain",
     danger: "dangerous",
-    description: "Monster projectiles chain between targets. Very dangerous with summons, totems, or in parties.",
+    description:
+      "Monster projectiles chain between targets. Very dangerous with summons, totems, or in parties.",
     dangerousFor: ["minion", "totem", "party play"],
     safeFor: ["solo", "no secondary targets"],
     games: ["poe1", "poe2"],
@@ -93,7 +99,8 @@ export const DANGEROUS_MODS: DangerousMod[] = [
     pattern: /Players are Cursed with Temporal Chains/i,
     shortName: "Temp Chains",
     danger: "dangerous",
-    description: "You are permanently slowed. Affects movement, attack, and cast speed significantly.",
+    description:
+      "You are permanently slowed. Affects movement, attack, and cast speed significantly.",
     dangerousFor: ["all builds"],
     safeFor: ["curse immune"],
     games: ["poe1", "poe2"],
@@ -204,7 +211,8 @@ export const DANGEROUS_MODS: DangerousMod[] = [
     pattern: /Monsters Penetrate (\d+)% Elemental Resistances/i,
     shortName: "Ele Pen",
     danger: "dangerous",
-    description: "Monsters bypass your elemental resistances. Very deadly for builds relying on res stacking.",
+    description:
+      "Monsters bypass your elemental resistances. Very deadly for builds relying on res stacking.",
     dangerousFor: ["elemental", "low res"],
     safeFor: ["armour stacking", "block"],
     games: ["poe2"],

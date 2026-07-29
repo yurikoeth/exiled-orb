@@ -47,14 +47,25 @@ export default function GggCharacterRow({
   return (
     <div>
       {/* Character header — clickable */}
-      <Panel bg={expanded ? "raised" : "dim"} gold={expanded}
+      <Panel
+        bg={expanded ? "raised" : "dim"}
+        gold={expanded}
         className="px-3 py-2 cursor-pointer hover:opacity-90 transition-opacity"
-        onClick={onToggle}>
+        onClick={onToggle}
+      >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <img src={char.game === "poe2" ? poe2Logo : poe1Logo} alt={char.game} className="h-3.5 shrink-0" style={{ opacity: 0.7 }} />
+            <img
+              src={char.game === "poe2" ? poe2Logo : poe1Logo}
+              alt={char.game}
+              className="h-3.5 shrink-0"
+              style={{ opacity: 0.7 }}
+            />
             <div>
-              <span className="text-xs font-bold" style={{ color: isLiveChar ? "var(--accent)" : "var(--text-primary)" }}>
+              <span
+                className="text-xs font-bold"
+                style={{ color: isLiveChar ? "var(--accent)" : "var(--text-primary)" }}
+              >
                 {char.name}
               </span>
               <span className="text-xs ml-1.5" style={{ color: "var(--text-secondary)" }}>
@@ -64,7 +75,15 @@ export default function GggCharacterRow({
           </div>
           <div className="flex items-center gap-1.5">
             {char.league && (
-              <span className="text-xs px-1.5 py-0.5 rounded" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid var(--border-color)", color: "var(--text-secondary)", fontSize: "0.6rem" }}>
+              <span
+                className="text-xs px-1.5 py-0.5 rounded"
+                style={{
+                  background: "rgba(255,255,255,0.04)",
+                  border: "1px solid var(--border-color)",
+                  color: "var(--text-secondary)",
+                  fontSize: "0.6rem",
+                }}
+              >
                 {char.league}
               </span>
             )}
@@ -80,30 +99,52 @@ export default function GggCharacterRow({
         <div className="mt-1 space-y-1">
           {/* Action buttons */}
           <div className="flex gap-1.5">
-            <Btn variant="green" active={isActiveBuild} size="action" className="flex-1"
-              onClick={(e) => { e.stopPropagation(); onSetActive(); }}>
+            <Btn
+              variant="green"
+              active={isActiveBuild}
+              size="action"
+              className="flex-1"
+              onClick={(e) => {
+                e.stopPropagation();
+                onSetActive();
+              }}
+            >
               {isActiveBuild ? "Active" : "Set Active"}
             </Btn>
-            <Btn size="action" style={{ border: "1px solid var(--border-color)" }}
-              onClick={(e) => { e.stopPropagation(); onRefresh(); }}>
+            <Btn
+              size="action"
+              style={{ border: "1px solid var(--border-color)" }}
+              onClick={(e) => {
+                e.stopPropagation();
+                onRefresh();
+              }}
+            >
               ↻
             </Btn>
-            <Btn variant="gold" size="action" className="flex-1" style={{ background: "rgba(255,255,255,0.06)" }}
+            <Btn
+              variant="gold"
+              size="action"
+              className="flex-1"
+              style={{ background: "rgba(255,255,255,0.06)" }}
               disabled={analyzing}
-              onClick={(e) => { e.stopPropagation(); onAnalyze(); }}>
+              onClick={(e) => {
+                e.stopPropagation();
+                onAnalyze();
+              }}
+            >
               {analyzing ? "Analyzing..." : "Analyze"}
             </Btn>
           </div>
 
           <BuildGoalEditor characterName={char.name} />
 
-          {analysis && (
-            <BuildAnalysisCard analysis={analysis} onClose={onCloseAnalysis} />
-          )}
+          {analysis && <BuildAnalysisCard analysis={analysis} onClose={onCloseAnalysis} />}
 
           {/* Gear list */}
           {itemsLoading ? (
-            <div className="text-xs text-center py-2" style={{ color: "var(--text-secondary)" }}>Loading gear...</div>
+            <div className="text-xs text-center py-2" style={{ color: "var(--text-secondary)" }}>
+              Loading gear...
+            </div>
           ) : (
             <div className="space-y-0.5">
               {items?.map((item, i) => (

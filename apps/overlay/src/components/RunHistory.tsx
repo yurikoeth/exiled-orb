@@ -51,14 +51,11 @@ export default function RunHistory({ onSelectMap }: RunHistoryProps) {
     }
   }, [filter, mapFilter]);
 
-  const runs: MapRun[] = filter === "session"
-    ? [...(session?.maps ?? [])].reverse()
-    : dbRuns;
+  const runs: MapRun[] = filter === "session" ? [...(session?.maps ?? [])].reverse() : dbRuns;
 
   // Get unique map names for filter dropdown
-  const mapNames = filter === "session"
-    ? [...new Set((session?.maps ?? []).map((m) => m.mapName))]
-    : [];
+  const mapNames =
+    filter === "session" ? [...new Set((session?.maps ?? []).map((m) => m.mapName))] : [];
 
   if (runs.length === 0 && !loading) return null;
 
@@ -68,7 +65,10 @@ export default function RunHistory({ onSelectMap }: RunHistoryProps) {
       style={{ backgroundColor: "var(--bg-panel)", borderColor: "var(--border-color)" }}
     >
       {/* Header */}
-      <div className="flex items-center justify-between px-3 py-1.5 border-b" style={{ borderColor: "var(--border-color)" }}>
+      <div
+        className="flex items-center justify-between px-3 py-1.5 border-b"
+        style={{ borderColor: "var(--border-color)" }}
+      >
         <SectionTitle>Run History</SectionTitle>
         <div className="flex items-center gap-1">
           <button
@@ -121,7 +121,14 @@ export default function RunHistory({ onSelectMap }: RunHistoryProps) {
               className="flex items-center justify-between px-3 py-1 border-b last:border-b-0 hover:brightness-125 cursor-pointer"
               style={{
                 borderColor: "rgba(255,255,255,0.05)",
-                borderLeft: run.outcome === "bricked" ? "2px solid #ef4444" : isPb ? "2px solid #22c55e" : run.deaths > 0 ? "2px solid #f59e0b" : "2px solid transparent",
+                borderLeft:
+                  run.outcome === "bricked"
+                    ? "2px solid #ef4444"
+                    : isPb
+                      ? "2px solid #22c55e"
+                      : run.deaths > 0
+                        ? "2px solid #f59e0b"
+                        : "2px solid transparent",
               }}
               onClick={() => onSelectMap?.(run.mapName, run.game)}
             >
@@ -138,7 +145,10 @@ export default function RunHistory({ onSelectMap }: RunHistoryProps) {
                 {/* Outcome toggle — click to cycle between completed/bricked */}
                 {run.outcome === "bricked" ? (
                   <button
-                    onClick={(e) => { e.stopPropagation(); useSpeedrunStore.getState().markOutcome(run.id, "completed"); }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      useSpeedrunStore.getState().markOutcome(run.id, "completed");
+                    }}
                     className="text-xs shrink-0 text-red-400 font-bold hover:opacity-70"
                     title="Click to mark as cleared"
                   >
@@ -146,28 +156,34 @@ export default function RunHistory({ onSelectMap }: RunHistoryProps) {
                   </button>
                 ) : run.outcome === "completed" && run.deaths > 0 ? (
                   <button
-                    onClick={(e) => { e.stopPropagation(); useSpeedrunStore.getState().markOutcome(run.id, "bricked"); }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      useSpeedrunStore.getState().markOutcome(run.id, "bricked");
+                    }}
                     className="text-xs shrink-0 hover:opacity-70"
                     style={{ color: "var(--text-secondary)" }}
                     title="Click to mark as bricked"
                   >
                     [B]
                   </button>
-                ) : run.outcome === "abandoned" && (
-                  <span className="text-xs shrink-0" style={{ color: "var(--text-secondary)" }}>
-                    (left)
-                  </span>
+                ) : (
+                  run.outcome === "abandoned" && (
+                    <span className="text-xs shrink-0" style={{ color: "var(--text-secondary)" }}>
+                      (left)
+                    </span>
+                  )
                 )}
               </div>
 
               {/* Right: time + delta + deaths + delete */}
               <div className="flex items-center gap-2 shrink-0">
-                {run.deaths > 0 && (
-                  <span className="text-xs text-red-400">{run.deaths}d</span>
-                )}
+                {run.deaths > 0 && <span className="text-xs text-red-400">{run.deaths}d</span>}
                 {diff != null && diff !== 0 && (
-                  <span className={`text-xs font-mono ${diff < 0 ? "text-green-400" : "text-red-400"}`}>
-                    {diff > 0 ? "+" : ""}{formatDuration(Math.abs(diff))}
+                  <span
+                    className={`text-xs font-mono ${diff < 0 ? "text-green-400" : "text-red-400"}`}
+                  >
+                    {diff > 0 ? "+" : ""}
+                    {formatDuration(Math.abs(diff))}
                   </span>
                 )}
                 {isPb && <span className="text-xs text-green-400">PB</span>}
@@ -178,7 +194,10 @@ export default function RunHistory({ onSelectMap }: RunHistoryProps) {
                   {run.totalMs != null ? formatDuration(run.totalMs) : "—"}
                 </span>
                 <button
-                  onClick={(e) => { e.stopPropagation(); useSpeedrunStore.getState().deleteRun(run.id); }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    useSpeedrunStore.getState().deleteRun(run.id);
+                  }}
                   className="text-xs px-0.5 hover:opacity-80 opacity-30 hover:opacity-70"
                   style={{ color: "var(--text-secondary)" }}
                   title="Delete run"
@@ -193,7 +212,10 @@ export default function RunHistory({ onSelectMap }: RunHistoryProps) {
 
       {/* Load more for DB mode */}
       {filter === "all" && hasMore && (
-        <div className="px-3 py-1.5 text-center border-t" style={{ borderColor: "var(--border-color)" }}>
+        <div
+          className="px-3 py-1.5 text-center border-t"
+          style={{ borderColor: "var(--border-color)" }}
+        >
           <Btn className="px-3" onClick={loadMore} disabled={loading}>
             {loading ? "Loading..." : "Load more"}
           </Btn>

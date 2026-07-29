@@ -57,10 +57,14 @@ export default function SpeedrunStats() {
     setShowGoalEditor(false);
   };
 
-  const mphOnTarget = goals.targetMapsPerHour != null && session.mapsPerHour != null
-    ? session.mapsPerHour >= goals.targetMapsPerHour : null;
-  const avgOnTarget = goals.targetClearTimeMs != null && session.avgMapTimeMs != null
-    ? session.avgMapTimeMs <= goals.targetClearTimeMs : null;
+  const mphOnTarget =
+    goals.targetMapsPerHour != null && session.mapsPerHour != null
+      ? session.mapsPerHour >= goals.targetMapsPerHour
+      : null;
+  const avgOnTarget =
+    goals.targetClearTimeMs != null && session.avgMapTimeMs != null
+      ? session.avgMapTimeMs <= goals.targetClearTimeMs
+      : null;
 
   return (
     <div
@@ -75,12 +79,20 @@ export default function SpeedrunStats() {
       <div className="flex items-center justify-between mb-1">
         <SectionTitle>Session{!tracking && " (Paused)"}</SectionTitle>
         <div className="flex items-center gap-1.5">
-          {exportMsg && (
-            <span className="text-xs text-green-400">{exportMsg}</span>
-          )}
-          <Btn className="px-1" onClick={() => handleExport("csv")} title="Export CSV">CSV</Btn>
-          <Btn className="px-1" onClick={() => handleExport("json")} title="Export JSON">JSON</Btn>
-          <Btn className="px-1" onClick={() => setShowGoalEditor(!showGoalEditor)} title="Set goals">&#9881;</Btn>
+          {exportMsg && <span className="text-xs text-green-400">{exportMsg}</span>}
+          <Btn className="px-1" onClick={() => handleExport("csv")} title="Export CSV">
+            CSV
+          </Btn>
+          <Btn className="px-1" onClick={() => handleExport("json")} title="Export JSON">
+            JSON
+          </Btn>
+          <Btn
+            className="px-1"
+            onClick={() => setShowGoalEditor(!showGoalEditor)}
+            title="Set goals"
+          >
+            &#9881;
+          </Btn>
           <Btn
             onClick={handlePauseToggle}
             style={tracking ? {} : { background: "rgba(34,197,94,0.2)", color: "#22c55e" }}
@@ -93,11 +105,18 @@ export default function SpeedrunStats() {
 
       {/* Goal editor */}
       {showGoalEditor && (
-        <div className="mb-2 p-2 rounded border" style={{ borderColor: "var(--border-color)", background: "rgba(0,0,0,0.3)" }}>
-          <div className="text-xs mb-1" style={{ color: "var(--text-secondary)" }}>Goals</div>
+        <div
+          className="mb-2 p-2 rounded border"
+          style={{ borderColor: "var(--border-color)", background: "rgba(0,0,0,0.3)" }}
+        >
+          <div className="text-xs mb-1" style={{ color: "var(--text-secondary)" }}>
+            Goals
+          </div>
           <div className="flex gap-2 items-end">
             <div>
-              <label className="text-xs block mb-0.5" style={{ color: "var(--text-secondary)" }}>Maps/hr</label>
+              <label className="text-xs block mb-0.5" style={{ color: "var(--text-secondary)" }}>
+                Maps/hr
+              </label>
               <input
                 type="number"
                 value={goalMph}
@@ -110,7 +129,9 @@ export default function SpeedrunStats() {
               />
             </div>
             <div>
-              <label className="text-xs block mb-0.5" style={{ color: "var(--text-secondary)" }}>Target (sec)</label>
+              <label className="text-xs block mb-0.5" style={{ color: "var(--text-secondary)" }}>
+                Target (sec)
+              </label>
               <input
                 type="number"
                 value={goalTime}
@@ -136,8 +157,20 @@ export default function SpeedrunStats() {
       <div className="grid grid-cols-3 gap-2 text-center">
         {/* Maps / Hour */}
         <div>
-          <div className="text-xs" style={{ color: "var(--text-secondary)" }}>Maps/hr</div>
-          <div className="text-sm font-bold" style={{ color: mphOnTarget === true ? "#22c55e" : mphOnTarget === false ? "#ef4444" : "var(--text-primary)" }}>
+          <div className="text-xs" style={{ color: "var(--text-secondary)" }}>
+            Maps/hr
+          </div>
+          <div
+            className="text-sm font-bold"
+            style={{
+              color:
+                mphOnTarget === true
+                  ? "#22c55e"
+                  : mphOnTarget === false
+                    ? "#ef4444"
+                    : "var(--text-primary)",
+            }}
+          >
             {session.mapsPerHour != null ? session.mapsPerHour.toFixed(1) : "—"}
             {goals.targetMapsPerHour != null && (
               <span className="text-xs font-normal" style={{ color: "var(--text-secondary)" }}>
@@ -149,8 +182,20 @@ export default function SpeedrunStats() {
 
         {/* Avg Time */}
         <div>
-          <div className="text-xs" style={{ color: "var(--text-secondary)" }}>Avg Time</div>
-          <div className="text-sm font-bold" style={{ color: avgOnTarget === true ? "#22c55e" : avgOnTarget === false ? "#ef4444" : "var(--text-primary)" }}>
+          <div className="text-xs" style={{ color: "var(--text-secondary)" }}>
+            Avg Time
+          </div>
+          <div
+            className="text-sm font-bold"
+            style={{
+              color:
+                avgOnTarget === true
+                  ? "#22c55e"
+                  : avgOnTarget === false
+                    ? "#ef4444"
+                    : "var(--text-primary)",
+            }}
+          >
             {session.avgMapTimeMs != null ? formatDuration(session.avgMapTimeMs) : "—"}
             {goals.targetClearTimeMs != null && (
               <span className="text-xs font-normal" style={{ color: "var(--text-secondary)" }}>
@@ -162,7 +207,9 @@ export default function SpeedrunStats() {
 
         {/* Total Maps */}
         <div>
-          <div className="text-xs" style={{ color: "var(--text-secondary)" }}>Maps</div>
+          <div className="text-xs" style={{ color: "var(--text-secondary)" }}>
+            Maps
+          </div>
           <div className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>
             {session.completedMaps}
           </div>
@@ -170,21 +217,36 @@ export default function SpeedrunStats() {
       </div>
 
       {/* Second row: Deaths + Bricked + Fastest */}
-      <div className="grid grid-cols-3 gap-2 text-center mt-1 pt-1 border-t" style={{ borderColor: "var(--border-color)" }}>
+      <div
+        className="grid grid-cols-3 gap-2 text-center mt-1 pt-1 border-t"
+        style={{ borderColor: "var(--border-color)" }}
+      >
         <div>
-          <div className="text-xs" style={{ color: "var(--text-secondary)" }}>Deaths</div>
-          <div className={`text-sm font-bold ${session.totalDeaths > 0 ? "text-red-400" : ""}`} style={session.totalDeaths === 0 ? { color: "var(--text-primary)" } : {}}>
+          <div className="text-xs" style={{ color: "var(--text-secondary)" }}>
+            Deaths
+          </div>
+          <div
+            className={`text-sm font-bold ${session.totalDeaths > 0 ? "text-red-400" : ""}`}
+            style={session.totalDeaths === 0 ? { color: "var(--text-primary)" } : {}}
+          >
             {session.totalDeaths}
           </div>
         </div>
         <div>
-          <div className="text-xs" style={{ color: "var(--text-secondary)" }}>Bricked</div>
-          <div className={`text-sm font-bold ${session.brickedMaps > 0 ? "text-red-400" : ""}`} style={session.brickedMaps === 0 ? { color: "var(--text-primary)" } : {}}>
+          <div className="text-xs" style={{ color: "var(--text-secondary)" }}>
+            Bricked
+          </div>
+          <div
+            className={`text-sm font-bold ${session.brickedMaps > 0 ? "text-red-400" : ""}`}
+            style={session.brickedMaps === 0 ? { color: "var(--text-primary)" } : {}}
+          >
             {session.brickedMaps}
           </div>
         </div>
         <div>
-          <div className="text-xs" style={{ color: "var(--text-secondary)" }}>Fastest</div>
+          <div className="text-xs" style={{ color: "var(--text-secondary)" }}>
+            Fastest
+          </div>
           <div className="text-sm font-bold" style={{ color: "var(--accent)" }}>
             {session.fastestMapMs != null ? formatDuration(session.fastestMapMs) : "—"}
           </div>

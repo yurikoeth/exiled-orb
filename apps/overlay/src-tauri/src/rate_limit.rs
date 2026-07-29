@@ -53,7 +53,11 @@ fn compute_wait_s(rules: &[Rule], request_ages_s: &[f64]) -> f64 {
         }
         let window = rule.window_s as f64;
         // Ages of requests still inside this window, oldest first.
-        let mut in_window: Vec<f64> = request_ages_s.iter().copied().filter(|a| *a < window).collect();
+        let mut in_window: Vec<f64> = request_ages_s
+            .iter()
+            .copied()
+            .filter(|a| *a < window)
+            .collect();
         in_window.sort_by(|a, b| b.partial_cmp(a).unwrap_or(std::cmp::Ordering::Equal));
         let count = in_window.len() as u32;
         if count >= rule.max {
@@ -88,7 +92,11 @@ impl Limiter {
 
 /// Conservative default until the first response tells us the real limits.
 fn default_rules() -> Vec<Rule> {
-    vec![Rule { max: 8, window_s: 10, penalty_s: 60 }]
+    vec![Rule {
+        max: 8,
+        window_s: 10,
+        penalty_s: 60,
+    }]
 }
 
 static LIMITER: LazyLock<Mutex<Limiter>> = LazyLock::new(|| {
@@ -153,7 +161,10 @@ async fn record_headers(headers: &reqwest::header::HeaderMap) {
     let mut rules: Vec<Rule> = Vec::new();
     let mut restricted_s: u64 = 0;
     for name in &rule_names {
-        if let Some(v) = headers.get(format!("X-Rate-Limit-{name}")).and_then(|v| v.to_str().ok()) {
+        if let Some(v) = headers
+            .get(format!("X-Rate-Limit-{name}"))
+            .and_then(|v| v.to_str().ok())
+        {
             rules.extend(parse_tuples(v));
         }
         if let Some(v) = headers
@@ -188,7 +199,10 @@ async fn set_restricted(seconds: u64) {
 pub async fn send(builder: reqwest::RequestBuilder) -> Result<reqwest::Response, String> {
     let retry_builder = builder.try_clone();
     acquire().await?;
-    let resp = builder.send().await.map_err(|e| format!("Request failed: {e}"))?;
+    let resp = builder
+        .send()
+        .await
+        .map_err(|e| format!("Request failed: {e}"))?;
     record_headers(resp.headers()).await;
 
     if resp.status() == reqwest::StatusCode::TOO_MANY_REQUESTS {
@@ -204,7 +218,10 @@ pub async fn send(builder: reqwest::RequestBuilder) -> Result<reqwest::Response,
             eprintln!("[ExiledOrb] GGG 429 — backing off {retry_after}s and retrying once");
             tokio::time::sleep(Duration::from_secs(retry_after)).await;
             acquire().await?;
-            let resp2 = rb.send().await.map_err(|e| format!("Request failed: {e}"))?;
+            let resp2 = rb
+                .send()
+                .await
+                .map_err(|e| format!("Request failed: {e}"))?;
             record_headers(resp2.headers()).await;
             return Ok(resp2);
         }
@@ -220,7 +237,11 @@ mod tests {
     fn parses_single_tuple() {
         assert_eq!(
             parse_tuples("15:60:120"),
-            vec![Rule { max: 15, window_s: 60, penalty_s: 120 }]
+            vec![Rule {
+                max: 15,
+                window_s: 60,
+                penalty_s: 120
+            }]
         );
     }
 
@@ -229,8 +250,16 @@ mod tests {
         assert_eq!(
             parse_tuples("45:60:120, 240:240:900"),
             vec![
-                Rule { max: 45, window_s: 60, penalty_s: 120 },
-                Rule { max: 240, window_s: 240, penalty_s: 900 },
+                Rule {
+                    max: 45,
+                    window_s: 60,
+                    penalty_s: 120
+                },
+                Rule {
+                    max: 240,
+                    window_s: 240,
+                    penalty_s: 900
+                },
             ]
         );
     }
@@ -239,21 +268,33 @@ mod tests {
     fn skips_malformed_tuples() {
         assert_eq!(
             parse_tuples("bogus,10:20:30,1:2"),
-            vec![Rule { max: 10, window_s: 20, penalty_s: 30 }]
+            vec![Rule {
+                max: 10,
+                window_s: 20,
+                penalty_s: 30
+            }]
         );
         assert!(parse_tuples("").is_empty());
     }
 
     #[test]
     fn no_wait_under_limit() {
-        let rules = vec![Rule { max: 3, window_s: 10, penalty_s: 60 }];
+        let rules = vec![Rule {
+            max: 3,
+            window_s: 10,
+            penalty_s: 60,
+        }];
         assert_eq!(compute_wait_s(&rules, &[1.0, 2.0]), 0.0);
         assert_eq!(compute_wait_s(&rules, &[]), 0.0);
     }
 
     #[test]
     fn waits_until_oldest_expires_at_limit() {
-        let rules = vec![Rule { max: 2, window_s: 10, penalty_s: 60 }];
+        let rules = vec![Rule {
+            max: 2,
+            window_s: 10,
+            penalty_s: 60,
+        }];
         // Two requests 3s and 7s ago fill the window; the 7s-old one gates.
         let wait = compute_wait_s(&rules, &[3.0, 7.0]);
         assert!((wait - 3.0).abs() < 1e-9, "wait = {wait}");
@@ -261,7 +302,11 @@ mod tests {
 
     #[test]
     fn over_limit_waits_for_enough_slots() {
-        let rules = vec![Rule { max: 2, window_s: 10, penalty_s: 60 }];
+        let rules = vec![Rule {
+            max: 2,
+            window_s: 10,
+            penalty_s: 60,
+        }];
         // Three in-window requests: two must expire; the 5s-old one gates.
         let wait = compute_wait_s(&rules, &[1.0, 5.0, 9.0]);
         assert!((wait - 5.0).abs() < 1e-9, "wait = {wait}");
@@ -270,8 +315,16 @@ mod tests {
     #[test]
     fn most_restrictive_rule_wins() {
         let rules = vec![
-            Rule { max: 10, window_s: 10, penalty_s: 60 },
-            Rule { max: 1, window_s: 60, penalty_s: 60 },
+            Rule {
+                max: 10,
+                window_s: 10,
+                penalty_s: 60,
+            },
+            Rule {
+                max: 1,
+                window_s: 60,
+                penalty_s: 60,
+            },
         ];
         let wait = compute_wait_s(&rules, &[30.0]);
         assert!((wait - 30.0).abs() < 1e-9, "wait = {wait}");
@@ -279,7 +332,11 @@ mod tests {
 
     #[test]
     fn requests_outside_window_are_ignored() {
-        let rules = vec![Rule { max: 1, window_s: 10, penalty_s: 60 }];
+        let rules = vec![Rule {
+            max: 1,
+            window_s: 10,
+            penalty_s: 60,
+        }];
         assert_eq!(compute_wait_s(&rules, &[11.0, 200.0]), 0.0);
     }
 }

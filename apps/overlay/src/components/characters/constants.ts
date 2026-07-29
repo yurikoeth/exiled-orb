@@ -8,8 +8,25 @@ export interface GggCharacter {
   game: string;
 }
 
-export const POE1_CLASSES = ["Marauder", "Ranger", "Witch", "Duelist", "Templar", "Shadow", "Scion"];
-export const POE2_CLASSES = ["Warrior", "Sorceress", "Witch", "Monk", "Mercenary", "Ranger", "Druid", "Huntress"];
+export const POE1_CLASSES = [
+  "Marauder",
+  "Ranger",
+  "Witch",
+  "Duelist",
+  "Templar",
+  "Shadow",
+  "Scion",
+];
+export const POE2_CLASSES = [
+  "Warrior",
+  "Sorceress",
+  "Witch",
+  "Monk",
+  "Mercenary",
+  "Ranger",
+  "Druid",
+  "Huntress",
+];
 
 /** Persisted map of manually-picked classes for live-session characters. */
 export const LIVE_CLASS_STORE_KEY = "live_char_classes";

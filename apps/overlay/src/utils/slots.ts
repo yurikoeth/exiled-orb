@@ -6,16 +6,34 @@
 
 /** Display order for equipped items (GGG inventory ids). */
 export const SLOT_ORDER = [
-  "Helm", "Amulet", "Weapon", "Weapon2",
-  "BodyArmour", "Offhand", "Offhand2",
-  "Gloves", "Ring", "Ring2", "Belt", "Boots",
+  "Helm",
+  "Amulet",
+  "Weapon",
+  "Weapon2",
+  "BodyArmour",
+  "Offhand",
+  "Offhand2",
+  "Gloves",
+  "Ring",
+  "Ring2",
+  "Belt",
+  "Boots",
   "Flask",
 ] as const;
 
 export const SLOT_LABELS: Record<string, string> = {
-  Helm: "Helmet", Amulet: "Amulet", Weapon: "Weapon", Weapon2: "Swap Weapon",
-  BodyArmour: "Body", Offhand: "Off-hand", Offhand2: "Swap Off-hand",
-  Gloves: "Gloves", Ring: "Ring 1", Ring2: "Ring 2", Belt: "Belt", Boots: "Boots",
+  Helm: "Helmet",
+  Amulet: "Amulet",
+  Weapon: "Weapon",
+  Weapon2: "Swap Weapon",
+  BodyArmour: "Body",
+  Offhand: "Off-hand",
+  Offhand2: "Swap Off-hand",
+  Gloves: "Gloves",
+  Ring: "Ring 1",
+  Ring2: "Ring 2",
+  Belt: "Belt",
+  Boots: "Boots",
   Flask: "Flask",
 };
 
@@ -25,8 +43,16 @@ export const SLOT_LABELS: Record<string, string> = {
  * through build-store + AI prompts).
  */
 export const CAPTURE_SLOTS = [
-  "Helm", "Amulet", "Weapon", "Offhand", "BodyArmour",
-  "Gloves", "Ring", "Ring2", "Belt", "Boots",
+  "Helm",
+  "Amulet",
+  "Weapon",
+  "Offhand",
+  "BodyArmour",
+  "Gloves",
+  "Ring",
+  "Ring2",
+  "Belt",
+  "Boots",
 ] as const;
 
 export type CaptureSlot = (typeof CAPTURE_SLOTS)[number];

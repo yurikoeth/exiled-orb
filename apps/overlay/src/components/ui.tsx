@@ -60,7 +60,15 @@ export interface PanelProps extends HTMLAttributes<HTMLDivElement> {
 }
 
 /** The rounded gradient box used by every overlay panel. Padding via className. */
-export function Panel({ bg = "default", gold = false, dashed = false, className = "", style, children, ...rest }: PanelProps) {
+export function Panel({
+  bg = "default",
+  gold = false,
+  dashed = false,
+  className = "",
+  style,
+  children,
+  ...rest
+}: PanelProps) {
   return (
     <div
       className={`rounded border ${className}`}
@@ -105,8 +113,16 @@ function btnStyle(variant: BtnVariant, active: boolean): CSSProperties {
       };
     case "green":
       return active
-        ? { background: "rgba(68,204,68,0.15)", border: `1px solid ${COLORS.green}`, color: COLORS.green }
-        : { background: "rgba(255,255,255,0.06)", border: "1px solid var(--border-color)", color: "var(--text-secondary)" };
+        ? {
+            background: "rgba(68,204,68,0.15)",
+            border: `1px solid ${COLORS.green}`,
+            color: COLORS.green,
+          }
+        : {
+            background: "rgba(255,255,255,0.06)",
+            border: "1px solid var(--border-color)",
+            color: "var(--text-secondary)",
+          };
     case "danger":
       return {
         background: "rgba(255,68,68,0.08)",
@@ -128,7 +144,15 @@ function btnStyle(variant: BtnVariant, active: boolean): CSSProperties {
 }
 
 /** Small overlay button. Variants cover the recurring bg/border/color combos. */
-export function Btn({ variant = "ghost", active = false, size = "xs", className = "", style, children, ...rest }: BtnProps) {
+export function Btn({
+  variant = "ghost",
+  active = false,
+  size = "xs",
+  className = "",
+  style,
+  children,
+  ...rest
+}: BtnProps) {
   return (
     <button
       className={`${BTN_SIZE[size]} rounded transition-opacity hover:opacity-80 disabled:opacity-50 ${className}`}
@@ -143,7 +167,12 @@ export function Btn({ variant = "ghost", active = false, size = "xs", className 
 // --- SectionTitle -----------------------------------------------------------
 
 /** Uppercase gold section heading. */
-export function SectionTitle({ className = "", style, children, ...rest }: HTMLAttributes<HTMLDivElement>) {
+export function SectionTitle({
+  className = "",
+  style,
+  children,
+  ...rest
+}: HTMLAttributes<HTMLDivElement>) {
   return (
     <div
       className={`text-xs font-bold uppercase tracking-wide ${className}`}

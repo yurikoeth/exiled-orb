@@ -20,16 +20,17 @@
   --danger-safe: #44cc44;
 }
 
-html, body {
+html,
+body {
   margin: 0;
   padding: 0;
   background: var(--bg-overlay);
   overflow: hidden;
-  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  font-family: "Inter", "Segoe UI", system-ui, sans-serif;
 }
 
 #root {
-  background-image: url('./assets/wallpaper/BlogPost_Path_of_Exile_2_How_to_Ascend_poe-2-ascension-banner_img_hero.jpg');
+  background-image: url("./assets/wallpaper/BlogPost_Path_of_Exile_2_How_to_Ascend_poe-2-ascension-banner_img_hero.jpg");
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -37,7 +38,7 @@ html, body {
 }
 
 #root::before {
-  content: '';
+  content: "";
   position: fixed;
   inset: 0;
   background: rgba(8, 8, 10, 0.85);

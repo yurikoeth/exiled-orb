@@ -16,10 +16,7 @@ function itemHash(item: ParsedItem): string {
 
 /** Generate a local analysis from mod tier data (no API key needed) */
 function generateLocalAnalysis(item: ParsedItem, priceResult: PriceResult | null): AiPriceAnalysis {
-  const allMods = [
-    ...item.explicits.map((m) => m.text),
-    ...item.implicits.map((m) => m.text),
-  ];
+  const allMods = [...item.explicits.map((m) => m.text), ...item.implicits.map((m) => m.text)];
   const socketCount = item.sockets ? item.sockets.split(/[-\s]/).length : null;
   const evaluation = evaluateItem(allMods, item.itemLevel, socketCount, item.links, item.game);
 

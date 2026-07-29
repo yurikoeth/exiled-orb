@@ -20,8 +20,11 @@ export interface BuildAnalysis {
 
 const ANALYSIS_FALLBACK: BuildAnalysis = {
   buildSummary: "The Witch could not read this exile's fate. Try again.",
-  strengths: [], weaknesses: [], upgrades: [],
-  overallRating: "?", nextSteps: "Click Analyze Build to retry.",
+  strengths: [],
+  weaknesses: [],
+  upgrades: [],
+  overallRating: "?",
+  nextSteps: "Click Analyze Build to retry.",
 };
 
 /**
@@ -64,9 +67,13 @@ export async function runBuildAnalysis(opts: {
       links: i.max_links,
       corrupted: i.corrupted,
       mods: i.mods,
-    })),
+    }))
   );
-  const result = await invoke<string>("analyze_build", { apiKey: opts.apiKey, characterJson, itemsJson });
+  const result = await invoke<string>("analyze_build", {
+    apiKey: opts.apiKey,
+    characterJson,
+    itemsJson,
+  });
   return parseAiJson<BuildAnalysis>(result, ANALYSIS_FALLBACK);
 }
 
@@ -94,7 +101,7 @@ export interface SaveBuildParts {
  */
 export async function saveActiveBuild(parts: SaveBuildParts): Promise<void> {
   const prev = useBuildStore.getState().activeBuild;
-  const goal = prev?.characterName === parts.characterName ? prev?.goal ?? null : null;
+  const goal = prev?.characterName === parts.characterName ? (prev?.goal ?? null) : null;
   await useBuildStore.getState().setActiveBuild({
     characterName: parts.characterName,
     characterClass: parts.characterClass,

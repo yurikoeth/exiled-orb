@@ -17,7 +17,12 @@ export function useClipboard() {
     console.log("[ExiledOrb] Clipboard hook mounted, listening for items...");
     const unlisten = listen<string>("clipboard-item", async (event) => {
       const raw = event.payload;
-      console.log("[ExiledOrb] Clipboard event received, length:", raw.length, "preview:", raw.substring(0, 80));
+      console.log(
+        "[ExiledOrb] Clipboard event received, length:",
+        raw.length,
+        "preview:",
+        raw.substring(0, 80)
+      );
       if (!isPoEItem(raw)) {
         console.log("[ExiledOrb] Not a PoE item, ignoring");
         return;
@@ -40,20 +45,31 @@ export function useClipboard() {
           const sessionGame = captureStore.game;
           if (slot) {
             console.log(
-              `[ExiledOrb] Captured ${sessionGame} ${slot}: ${item.name || item.baseType} (${item.rarity})`,
+              `[ExiledOrb] Captured ${sessionGame} ${slot}: ${item.name || item.baseType} (${item.rarity})`
             );
           } else {
             console.log(
-              `[ExiledOrb] Capture: no slot for item class ${JSON.stringify(item.itemClass)} (${item.rarity}, ${item.name || item.baseType})`,
+              `[ExiledOrb] Capture: no slot for item class ${JSON.stringify(item.itemClass)} (${item.rarity}, ${item.name || item.baseType})`
             );
           }
           return;
         }
 
-        console.log("[ExiledOrb] Parsed item:", item.rarity, item.name || item.baseType, "class:", item.itemClass, "game:", item.game);
+        console.log(
+          "[ExiledOrb] Parsed item:",
+          item.rarity,
+          item.name || item.baseType,
+          "class:",
+          item.itemClass,
+          "game:",
+          item.game
+        );
 
         // Route based on item class
-        if (item.itemClass.toLowerCase().includes("map") || item.itemClass.toLowerCase().includes("waystone")) {
+        if (
+          item.itemClass.toLowerCase().includes("map") ||
+          item.itemClass.toLowerCase().includes("waystone")
+        ) {
           // Map — show mod warnings
           const modTexts = item.explicits.map((m) => m.text);
           const buildProfile = useSettingsStore.getState().settings.build;
@@ -71,7 +87,12 @@ export function useClipboard() {
 
           // Fetch price asynchronously
           const result = await checkPrice(item);
-          console.log("[ExiledOrb] Price result:", result.source, result.chaosValue, result.confidence);
+          console.log(
+            "[ExiledOrb] Price result:",
+            result.source,
+            result.chaosValue,
+            result.confidence
+          );
           useOverlayStore.getState().setPriceCheck(item, result, false);
 
           // Trigger AI analysis in the background (non-blocking).
@@ -80,12 +101,47 @@ export function useClipboard() {
         }
       } catch (err) {
         console.error("[ExiledOrb] Failed to parse clipboard item:", err);
-        const errorItem: ParsedItem = { raw, game: "poe1", itemClass: "", rarity: "Normal", name: null, baseType: "Parse Error", itemLevel: null, quality: null, sockets: null, links: null, implicits: [], explicits: [], enchants: [], corrupted: false, mirrored: false, unidentified: false, influences: [], stackSize: null, mapTier: null, gemLevel: null, requirements: {}, properties: {} };
-        useOverlayStore.getState().setPriceCheck(
-          errorItem,
-          { item: errorItem, source: "unavailable", chaosValue: null, divineValue: null, confidence: "none", listingCount: null, priceRange: null, tradeUrl: null, timestamp: Date.now() },
-          false
-        );
+        const errorItem: ParsedItem = {
+          raw,
+          game: "poe1",
+          itemClass: "",
+          rarity: "Normal",
+          name: null,
+          baseType: "Parse Error",
+          itemLevel: null,
+          quality: null,
+          sockets: null,
+          links: null,
+          implicits: [],
+          explicits: [],
+          enchants: [],
+          corrupted: false,
+          mirrored: false,
+          unidentified: false,
+          influences: [],
+          stackSize: null,
+          mapTier: null,
+          gemLevel: null,
+          requirements: {},
+          properties: {},
+        };
+        useOverlayStore
+          .getState()
+          .setPriceCheck(
+            errorItem,
+            {
+              item: errorItem,
+              source: "unavailable",
+              chaosValue: null,
+              divineValue: null,
+              confidence: "none",
+              listingCount: null,
+              priceRange: null,
+              tradeUrl: null,
+              timestamp: Date.now(),
+            },
+            false
+          );
       }
     });
 

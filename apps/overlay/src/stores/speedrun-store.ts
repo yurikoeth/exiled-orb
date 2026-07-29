@@ -1,7 +1,13 @@
 import { create } from "zustand";
 import type { MapRun, MapRunOutcome, SpeedrunSession, SpeedrunGoals } from "@exiled-orb/shared";
 import { computeSessionStats } from "@exiled-orb/shared";
-import { saveMapRun, deleteMapRun, loadPersonalBests, loadGoals, saveGoals as saveGoalsDb } from "./speedrun-db";
+import {
+  saveMapRun,
+  deleteMapRun,
+  loadPersonalBests,
+  loadGoals,
+  saveGoals as saveGoalsDb,
+} from "./speedrun-db";
 
 interface SpeedrunState {
   /** Current active map run (null when in hideout/town) */
@@ -26,7 +32,12 @@ interface SpeedrunState {
   // Actions
   startSession: (game: string, league: string) => void;
   endSession: () => void;
-  startMapRun: (mapName: string, mapTier: number | null, timestamp: number, characterName?: string | null) => void;
+  startMapRun: (
+    mapName: string,
+    mapTier: number | null,
+    timestamp: number,
+    characterName?: string | null
+  ) => void;
   enterBossArena: (timestamp: number) => void;
   /** Stop the timer and move run to pending — waits for user to resolve */
   finishMapRun: (timestamp: number) => void;

@@ -20,16 +20,28 @@ function createPbChime(): string {
   // Encode as 16-bit WAV
   const wavBuffer = new ArrayBuffer(44 + samples * 2);
   const view = new DataView(wavBuffer);
-  const writeStr = (o: number, s: string) => { for (let i = 0; i < s.length; i++) view.setUint8(o + i, s.charCodeAt(i)); };
-  writeStr(0, "RIFF"); view.setUint32(4, 36 + samples * 2, true);
-  writeStr(8, "WAVE"); writeStr(12, "fmt ");
-  view.setUint32(16, 16, true); view.setUint16(20, 1, true);
-  view.setUint16(22, 1, true); view.setUint32(24, sampleRate, true);
-  view.setUint32(28, sampleRate * 2, true); view.setUint16(32, 2, true);
-  view.setUint16(34, 16, true); writeStr(36, "data");
+  const writeStr = (o: number, s: string) => {
+    for (let i = 0; i < s.length; i++) view.setUint8(o + i, s.charCodeAt(i));
+  };
+  writeStr(0, "RIFF");
+  view.setUint32(4, 36 + samples * 2, true);
+  writeStr(8, "WAVE");
+  writeStr(12, "fmt ");
+  view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true);
+  view.setUint16(22, 1, true);
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, sampleRate * 2, true);
+  view.setUint16(32, 2, true);
+  view.setUint16(34, 16, true);
+  writeStr(36, "data");
   view.setUint32(40, samples * 2, true);
   for (let i = 0; i < samples; i++) {
-    view.setInt16(44 + i * 2, Math.max(-32768, Math.min(32767, Math.round(buffer[i] * 32767))), true);
+    view.setInt16(
+      44 + i * 2,
+      Math.max(-32768, Math.min(32767, Math.round(buffer[i] * 32767))),
+      true
+    );
   }
 
   const blob = new Blob([wavBuffer], { type: "audio/wav" });
@@ -99,7 +111,9 @@ export default function MapSplitDisplay() {
 
         {pb != null && pendingRun.totalMs != null && (
           <div className="text-right mt-0.5">
-            <span className={`text-xs font-mono ${pendingRun.totalMs <= pb ? "text-green-400" : "text-red-400"}`}>
+            <span
+              className={`text-xs font-mono ${pendingRun.totalMs <= pb ? "text-green-400" : "text-red-400"}`}
+            >
               {pendingRun.totalMs <= pb ? "New PB! " : ""}
               vs PB {formatDuration(pb)}
             </span>
@@ -155,15 +169,26 @@ export default function MapSplitDisplay() {
       className="rounded-lg border px-3 py-2 backdrop-blur-sm animate-in fade-in slide-in-from-top-2 duration-200"
       style={{
         backgroundColor: "var(--bg-panel)",
-        borderColor: isBricked ? "rgba(239, 68, 68, 0.5)" : isPb ? "rgba(34, 197, 94, 0.5)" : "var(--border-color)",
-        boxShadow: isBricked ? "0 0 12px rgba(239, 68, 68, 0.3)" : isPb ? "0 0 12px rgba(34, 197, 94, 0.3)" : "none",
+        borderColor: isBricked
+          ? "rgba(239, 68, 68, 0.5)"
+          : isPb
+            ? "rgba(34, 197, 94, 0.5)"
+            : "var(--border-color)",
+        boxShadow: isBricked
+          ? "0 0 12px rgba(239, 68, 68, 0.3)"
+          : isPb
+            ? "0 0 12px rgba(34, 197, 94, 0.3)"
+            : "none",
       }}
     >
       <div className="flex items-center justify-between">
         <span className="text-xs" style={{ color: isBricked ? "#ef4444" : "#22c55e" }}>
           {lastRun.mapName} {isBricked ? "BRICKED" : "CLEARED"}
         </span>
-        <span className={`text-sm font-bold font-mono ${isPb ? "text-green-400" : ""}`} style={isPb ? {} : { color: "var(--text-primary)" }}>
+        <span
+          className={`text-sm font-bold font-mono ${isPb ? "text-green-400" : ""}`}
+          style={isPb ? {} : { color: "var(--text-primary)" }}
+        >
           {formatDuration(lastRun.totalMs)}
         </span>
       </div>
@@ -172,7 +197,8 @@ export default function MapSplitDisplay() {
         <div className="text-right mt-0.5">
           <span className={`text-xs font-mono ${diff <= 0 ? "text-green-400" : "text-red-400"}`}>
             {diff <= 0 ? "PB! " : ""}
-            {diff > 0 ? "+" : ""}{formatDuration(Math.abs(diff))}
+            {diff > 0 ? "+" : ""}
+            {formatDuration(Math.abs(diff))}
           </span>
         </div>
       )}

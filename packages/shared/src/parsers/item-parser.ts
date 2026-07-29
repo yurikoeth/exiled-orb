@@ -52,14 +52,22 @@ function detectGame(raw: string): Game {
 function parseRarity(line: string): Rarity {
   const value = line.replace("Rarity: ", "").trim();
   switch (value) {
-    case "Normal": return "Normal";
-    case "Magic": return "Magic";
-    case "Rare": return "Rare";
-    case "Unique": return "Unique";
-    case "Currency": return "Currency";
-    case "Gem": return "Gem";
-    case "Divination Card": return "Divination Card";
-    default: return "Normal";
+    case "Normal":
+      return "Normal";
+    case "Magic":
+      return "Magic";
+    case "Rare":
+      return "Rare";
+    case "Unique":
+      return "Unique";
+    case "Currency":
+      return "Currency";
+    case "Gem":
+      return "Gem";
+    case "Divination Card":
+      return "Divination Card";
+    default:
+      return "Normal";
   }
 }
 
@@ -91,7 +99,12 @@ function detectInfluences(sections: string[]): Influence[] {
   const influences: Influence[] = [];
   const fullText = sections.join("\n");
   const influenceNames: Influence[] = [
-    "Shaper", "Elder", "Crusader", "Hunter", "Redeemer", "Warlord",
+    "Shaper",
+    "Elder",
+    "Crusader",
+    "Hunter",
+    "Redeemer",
+    "Warlord",
   ];
   for (const inf of influenceNames) {
     if (fullText.includes(`${inf} Item`)) {
@@ -104,7 +117,10 @@ function detectInfluences(sections: string[]): Influence[] {
 /** Parse a PoE item from clipboard text (Ctrl+C output) */
 export function parseItem(raw: string): ParsedItem {
   const trimmed = raw.trim();
-  const sections = trimmed.split(SEPARATOR).map((s) => s.trim()).filter(Boolean);
+  const sections = trimmed
+    .split(SEPARATOR)
+    .map((s) => s.trim())
+    .filter(Boolean);
 
   if (sections.length === 0) {
     throw new Error("Empty or invalid item text");
@@ -322,7 +338,8 @@ export function parseItem(raw: string): ParsedItem {
 
       // If we just passed item level, first mod section = implicits
       // Exception: maps don't have implicits — their mods are all explicits
-      const isMap = itemClass.toLowerCase().includes("map") || itemClass.toLowerCase().includes("waystone");
+      const isMap =
+        itemClass.toLowerCase().includes("map") || itemClass.toLowerCase().includes("waystone");
       if (foundImplicitSeparator && result.implicits.length === 0 && !isMap) {
         // Check if mods are tagged — if tagged, respect tags; otherwise treat as implicits
         const hasImplicitTag = mods.some((m) => m.type === "implicit");

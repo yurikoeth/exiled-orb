@@ -16,11 +16,7 @@ describe("slots", () => {
   });
 
   it("sortBySlot orders items by equipment order", () => {
-    const items = [
-      { inventory_id: "Boots" },
-      { inventory_id: "Helm" },
-      { inventory_id: "Weapon" },
-    ];
+    const items = [{ inventory_id: "Boots" }, { inventory_id: "Helm" }, { inventory_id: "Weapon" }];
     expect(sortBySlot(items).map((i) => i.inventory_id)).toEqual(["Helm", "Weapon", "Boots"]);
   });
 

@@ -9,11 +9,16 @@ export default function ApiKeyInline() {
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
-    getStore().then((store) => {
-      store.get<string>("claude_api_key").then((k) => {
-        if (k) { setKey(k); setSaved(true); }
-      });
-    }).catch(() => {});
+    getStore()
+      .then((store) => {
+        store.get<string>("claude_api_key").then((k) => {
+          if (k) {
+            setKey(k);
+            setSaved(true);
+          }
+        });
+      })
+      .catch(() => {});
   }, []);
 
   const save = async () => {
@@ -34,10 +39,17 @@ export default function ApiKeyInline() {
           <input
             type="password"
             value={key}
-            onChange={(e) => { setKey(e.target.value); setSaved(false); }}
+            onChange={(e) => {
+              setKey(e.target.value);
+              setSaved(false);
+            }}
             placeholder="sk-ant-..."
             className="flex-1 px-2 py-1 rounded text-xs"
-            style={{ background: "rgba(255,255,255,0.04)", border: "1px solid var(--border-color)", color: "var(--text-primary)" }}
+            style={{
+              background: "rgba(255,255,255,0.04)",
+              border: "1px solid var(--border-color)",
+              color: "var(--text-primary)",
+            }}
           />
           <Btn variant={saved ? "green" : "outline"} active={saved} size="sm" onClick={save}>
             {saved ? "Saved" : "Save"}

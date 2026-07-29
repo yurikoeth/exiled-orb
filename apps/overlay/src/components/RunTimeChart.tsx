@@ -36,7 +36,12 @@ export default function RunTimeChart() {
   const runningPbs: boolean[] = [];
   let best = Infinity;
   for (const t of times) {
-    if (t < best) { best = t; runningPbs.push(true); } else { runningPbs.push(false); }
+    if (t < best) {
+      best = t;
+      runningPbs.push(true);
+    } else {
+      runningPbs.push(false);
+    }
   }
 
   // Overall PB line
@@ -51,15 +56,32 @@ export default function RunTimeChart() {
     >
       <SectionTitle className="mb-1">Run Times ({runs.length} recent)</SectionTitle>
 
-      <svg width={WIDTH} height={HEIGHT} className="w-full" viewBox={`0 0 ${WIDTH} ${HEIGHT}`} preserveAspectRatio="none">
+      <svg
+        width={WIDTH}
+        height={HEIGHT}
+        className="w-full"
+        viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
+        preserveAspectRatio="none"
+      >
         {/* Average line */}
         {avgY >= PAD.top && avgY <= PAD.top + CHART_H && (
           <>
             <line
-              x1={PAD.left} y1={avgY} x2={PAD.left + CHART_W} y2={avgY}
-              stroke="rgba(255,255,255,0.2)" strokeWidth={1} strokeDasharray="4,3"
+              x1={PAD.left}
+              y1={avgY}
+              x2={PAD.left + CHART_W}
+              y2={avgY}
+              stroke="rgba(255,255,255,0.2)"
+              strokeWidth={1}
+              strokeDasharray="4,3"
             />
-            <text x={PAD.left + CHART_W - 2} y={avgY - 2} textAnchor="end" fontSize={8} fill="rgba(255,255,255,0.4)">
+            <text
+              x={PAD.left + CHART_W - 2}
+              y={avgY - 2}
+              textAnchor="end"
+              fontSize={8}
+              fill="rgba(255,255,255,0.4)"
+            >
               avg {formatDuration(avgMs)}
             </text>
           </>
@@ -69,8 +91,13 @@ export default function RunTimeChart() {
         {overallPb < Infinity && pbY >= PAD.top && pbY <= PAD.top + CHART_H && (
           <>
             <line
-              x1={PAD.left} y1={pbY} x2={PAD.left + CHART_W} y2={pbY}
-              stroke="rgba(34,197,94,0.3)" strokeWidth={1} strokeDasharray="4,3"
+              x1={PAD.left}
+              y1={pbY}
+              x2={PAD.left + CHART_W}
+              y2={pbY}
+              stroke="rgba(34,197,94,0.3)"
+              strokeWidth={1}
+              strokeDasharray="4,3"
             />
             <text x={PAD.left + 2} y={pbY - 2} fontSize={8} fill="rgba(34,197,94,0.6)">
               PB {formatDuration(overallPb)}
@@ -104,7 +131,13 @@ export default function RunTimeChart() {
         <text x={PAD.left} y={HEIGHT - 2} fontSize={8} fill="rgba(255,255,255,0.3)">
           1
         </text>
-        <text x={PAD.left + CHART_W} y={HEIGHT - 2} textAnchor="end" fontSize={8} fill="rgba(255,255,255,0.3)">
+        <text
+          x={PAD.left + CHART_W}
+          y={HEIGHT - 2}
+          textAnchor="end"
+          fontSize={8}
+          fill="rgba(255,255,255,0.3)"
+        >
           {runs.length}
         </text>
 

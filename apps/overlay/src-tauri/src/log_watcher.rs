@@ -41,7 +41,11 @@ struct LogEventEnvelope<'a> {
 }
 
 fn detect_game_from_path(path: &PathBuf) -> &'static str {
-    if path.to_string_lossy().contains("Path of Exile 2") { "poe2" } else { "poe1" }
+    if path.to_string_lossy().contains("Path of Exile 2") {
+        "poe2"
+    } else {
+        "poe1"
+    }
 }
 
 /// PoE2 SCENE sentinels that should not be treated as zone changes:
@@ -117,7 +121,10 @@ fn apply_event(state: &mut InitialGameState, event: &LogEvent) {
         LogEvent::Death { character_name } => {
             state.character_name = Some(character_name.clone());
         }
-        LogEvent::LevelUp { character_name, level } => {
+        LogEvent::LevelUp {
+            character_name,
+            level,
+        } => {
             state.character_name = Some(character_name.clone());
             state.character_level = Some(*level);
         }
@@ -220,7 +227,8 @@ fn parse_log_line(line: &str, game: &str) -> Option<LogEvent> {
         if parts.len() == 2 {
             if let Ok(level) = parts[1].trim().parse::<u32>() {
                 let raw = parts[0].trim();
-                let name = raw.rsplit_once(" (")
+                let name = raw
+                    .rsplit_once(" (")
                     .filter(|(_, suffix)| suffix.ends_with(')'))
                     .map(|(name, _)| name)
                     .unwrap_or(raw);
@@ -253,7 +261,11 @@ fn scan_log_history(log_path: &PathBuf) -> InitialGameState {
 
     if let Ok(mut file) = File::open(log_path) {
         let file_len = file.metadata().map(|m| m.len()).unwrap_or(0);
-        let seek_pos = if file_len > 65536 { file_len - 65536 } else { 0 };
+        let seek_pos = if file_len > 65536 {
+            file_len - 65536
+        } else {
+            0
+        };
         let _ = file.seek(SeekFrom::Start(seek_pos));
 
         let reader = BufReader::new(file);
@@ -313,7 +325,10 @@ pub fn start_log_watcher(app: AppHandle, log_path: PathBuf) {
                         apply_event(&mut game_state.0.lock().unwrap(), &log_event);
                     }
 
-                    let envelope = LogEventEnvelope { game, event: &log_event };
+                    let envelope = LogEventEnvelope {
+                        game,
+                        event: &log_event,
+                    };
                     if let Err(e) = app.emit("log-event", &envelope) {
                         eprintln!("Failed to emit log event: {}", e);
                     }
@@ -332,8 +347,11 @@ fn extract_timestamp(line: &str) -> Option<&str> {
         return None;
     }
     let bytes = line.as_bytes();
-    if bytes[4] == b'/' && bytes[7] == b'/' && bytes[10] == b' '
-        && bytes[13] == b':' && bytes[16] == b':'
+    if bytes[4] == b'/'
+        && bytes[7] == b'/'
+        && bytes[10] == b' '
+        && bytes[13] == b':'
+        && bytes[16] == b':'
     {
         Some(&line[..19])
     } else {
@@ -375,7 +393,9 @@ fn parse_death_for_history(line: &str) -> Option<String> {
     let after_marker = &line[marker_pos..];
     let colon_pos = after_marker.find("] : ")?;
     let message = after_marker[colon_pos + 4..].trim();
-    message.strip_suffix(" has been slain.").map(|s| s.to_string())
+    message
+        .strip_suffix(" has been slain.")
+        .map(|s| s.to_string())
 }
 
 /// Read an entire Client.txt and collect every character that ever leveled
@@ -389,7 +409,10 @@ fn scan_for_characters(log_path: &PathBuf) -> Vec<DetectedCharacter> {
     let file = match File::open(log_path) {
         Ok(f) => f,
         Err(e) => {
-            eprintln!("[ExiledOrb] scan_for_characters: cannot open {:?}: {}", log_path, e);
+            eprintln!(
+                "[ExiledOrb] scan_for_characters: cannot open {:?}: {}",
+                log_path, e
+            );
             return vec![];
         }
     };
@@ -414,14 +437,16 @@ fn scan_for_characters(log_path: &PathBuf) -> Vec<DetectedCharacter> {
         let timestamp = extract_timestamp(&line).map(|s| s.to_string());
 
         if let Some((name, class, level)) = parse_levelup_for_history(&line) {
-            let entry = acc.entry(name.clone()).or_insert_with(|| DetectedCharacter {
-                name: name.clone(),
-                class: class.clone(),
-                level,
-                game: game.clone(),
-                last_seen: timestamp.clone(),
-                deaths: 0,
-            });
+            let entry = acc
+                .entry(name.clone())
+                .or_insert_with(|| DetectedCharacter {
+                    name: name.clone(),
+                    class: class.clone(),
+                    level,
+                    game: game.clone(),
+                    last_seen: timestamp.clone(),
+                    deaths: 0,
+                });
             if level > entry.level {
                 entry.level = level;
             }
@@ -435,14 +460,16 @@ fn scan_for_characters(log_path: &PathBuf) -> Vec<DetectedCharacter> {
         }
 
         if let Some(name) = parse_death_for_history(&line) {
-            let entry = acc.entry(name.clone()).or_insert_with(|| DetectedCharacter {
-                name: name.clone(),
-                class: None,
-                level: 0,
-                game: game.clone(),
-                last_seen: timestamp.clone(),
-                deaths: 0,
-            });
+            let entry = acc
+                .entry(name.clone())
+                .or_insert_with(|| DetectedCharacter {
+                    name: name.clone(),
+                    class: None,
+                    level: 0,
+                    game: game.clone(),
+                    last_seen: timestamp.clone(),
+                    deaths: 0,
+                });
             entry.deaths += 1;
             if timestamp.is_some() && timestamp > entry.last_seen {
                 entry.last_seen = timestamp;
@@ -550,7 +577,8 @@ mod tests {
 
     #[test]
     fn poe2_scene_zone() {
-        let line = "2026/07/21 12:00:00 123 abc [INFO Client 9560] [SCENE] Set Source [The Riverbank]";
+        let line =
+            "2026/07/21 12:00:00 123 abc [INFO Client 9560] [SCENE] Set Source [The Riverbank]";
         match parse_log_line(line, "poe2") {
             Some(LogEvent::Zone { zone_name }) => assert_eq!(zone_name, "The Riverbank"),
             other => panic!("expected Zone, got {:?}", other.is_some()),
@@ -559,15 +587,21 @@ mod tests {
 
     #[test]
     fn poe1_ignores_scene_lines() {
-        let line = "2026/07/21 12:00:00 123 abc [INFO Client 9560] [SCENE] Set Source [The Riverbank]";
+        let line =
+            "2026/07/21 12:00:00 123 abc [INFO Client 9560] [SCENE] Set Source [The Riverbank]";
         assert!(parse_log_line(line, "poe1").is_none());
     }
 
     #[test]
     fn scene_sentinels_are_filtered() {
         for zone in ["(null)", "(unknown)", "Act 3", "Act 12"] {
-            let line = format!("2026/07/21 12:00:00 123 abc [INFO Client 9560] [SCENE] Set Source [{zone}]");
-            assert!(parse_log_line(&line, "poe2").is_none(), "sentinel {zone} not filtered");
+            let line = format!(
+                "2026/07/21 12:00:00 123 abc [INFO Client 9560] [SCENE] Set Source [{zone}]"
+            );
+            assert!(
+                parse_log_line(&line, "poe2").is_none(),
+                "sentinel {zone} not filtered"
+            );
         }
         // A real zone that merely starts with "Act" must NOT be filtered.
         assert!(!is_scene_sentinel("Act on Instinct"));
@@ -586,7 +620,11 @@ mod tests {
     fn incoming_and_outgoing_whispers() {
         let line = info("@From Buyer: Hi, I'd like to buy your Mageblood");
         match parse_log_line(&line, "poe1") {
-            Some(LogEvent::Whisper { direction, player_name, message }) => {
+            Some(LogEvent::Whisper {
+                direction,
+                player_name,
+                message,
+            }) => {
                 assert_eq!(direction, "incoming");
                 assert_eq!(player_name, "Buyer");
                 assert_eq!(message, "Hi, I'd like to buy your Mageblood");
@@ -605,7 +643,10 @@ mod tests {
     fn poe1_level_up() {
         let line = info("Witchtimeee is now level 42");
         match parse_log_line(&line, "poe1") {
-            Some(LogEvent::LevelUp { character_name, level }) => {
+            Some(LogEvent::LevelUp {
+                character_name,
+                level,
+            }) => {
                 assert_eq!(character_name, "Witchtimeee");
                 assert_eq!(level, 42);
             }
@@ -617,7 +658,10 @@ mod tests {
     fn poe2_level_up_strips_class_suffix() {
         let line = info("Sorceress (Witch) is now level 8");
         match parse_log_line(&line, "poe2") {
-            Some(LogEvent::LevelUp { character_name, level }) => {
+            Some(LogEvent::LevelUp {
+                character_name,
+                level,
+            }) => {
                 assert_eq!(character_name, "Sorceress");
                 assert_eq!(level, 8);
             }
@@ -677,7 +721,10 @@ mod tests {
     #[test]
     fn death_history_extracts_name() {
         let line = info("Sorceress has been slain.");
-        assert_eq!(parse_death_for_history(&line), Some("Sorceress".to_string()));
+        assert_eq!(
+            parse_death_for_history(&line),
+            Some("Sorceress".to_string())
+        );
         assert_eq!(parse_death_for_history(&info("no death here")), None);
     }
 }

@@ -37,7 +37,10 @@ export default function DetectedCharacterTile({
     <Panel bg={isActive ? "raised" : "dim"} gold={isActive} className="px-3 py-2">
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 min-w-0">
-          <span className="text-xs font-bold truncate" style={{ color: isActive ? "var(--accent)" : "var(--text-primary)" }}>
+          <span
+            className="text-xs font-bold truncate"
+            style={{ color: isActive ? "var(--accent)" : "var(--text-primary)" }}
+          >
             {char.name}
           </span>
           <span className="text-xs shrink-0" style={{ color: "var(--text-secondary)" }}>
@@ -49,38 +52,70 @@ export default function DetectedCharacterTile({
             </span>
           )}
           {char.deaths > 0 && (
-            <span className="text-xs shrink-0" style={{ color: "var(--text-secondary)", fontSize: "0.6rem" }} title={`${char.deaths} death${char.deaths === 1 ? "" : "s"} in log`}>
+            <span
+              className="text-xs shrink-0"
+              style={{ color: "var(--text-secondary)", fontSize: "0.6rem" }}
+              title={`${char.deaths} death${char.deaths === 1 ? "" : "s"} in log`}
+            >
               ☠ {char.deaths}
             </span>
           )}
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
           {char.last_seen && (
-            <span className="text-xs" style={{ color: "var(--text-secondary)", fontSize: "0.6rem" }} title="Most recent log line">
+            <span
+              className="text-xs"
+              style={{ color: "var(--text-secondary)", fontSize: "0.6rem" }}
+              title="Most recent log line"
+            >
               {char.last_seen.slice(0, 10)}
             </span>
           )}
           {char.class && (
-            <Btn variant="gold" active={isActive} onClick={setAsActive}
-              style={{ fontSize: "0.6rem", ...(isActive ? {} : { background: "rgba(255,255,255,0.06)", border: "1px solid var(--border-color)", color: "var(--text-secondary)" }) }}>
+            <Btn
+              variant="gold"
+              active={isActive}
+              onClick={setAsActive}
+              style={{
+                fontSize: "0.6rem",
+                ...(isActive
+                  ? {}
+                  : {
+                      background: "rgba(255,255,255,0.06)",
+                      border: "1px solid var(--border-color)",
+                      color: "var(--text-secondary)",
+                    }),
+              }}
+            >
               {isActive ? "active" : "set active"}
             </Btn>
           )}
           {onRemove && (
-            <Btn variant="text" onClick={onRemove} style={{ fontSize: "0.7rem" }}
-              title="Hide this character from the list (can be restored from the hidden manager below)">
+            <Btn
+              variant="text"
+              onClick={onRemove}
+              style={{ fontSize: "0.7rem" }}
+              title="Hide this character from the list (can be restored from the hidden manager below)"
+            >
               ✕
             </Btn>
           )}
           {onDelete && (
-            <Btn variant="text" onClick={onDelete} style={{ fontSize: "0.7rem", color: "#ff6666" }}
-              title="Permanently delete (filtered out of all future scans — not reversible from UI)">
+            <Btn
+              variant="text"
+              onClick={onDelete}
+              style={{ fontSize: "0.7rem", color: "#ff6666" }}
+              title="Permanently delete (filtered out of all future scans — not reversible from UI)"
+            >
               🗑
             </Btn>
           )}
         </div>
       </div>
-      <div className="text-xs pt-0.5" style={{ color: "var(--text-secondary)", fontSize: "0.6rem" }}>
+      <div
+        className="text-xs pt-0.5"
+        style={{ color: "var(--text-secondary)", fontSize: "0.6rem" }}
+      >
         {isActiveWithGear
           ? `Active build · ${activeBuildGearCount} gear items captured (see Live Session above)`
           : "From local log history — no gear data. Use Capture (live session) for gear."}
@@ -112,12 +147,23 @@ export function HiddenCharsManager({
 }) {
   return (
     <div className="space-y-1">
-      <Btn variant="text" size="sm" className="py-0.5" style={{ fontSize: "0.6rem" }} onClick={onToggleOpen}
-        title={open ? "Collapse hidden list" : "Expand to manage individual hidden characters"}>
+      <Btn
+        variant="text"
+        size="sm"
+        className="py-0.5"
+        style={{ fontSize: "0.6rem" }}
+        onClick={onToggleOpen}
+        title={open ? "Collapse hidden list" : "Expand to manage individual hidden characters"}
+      >
         {open ? "▾" : "▸"} {hidden.length} hidden
       </Btn>
       {open && (
-        <Panel bg="faint" dashed className="space-y-0.5 px-2 py-1.5" style={{ background: "rgba(255,255,255,0.02)" }}>
+        <Panel
+          bg="faint"
+          dashed
+          className="space-y-0.5 px-2 py-1.5"
+          style={{ background: "rgba(255,255,255,0.02)" }}
+        >
           {hidden.map((d) => (
             <div
               key={`hidden-${d.game}-${d.name}`}
@@ -130,24 +176,41 @@ export function HiddenCharsManager({
                 {d.level > 0 ? ` · Lv.${d.level}` : ""}
               </span>
               <div className="flex items-center gap-1 shrink-0">
-                <Btn variant="outline" style={{ background: "rgba(255,255,255,0.04)", fontSize: "0.6rem" }}
-                  onClick={() => onRestoreOne(d)} title="Restore this character to the list">
+                <Btn
+                  variant="outline"
+                  style={{ background: "rgba(255,255,255,0.04)", fontSize: "0.6rem" }}
+                  onClick={() => onRestoreOne(d)}
+                  title="Restore this character to the list"
+                >
                   ↺ restore
                 </Btn>
-                <Btn variant="danger" style={{ fontSize: "0.6rem" }} onClick={() => onDismissOne(d)}
-                  title="Permanently delete (filtered out of all future scans — not reversible from UI)">
+                <Btn
+                  variant="danger"
+                  style={{ fontSize: "0.6rem" }}
+                  onClick={() => onDismissOne(d)}
+                  title="Permanently delete (filtered out of all future scans — not reversible from UI)"
+                >
                   🗑 delete
                 </Btn>
               </div>
             </div>
           ))}
           <div className="flex items-center gap-1 mt-1">
-            <Btn className="flex-1 py-0.5" style={{ background: "rgba(255,255,255,0.04)", fontSize: "0.6rem" }}
-              onClick={onRestoreAll} title="Restore every hidden character at once">
+            <Btn
+              className="flex-1 py-0.5"
+              style={{ background: "rgba(255,255,255,0.04)", fontSize: "0.6rem" }}
+              onClick={onRestoreAll}
+              title="Restore every hidden character at once"
+            >
               ↺ Restore all
             </Btn>
-            <Btn variant="danger" className="flex-1 py-0.5" style={{ border: "none", fontSize: "0.6rem" }}
-              onClick={onDismissAll} title="Permanently delete all currently-hidden characters (not reversible from UI)">
+            <Btn
+              variant="danger"
+              className="flex-1 py-0.5"
+              style={{ border: "none", fontSize: "0.6rem" }}
+              onClick={onDismissAll}
+              title="Permanently delete all currently-hidden characters (not reversible from UI)"
+            >
               🗑 Delete all
             </Btn>
           </div>

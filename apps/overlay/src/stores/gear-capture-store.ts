@@ -3,9 +3,22 @@ import type { ParsedItem, Game } from "@exiled-orb/shared";
 import type { CaptureSlot } from "../utils/slots";
 
 const WEAPON_KEYWORDS = [
-  "sword", "axe", "mace", "bow", "claw", "dagger",
-  "wand", "stave", "staff", "sceptre", "scepter",
-  "crossbow", "quarterstaff", "spear", "flail", "rune dagger",
+  "sword",
+  "axe",
+  "mace",
+  "bow",
+  "claw",
+  "dagger",
+  "wand",
+  "stave",
+  "staff",
+  "sceptre",
+  "scepter",
+  "crossbow",
+  "quarterstaff",
+  "spear",
+  "flail",
+  "rune dagger",
 ];
 
 /**
@@ -16,7 +29,7 @@ const WEAPON_KEYWORDS = [
  */
 function slotForItem(
   item: ParsedItem,
-  filled: Partial<Record<CaptureSlot, ParsedItem>>,
+  filled: Partial<Record<CaptureSlot, ParsedItem>>
 ): CaptureSlot | null {
   const cls = item.itemClass.toLowerCase();
 
@@ -32,7 +45,12 @@ function slotForItem(
   }
 
   // Off-hand-only families
-  if (cls.includes("shield") || cls.includes("focus") || cls.includes("foci") || cls.includes("quiver")) {
+  if (
+    cls.includes("shield") ||
+    cls.includes("focus") ||
+    cls.includes("foci") ||
+    cls.includes("quiver")
+  ) {
     return "Offhand";
   }
 

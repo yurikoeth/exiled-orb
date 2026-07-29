@@ -35,8 +35,11 @@ export default function BuildCapturePanel() {
     if (!characterName || !characterClass) {
       console.warn(
         "[ExiledOrb] Capture cannot save — characterName/class missing.",
-        "Name:", characterName, "Class:", characterClass,
-        "Set class on the Live Session tile first; capture state preserved.",
+        "Name:",
+        characterName,
+        "Class:",
+        characterClass,
+        "Set class on the Live Session tile first; capture state preserved."
       );
       return;
     }
@@ -45,20 +48,21 @@ export default function BuildCapturePanel() {
     const captured = result.items;
     const game = result.game ?? "poe1";
 
-    const entries = (Object.entries(captured) as [CaptureSlot, ParsedItem | undefined][])
-      .filter((entry): entry is [CaptureSlot, ParsedItem] => Boolean(entry[1]));
+    const entries = (Object.entries(captured) as [CaptureSlot, ParsedItem | undefined][]).filter(
+      (entry): entry is [CaptureSlot, ParsedItem] => Boolean(entry[1])
+    );
 
     const resolvedLevel =
-      resolveCharacterLevel(characterName, game)
-      ?? useBuildStore.getState().activeBuild?.level
-      ?? 1;
+      resolveCharacterLevel(characterName, game) ??
+      useBuildStore.getState().activeBuild?.level ??
+      1;
 
     console.log(
-      `[ExiledOrb] Saving captured build: ${characterName} (${characterClass}, ${game}, lv${resolvedLevel}) — ${entries.length} items`,
+      `[ExiledOrb] Saving captured build: ${characterName} (${characterClass}, ${game}, lv${resolvedLevel}) — ${entries.length} items`
     );
 
     const allMods = entries.flatMap(([, item]) =>
-      [...item.implicits, ...item.explicits].map((m) => m.text),
+      [...item.implicits, ...item.explicits].map((m) => m.text)
     );
     const tags = inferBuildTags(allMods);
 
@@ -110,7 +114,7 @@ export default function BuildCapturePanel() {
         gear,
       });
       console.log(
-        `[ExiledOrb] Build saved OK: ${characterName} (${characterClass}, ${game}, lv${resolvedLevel}) — ${entries.length} gear items, ${keyItems.length} unique(s)`,
+        `[ExiledOrb] Build saved OK: ${characterName} (${characterClass}, ${game}, lv${resolvedLevel}) — ${entries.length} gear items, ${keyItems.length} unique(s)`
       );
     } catch (err) {
       console.error("[ExiledOrb] Build save FAILED:", err);
@@ -133,8 +137,8 @@ export default function BuildCapturePanel() {
       </div>
 
       <div className="text-xs" style={{ color: "var(--text-secondary)", lineHeight: 1.3 }}>
-        Open your inventory in PoE and press Ctrl+C on each equipped piece.
-        Items route to slots automatically. Re-copy any piece to overwrite.
+        Open your inventory in PoE and press Ctrl+C on each equipped piece. Items route to slots
+        automatically. Re-copy any piece to overwrite.
       </div>
 
       <div className="grid grid-cols-2 gap-1">
@@ -156,38 +160,74 @@ export default function BuildCapturePanel() {
               onClick={() => item && setExpandedSlot(isExpanded ? null : slot)}
             >
               <div className="flex items-center gap-1.5">
-                <span className="text-xs shrink-0 w-12" style={{ color: "var(--text-secondary)", fontSize: "0.65rem" }}>
+                <span
+                  className="text-xs shrink-0 w-12"
+                  style={{ color: "var(--text-secondary)", fontSize: "0.65rem" }}
+                >
                   {SLOT_LABELS[slot]}
                 </span>
                 {item ? (
                   <>
-                    <span className="text-xs truncate flex-1" style={{ color: item.rarity === "Unique" ? "#af6025" : item.rarity === "Rare" ? "#ffff77" : "var(--text-primary)", fontSize: "0.7rem" }} title={item.name || item.baseType}>
+                    <span
+                      className="text-xs truncate flex-1"
+                      style={{
+                        color:
+                          item.rarity === "Unique"
+                            ? "#af6025"
+                            : item.rarity === "Rare"
+                              ? "#ffff77"
+                              : "var(--text-primary)",
+                        fontSize: "0.7rem",
+                      }}
+                      title={item.name || item.baseType}
+                    >
                       {item.name || item.baseType}
                     </span>
                     {modCount > 0 && (
-                      <span className="text-xs shrink-0" style={{ color: "var(--text-secondary)", fontSize: "0.6rem" }}>
+                      <span
+                        className="text-xs shrink-0"
+                        style={{ color: "var(--text-secondary)", fontSize: "0.6rem" }}
+                      >
                         {isExpanded ? "▾" : "▸"} {modCount} mod{modCount === 1 ? "" : "s"}
                       </span>
                     )}
                   </>
                 ) : (
-                  <span className="text-xs" style={{ color: "var(--text-secondary)", fontSize: "0.7rem" }}>—</span>
+                  <span
+                    className="text-xs"
+                    style={{ color: "var(--text-secondary)", fontSize: "0.7rem" }}
+                  >
+                    —
+                  </span>
                 )}
               </div>
               {item && isExpanded && (
                 <div className="mt-1 pl-12 space-y-0.5">
                   {item.implicits.map((m, i) => (
-                    <div key={`i-${i}`} className="text-xs" style={{ color: "#8888cc", fontSize: "0.65rem" }}>
+                    <div
+                      key={`i-${i}`}
+                      className="text-xs"
+                      style={{ color: "#8888cc", fontSize: "0.65rem" }}
+                    >
                       {m.text}
                     </div>
                   ))}
                   {item.explicits.map((m, i) => (
-                    <div key={`e-${i}`} className="text-xs" style={{ color: "var(--text-secondary)", fontSize: "0.65rem" }}>
+                    <div
+                      key={`e-${i}`}
+                      className="text-xs"
+                      style={{ color: "var(--text-secondary)", fontSize: "0.65rem" }}
+                    >
                       {m.text}
                     </div>
                   ))}
                   {item.implicits.length === 0 && item.explicits.length === 0 && (
-                    <div className="text-xs italic" style={{ color: "var(--text-secondary)", fontSize: "0.6rem" }}>(no mods parsed)</div>
+                    <div
+                      className="text-xs italic"
+                      style={{ color: "var(--text-secondary)", fontSize: "0.6rem" }}
+                    >
+                      (no mods parsed)
+                    </div>
                   )}
                 </div>
               )}
@@ -197,11 +237,19 @@ export default function BuildCapturePanel() {
       </div>
 
       <div className="flex items-center gap-2">
-        <Btn variant="gold" active size="sm" onClick={onSave} disabled={!canSave}
-          className="disabled:opacity-40 disabled:cursor-not-allowed">
+        <Btn
+          variant="gold"
+          active
+          size="sm"
+          onClick={onSave}
+          disabled={!canSave}
+          className="disabled:opacity-40 disabled:cursor-not-allowed"
+        >
           Save Build ({filledCount})
         </Btn>
-        <Btn size="sm" onClick={onCancel}>Cancel</Btn>
+        <Btn size="sm" onClick={onCancel}>
+          Cancel
+        </Btn>
         {!characterClass && (
           <span className="text-xs" style={{ color: "var(--danger-deadly)", fontSize: "0.65rem" }}>
             Set class on the Live Session tile to enable Save.

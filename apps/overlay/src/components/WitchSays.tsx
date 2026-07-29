@@ -30,10 +30,7 @@ export default function WitchSays({ children, title }: { children: ReactNode; ti
         {/* Speech content */}
         <div className="flex-1 px-3 py-2 min-w-0">
           {title && (
-            <div
-              className="text-xs font-bold mb-1 italic"
-              style={{ color: "var(--accent)" }}
-            >
+            <div className="text-xs font-bold mb-1 italic" style={{ color: "var(--accent)" }}>
               {title}
             </div>
           )}

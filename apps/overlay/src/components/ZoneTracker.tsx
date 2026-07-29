@@ -20,7 +20,10 @@ function useClassImage(className: string | null): string | null {
   const [src, setSrc] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!className) { setSrc(null); return; }
+    if (!className) {
+      setSrc(null);
+      return;
+    }
 
     const key = className.toLowerCase().replace(/\s+/g, "-");
 
@@ -38,20 +41,37 @@ function useClassImage(className: string | null): string | null {
       .catch(() => {
         // Try base class name (e.g. "witch" for "Elementalist")
         const baseMap: Record<string, string> = {
-          elementalist: "elementalist", necromancer: "witch", occultist: "witch",
-          deadeye: "ranger", raider: "ranger", pathfinder: "ranger",
-          juggernaut: "marauder", berserker: "marauder", chieftain: "marauder",
-          assassin: "shadow", trickster: "shadow", saboteur: "shadow",
-          inquisitor: "templar", hierophant: "templar", guardian: "templar",
-          champion: "duelist", gladiator: "duelist", slayer: "duelist",
+          elementalist: "elementalist",
+          necromancer: "witch",
+          occultist: "witch",
+          deadeye: "ranger",
+          raider: "ranger",
+          pathfinder: "ranger",
+          juggernaut: "marauder",
+          berserker: "marauder",
+          chieftain: "marauder",
+          assassin: "shadow",
+          trickster: "shadow",
+          saboteur: "shadow",
+          inquisitor: "templar",
+          hierophant: "templar",
+          guardian: "templar",
+          champion: "duelist",
+          gladiator: "duelist",
+          slayer: "duelist",
           ascendant: "scion",
           // PoE2
-          stormweaver: "sorceress", chronomancer: "sorceress",
-          titan: "warrior", warbringer: "warrior",
-          witchhunter: "mercenary", gemling: "mercenary",
+          stormweaver: "sorceress",
+          chronomancer: "sorceress",
+          titan: "warrior",
+          warbringer: "warrior",
+          witchhunter: "mercenary",
+          gemling: "mercenary",
           deadeye2: "ranger",
-          bloodmage: "witch", infernalist: "witch",
-          acolyte: "monk", invoker: "monk",
+          bloodmage: "witch",
+          infernalist: "witch",
+          acolyte: "monk",
+          invoker: "monk",
         };
         const fallback = baseMap[key];
         if (fallback && fallback !== key) {
@@ -104,9 +124,12 @@ export default function ZoneTracker() {
   const season = seasonLabel(detectedGame ?? settingsGame, now);
 
   const refresh = () => {
-    invoke<{ character_name: string | null; zone: string | null; area_level: number | null; game: string | null }>(
-      "get_initial_game_state"
-    ).then((state) => {
+    invoke<{
+      character_name: string | null;
+      zone: string | null;
+      area_level: number | null;
+      game: string | null;
+    }>("get_initial_game_state").then((state) => {
       const store = useOverlayStore.getState();
       if (state.character_name) store.setCharacterName(state.character_name);
       if (state.zone) store.setZone(state.zone);
@@ -157,11 +180,17 @@ export default function ZoneTracker() {
 
           <div className="flex items-center gap-2 shrink-0">
             {sessionStart && (
-              <span className="text-xs font-mono" style={{ color: "var(--text-secondary)" }} title="Session time">
+              <span
+                className="text-xs font-mono"
+                style={{ color: "var(--text-secondary)" }}
+                title="Session time"
+              >
                 {formatDuration(elapsed)}
               </span>
             )}
-            <Btn className="px-1" onClick={refresh} title="Refresh game state">↻</Btn>
+            <Btn className="px-1" onClick={refresh} title="Refresh game state">
+              ↻
+            </Btn>
           </div>
         </div>
 
@@ -183,14 +212,19 @@ export default function ZoneTracker() {
             style={{ color: sessionDeaths > 0 ? "var(--danger-deadly)" : "var(--text-secondary)" }}
             title="Deaths this session"
           >
-            {sessionDeaths > 0 ? `${sessionDeaths} death${sessionDeaths !== 1 ? "s" : ""}` : "Deathless"}
+            {sessionDeaths > 0
+              ? `${sessionDeaths} death${sessionDeaths !== 1 ? "s" : ""}`
+              : "Deathless"}
           </span>
         </div>
 
         {/* Season line for the active game */}
         <div
           className="pt-0.5 truncate"
-          style={{ color: season.urgent ? COLORS.orange : "var(--text-secondary)", fontSize: "0.6rem" }}
+          style={{
+            color: season.urgent ? COLORS.orange : "var(--text-secondary)",
+            fontSize: "0.6rem",
+          }}
           title="Season status (see Season tile on home for both games)"
         >
           {season.name} · {season.detail}

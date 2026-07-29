@@ -10,7 +10,10 @@ import { COLORS, Panel, SectionTitle } from "./ui";
  * One-line description of a game's season status. Shared by the home tile
  * and the compact ZoneTracker line.
  */
-export function seasonLabel(game: Game, now: number): { name: string; detail: string; urgent: boolean } {
+export function seasonLabel(
+  game: Game,
+  now: number
+): { name: string; detail: string; urgent: boolean } {
   const season = getSeason(game);
   const state: SeasonState = getSeasonState(season, now);
   switch (state.kind) {
@@ -26,13 +29,18 @@ export function seasonLabel(game: Game, now: number): { name: string; detail: st
     case "ended":
       return {
         name: season.name,
-        detail: state.msToNext != null
-          ? `ended · ${state.nextName ?? "next league"} in ${formatDaysHours(state.msToNext)}`
-          : "ended · next league TBA",
+        detail:
+          state.msToNext != null
+            ? `ended · ${state.nextName ?? "next league"} in ${formatDaysHours(state.msToNext)}`
+            : "ended · next league TBA",
         urgent: true,
       };
     case "stale":
-      return { name: season.name, detail: "season data outdated — update seasons.ts", urgent: true };
+      return {
+        name: season.name,
+        detail: "season data outdated — update seasons.ts",
+        urgent: true,
+      };
   }
 }
 
@@ -59,11 +67,19 @@ export default function SeasonTimers() {
         const { name, detail, urgent } = seasonLabel(game, now);
         return (
           <div key={game} className="flex items-center gap-2">
-            <img src={GAME_LOGOS[game]} alt={game} className="h-3 shrink-0" style={{ opacity: 0.7 }} />
+            <img
+              src={GAME_LOGOS[game]}
+              alt={game}
+              className="h-3 shrink-0"
+              style={{ opacity: 0.7 }}
+            />
             <span className="text-xs font-bold shrink-0" style={{ color: "var(--text-primary)" }}>
               {name}
             </span>
-            <span className="text-xs truncate" style={{ color: urgent ? COLORS.orange : "var(--text-secondary)" }}>
+            <span
+              className="text-xs truncate"
+              style={{ color: urgent ? COLORS.orange : "var(--text-secondary)" }}
+            >
               {detail}
             </span>
           </div>

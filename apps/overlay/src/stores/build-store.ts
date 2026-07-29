@@ -103,7 +103,9 @@ export const useBuildStore = create<BuildState>((set, get) => ({
         await store.set(ACTIVE_KEY, updated);
         await store.set(STORE_KEY, saved);
         await store.save();
-      } catch (err) { console.error("[ExiledOrb] Store error:", err); }
+      } catch (err) {
+        console.error("[ExiledOrb] Store error:", err);
+      }
     }
   },
 
@@ -121,7 +123,9 @@ export const useBuildStore = create<BuildState>((set, get) => ({
       set({ savedBuilds: saved });
       await store.set(STORE_KEY, saved);
       await store.save();
-    } catch (err) { console.error("[ExiledOrb] Store error:", err); }
+    } catch (err) {
+      console.error("[ExiledOrb] Store error:", err);
+    }
   },
 
   loadBuilds: async () => {
@@ -133,7 +137,9 @@ export const useBuildStore = create<BuildState>((set, get) => ({
         activeBuild: active ?? null,
         savedBuilds: saved ?? [],
       });
-    } catch (err) { console.error("[ExiledOrb] Store error:", err); }
+    } catch (err) {
+      console.error("[ExiledOrb] Store error:", err);
+    }
   },
 
   deleteBuild: async (characterName) => {
@@ -146,7 +152,9 @@ export const useBuildStore = create<BuildState>((set, get) => ({
       const store = await getStore();
       await store.set(STORE_KEY, saved);
       await store.save();
-    } catch (err) { console.error("[ExiledOrb] Store error:", err); }
+    } catch (err) {
+      console.error("[ExiledOrb] Store error:", err);
+    }
   },
 }));
 

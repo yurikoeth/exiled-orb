@@ -20,7 +20,10 @@ export default function AiPriceInsight() {
     return (
       <WitchSays title="Analyzing...">
         <div className="flex items-center gap-2">
-          <div className="w-3 h-3 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: "var(--accent)" }} />
+          <div
+            className="w-3 h-3 border-2 border-t-transparent rounded-full animate-spin"
+            style={{ borderColor: "var(--accent)" }}
+          />
           <span style={{ color: "var(--text-secondary)" }}>Examining this item...</span>
         </div>
       </WitchSays>
@@ -29,7 +32,8 @@ export default function AiPriceInsight() {
 
   if (!currentAnalysis) return null;
 
-  const { modTiers, priceRecommendation, craftAdvice, itemSummary, buyOrCraftReason } = currentAnalysis;
+  const { modTiers, priceRecommendation, craftAdvice, itemSummary, buyOrCraftReason } =
+    currentAnalysis;
 
   // Detect if this is a local (no API key) analysis
   const isLocal = !buyOrCraftReason && priceRecommendation.reasoning?.includes("mod tier analysis");
@@ -68,7 +72,10 @@ export default function AiPriceInsight() {
         <div className="pt-1 border-t" style={{ borderColor: "rgba(255,255,255,0.05)" }}>
           <div className="flex items-center justify-between">
             <span style={{ color: "var(--text-secondary)" }}>Recommended</span>
-            <span className="font-bold" style={{ color: "var(--text-primary)", fontSize: "0.8rem" }}>
+            <span
+              className="font-bold"
+              style={{ color: "var(--text-primary)", fontSize: "0.8rem" }}
+            >
               {priceRecommendation.minChaos}–{priceRecommendation.maxChaos}c
             </span>
           </div>
@@ -79,7 +86,9 @@ export default function AiPriceInsight() {
 
         {craftAdvice && (
           <div style={{ color: "var(--text-secondary)" }}>
-            <span className="font-bold" style={{ color: "var(--accent)" }}>Craft: </span>
+            <span className="font-bold" style={{ color: "var(--accent)" }}>
+              Craft:{" "}
+            </span>
             {craftAdvice}
           </div>
         )}
