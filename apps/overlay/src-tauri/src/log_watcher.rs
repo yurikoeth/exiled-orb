@@ -40,7 +40,7 @@ struct LogEventEnvelope<'a> {
     event: &'a LogEvent,
 }
 
-fn detect_game_from_path(path: &PathBuf) -> &'static str {
+fn detect_game_from_path(path: &std::path::Path) -> &'static str {
     if path.to_string_lossy().contains("Path of Exile 2") {
         "poe2"
     } else {
@@ -261,15 +261,11 @@ fn scan_log_history(log_path: &PathBuf) -> InitialGameState {
 
     if let Ok(mut file) = File::open(log_path) {
         let file_len = file.metadata().map(|m| m.len()).unwrap_or(0);
-        let seek_pos = if file_len > 65536 {
-            file_len - 65536
-        } else {
-            0
-        };
+        let seek_pos = file_len.saturating_sub(65536);
         let _ = file.seek(SeekFrom::Start(seek_pos));
 
         let reader = BufReader::new(file);
-        for line in reader.lines().filter_map(|l| l.ok()) {
+        for line in reader.lines().map_while(Result::ok) {
             if let Some(event) = parse_log_line(line.trim(), game) {
                 apply_event(&mut state, &event);
             }
@@ -378,8 +374,7 @@ fn parse_levelup_for_history(line: &str) -> Option<(String, Option<String>, u32)
 
     // PoE2: "Witchtimeee (Witch)"; PoE1: "Witchtimeee".
     if let Some((name_part, suffix)) = raw_name.rsplit_once(" (") {
-        if suffix.ends_with(')') {
-            let class = &suffix[..suffix.len() - 1];
+        if let Some(class) = suffix.strip_suffix(')') {
             return Some((name_part.to_string(), Some(class.to_string()), level));
         }
     }

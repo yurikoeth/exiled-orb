@@ -125,23 +125,21 @@ export function useClipboard() {
           requirements: {},
           properties: {},
         };
-        useOverlayStore
-          .getState()
-          .setPriceCheck(
-            errorItem,
-            {
-              item: errorItem,
-              source: "unavailable",
-              chaosValue: null,
-              divineValue: null,
-              confidence: "none",
-              listingCount: null,
-              priceRange: null,
-              tradeUrl: null,
-              timestamp: Date.now(),
-            },
-            false
-          );
+        useOverlayStore.getState().setPriceCheck(
+          errorItem,
+          {
+            item: errorItem,
+            source: "unavailable",
+            chaosValue: null,
+            divineValue: null,
+            confidence: "none",
+            listingCount: null,
+            priceRange: null,
+            tradeUrl: null,
+            timestamp: Date.now(),
+          },
+          false
+        );
       }
     });
 

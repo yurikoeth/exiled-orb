@@ -53,10 +53,6 @@ export default function RunHistory({ onSelectMap }: RunHistoryProps) {
 
   const runs: MapRun[] = filter === "session" ? [...(session?.maps ?? [])].reverse() : dbRuns;
 
-  // Get unique map names for filter dropdown
-  const mapNames =
-    filter === "session" ? [...new Set((session?.maps ?? []).map((m) => m.mapName))] : [];
-
   if (runs.length === 0 && !loading) return null;
 
   return (

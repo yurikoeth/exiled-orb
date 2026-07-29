@@ -1,0 +1,7 @@
+pnpm-lock.yaml
+dist/
+.turbo/
+apps/overlay/src-tauri/target/
+apps/overlay/src-tauri/gen/
+apps/overlay/src-tauri/Cargo.lock
+*.md

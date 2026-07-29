@@ -164,7 +164,7 @@ async fn accept_callback(listener: TcpListener, expected_state: &str) -> Result<
 
     let parts: Vec<&str> = first_line.split_whitespace().collect();
     let path = parts.get(1).copied().unwrap_or("");
-    let query = path.splitn(2, '?').nth(1).unwrap_or("");
+    let query = path.split_once('?').map(|(_, q)| q).unwrap_or("");
 
     let mut code: Option<String> = None;
     let mut state: Option<String> = None;
@@ -323,6 +323,10 @@ pub async fn start_oauth_flow(app: AppHandle) -> Result<(), String> {
 
     // Open browser.
     let url = build_authorize_url(&state, &challenge);
+    // Shell::open is deprecated in favor of tauri-plugin-opener; migrating is
+    // tracked in CLAUDE.md ("Not Yet Implemented") — the shell plugin is still
+    // needed elsewhere, so silence the lint rather than half-migrate.
+    #[allow(deprecated)]
     app.shell()
         .open(&url, None)
         .map_err(|e| format!("Cannot open browser: {e}"))?;

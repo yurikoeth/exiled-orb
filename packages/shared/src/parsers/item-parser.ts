@@ -192,7 +192,6 @@ export function parseItem(raw: string): ParsedItem {
 
   // Track which section contains what
   let foundImplicitSeparator = false;
-  let requirementsSection = false;
 
   for (let i = 1; i < sections.length; i++) {
     const section = sections[i];
@@ -256,7 +255,6 @@ export function parseItem(raw: string): ParsedItem {
 
     // Requirements section — check BEFORE gem level to avoid matching "Level:" inside requirements
     if (lines[0] === "Requirements:") {
-      requirementsSection = true;
       for (let j = 1; j < lines.length; j++) {
         const reqMatch = lines[j].match(/^(\w+):\s*(\d+)/);
         if (reqMatch) {
@@ -265,7 +263,6 @@ export function parseItem(raw: string): ParsedItem {
       }
       continue;
     }
-    requirementsSection = false;
 
     // Gem Level — only match "Level:" outside of requirements sections
     if (rarity === "Gem" && result.gemLevel === null) {

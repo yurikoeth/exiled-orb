@@ -19,7 +19,7 @@ const TRADE_SITE_URLS: Record<Game, string> = {
 const tradeLimiter = new RateLimiter(12, 10_000);
 
 /** Build a trade search query for a rare item */
-function buildRareQuery(item: ParsedItem, league: string) {
+function buildRareQuery(item: ParsedItem, _league: string) {
   const filters: Record<string, unknown> = {};
 
   // Type filter

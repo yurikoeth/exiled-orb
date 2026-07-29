@@ -8,7 +8,6 @@ export const NINJA_BASE_URLS: Record<Game, string> = {
   poe1: "https://poe.ninja/api/data",
   poe2: "https://poe2.ninja/api/data", // PoE2 has a separate domain
 };
-const BASE_URLS = NINJA_BASE_URLS;
 
 /** Categories served by the currencyoverview endpoint */
 export const NINJA_CURRENCY_CATEGORIES: ReadonlySet<string> = new Set(["Currency", "Fragment"]);
