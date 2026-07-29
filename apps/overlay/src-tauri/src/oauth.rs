@@ -135,6 +135,44 @@ fn dedupe_by_name_keep_max_level(all: Vec<GggCharacter>) -> Vec<GggCharacter> {
     deduped
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn ch(name: &str, level: u32, game: &str) -> GggCharacter {
+        GggCharacter {
+            name: name.to_string(),
+            class: "Witch".to_string(),
+            level,
+            league: None,
+            experience: None,
+            game: game.to_string(),
+        }
+    }
+
+    #[test]
+    fn dedupe_keeps_higher_level_and_sorts_desc() {
+        let deduped = dedupe_by_name_keep_max_level(vec![
+            ch("Alice", 40, "poe1"),
+            ch("Bob", 90, "poe1"),
+            ch("Alice", 76, "poe2"), // same name, higher level → wins
+        ]);
+        assert_eq!(deduped.len(), 2);
+        assert_eq!(deduped[0].name, "Bob");
+        assert_eq!(deduped[1].name, "Alice");
+        assert_eq!(deduped[1].level, 76);
+        assert_eq!(deduped[1].game, "poe2");
+    }
+
+    #[test]
+    fn dedupe_handles_empty_and_singleton() {
+        assert!(dedupe_by_name_keep_max_level(vec![]).is_empty());
+        let one = dedupe_by_name_keep_max_level(vec![ch("Solo", 12, "poe1")]);
+        assert_eq!(one.len(), 1);
+        assert_eq!(one[0].name, "Solo");
+    }
+}
+
 /// A single socket with color and link group
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct SocketInfo {

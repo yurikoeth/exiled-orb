@@ -522,3 +522,162 @@ fn scan_character_history_blocking() -> Vec<DetectedCharacter> {
     );
     result
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    const PREFIX: &str = "2026/07/21 12:00:00 3086096 cff945b9 [INFO Client 9560] : ";
+
+    fn info(msg: &str) -> String {
+        format!("{PREFIX}{msg}")
+    }
+
+    #[test]
+    fn poe1_zone_entered() {
+        let line = info("You have entered Aspirants' Plaza.");
+        match parse_log_line(&line, "poe1") {
+            Some(LogEvent::Zone { zone_name }) => assert_eq!(zone_name, "Aspirants' Plaza"),
+            other => panic!("expected Zone, got {:?}", other.is_some()),
+        }
+    }
+
+    #[test]
+    fn poe2_ignores_you_have_entered() {
+        let line = info("You have entered Clearfell.");
+        assert!(parse_log_line(&line, "poe2").is_none());
+    }
+
+    #[test]
+    fn poe2_scene_zone() {
+        let line = "2026/07/21 12:00:00 123 abc [INFO Client 9560] [SCENE] Set Source [The Riverbank]";
+        match parse_log_line(line, "poe2") {
+            Some(LogEvent::Zone { zone_name }) => assert_eq!(zone_name, "The Riverbank"),
+            other => panic!("expected Zone, got {:?}", other.is_some()),
+        }
+    }
+
+    #[test]
+    fn poe1_ignores_scene_lines() {
+        let line = "2026/07/21 12:00:00 123 abc [INFO Client 9560] [SCENE] Set Source [The Riverbank]";
+        assert!(parse_log_line(line, "poe1").is_none());
+    }
+
+    #[test]
+    fn scene_sentinels_are_filtered() {
+        for zone in ["(null)", "(unknown)", "Act 3", "Act 12"] {
+            let line = format!("2026/07/21 12:00:00 123 abc [INFO Client 9560] [SCENE] Set Source [{zone}]");
+            assert!(parse_log_line(&line, "poe2").is_none(), "sentinel {zone} not filtered");
+        }
+        // A real zone that merely starts with "Act" must NOT be filtered.
+        assert!(!is_scene_sentinel("Act on Instinct"));
+    }
+
+    #[test]
+    fn death_line() {
+        let line = info("Witchtimeee has been slain.");
+        match parse_log_line(&line, "poe1") {
+            Some(LogEvent::Death { character_name }) => assert_eq!(character_name, "Witchtimeee"),
+            other => panic!("expected Death, got {:?}", other.is_some()),
+        }
+    }
+
+    #[test]
+    fn incoming_and_outgoing_whispers() {
+        let line = info("@From Buyer: Hi, I'd like to buy your Mageblood");
+        match parse_log_line(&line, "poe1") {
+            Some(LogEvent::Whisper { direction, player_name, message }) => {
+                assert_eq!(direction, "incoming");
+                assert_eq!(player_name, "Buyer");
+                assert_eq!(message, "Hi, I'd like to buy your Mageblood");
+            }
+            other => panic!("expected Whisper, got {:?}", other.is_some()),
+        }
+
+        let line = info("@To Seller: still available?");
+        match parse_log_line(&line, "poe1") {
+            Some(LogEvent::Whisper { direction, .. }) => assert_eq!(direction, "outgoing"),
+            other => panic!("expected Whisper, got {:?}", other.is_some()),
+        }
+    }
+
+    #[test]
+    fn poe1_level_up() {
+        let line = info("Witchtimeee is now level 42");
+        match parse_log_line(&line, "poe1") {
+            Some(LogEvent::LevelUp { character_name, level }) => {
+                assert_eq!(character_name, "Witchtimeee");
+                assert_eq!(level, 42);
+            }
+            other => panic!("expected LevelUp, got {:?}", other.is_some()),
+        }
+    }
+
+    #[test]
+    fn poe2_level_up_strips_class_suffix() {
+        let line = info("Sorceress (Witch) is now level 8");
+        match parse_log_line(&line, "poe2") {
+            Some(LogEvent::LevelUp { character_name, level }) => {
+                assert_eq!(character_name, "Sorceress");
+                assert_eq!(level, 8);
+            }
+            other => panic!("expected LevelUp, got {:?}", other.is_some()),
+        }
+    }
+
+    #[test]
+    fn area_level_debug_line() {
+        let line = "2026/07/21 12:00:00 123 abc [DEBUG Client 9560] Generating level 72 area \"MapWorldsGrotto\"";
+        match parse_log_line(line, "poe1") {
+            Some(LogEvent::AreaLevel { level }) => assert_eq!(level, 72),
+            other => panic!("expected AreaLevel, got {:?}", other.is_some()),
+        }
+    }
+
+    #[test]
+    fn instance_server_connection() {
+        let line = info("Connecting to instance server at 169.63.67.235:6112");
+        match parse_log_line(&line, "poe1") {
+            Some(LogEvent::Connected { server }) => assert_eq!(server, "169.63.67.235:6112"),
+            other => panic!("expected Connected, got {:?}", other.is_some()),
+        }
+    }
+
+    #[test]
+    fn unrelated_lines_return_none() {
+        assert!(parse_log_line(&info("Async connecting to login server"), "poe1").is_none());
+        assert!(parse_log_line("garbage with no markers", "poe1").is_none());
+        assert!(parse_log_line("", "poe2").is_none());
+    }
+
+    #[test]
+    fn timestamp_extraction() {
+        assert_eq!(
+            extract_timestamp("2026/07/21 12:34:56 whatever"),
+            Some("2026/07/21 12:34:56")
+        );
+        assert_eq!(extract_timestamp("not a timestamp line here ok"), None);
+        assert_eq!(extract_timestamp("short"), None);
+    }
+
+    #[test]
+    fn levelup_history_keeps_class() {
+        let line = info("Sorceress (Witch) is now level 30");
+        assert_eq!(
+            parse_levelup_for_history(&line),
+            Some(("Sorceress".to_string(), Some("Witch".to_string()), 30))
+        );
+        let line = info("OldSchool is now level 90");
+        assert_eq!(
+            parse_levelup_for_history(&line),
+            Some(("OldSchool".to_string(), None, 90))
+        );
+    }
+
+    #[test]
+    fn death_history_extracts_name() {
+        let line = info("Sorceress has been slain.");
+        assert_eq!(parse_death_for_history(&line), Some("Sorceress".to_string()));
+        assert_eq!(parse_death_for_history(&info("no death here")), None);
+    }
+}
