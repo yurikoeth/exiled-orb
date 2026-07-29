@@ -6,6 +6,14 @@ dist/
 # Tauri
 apps/overlay/src-tauri/target/
 
+# Machine-local cargo config (optional target-dir override)
+apps/overlay/src-tauri/.cargo/
+
+# Local agent config / scratch notes
+.claude/
+Plan.txt
+PRODUCTION-PLAN.txt
+
 # Environment
 .env
 .env.local
