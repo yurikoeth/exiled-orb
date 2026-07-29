@@ -35,7 +35,7 @@ export interface AppSettings {
 
 export const DEFAULT_SETTINGS: AppSettings = {
   game: "poe2",
-  league: "Mirage",
+  league: "Allflame",
   clientLogPath: null,
   autoDetectLog: true,
   overlay: {

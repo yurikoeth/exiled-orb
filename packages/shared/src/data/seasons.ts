@@ -28,12 +28,12 @@ export interface SeasonInfo {
 export const SEASONS: Record<Game, SeasonInfo> = {
   poe1: {
     game: "poe1",
-    name: "Mirage",
-    startAt: "2026-04-10T20:00:00Z",
-    // 3.28 end announced: July 20, 2026 3:00 PM PDT.
-    endAt: "2026-07-20T22:00:00Z",
-    // 3.29 (name TBA at GGG Live) launches July 24, 2026 1:00 PM PDT.
-    next: { name: null, startAt: "2026-07-24T20:00:00Z" },
+    // 3.29 "Curse of the Allflame" (league id: Allflame) launched July 24, 2026 1:00 PM PDT.
+    name: "Allflame",
+    startAt: "2026-07-24T20:00:00Z",
+    // End not announced yet.
+    endAt: null,
+    next: { name: null, startAt: null },
   },
   poe2: {
     game: "poe2",

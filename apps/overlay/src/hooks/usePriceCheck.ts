@@ -117,7 +117,7 @@ export async function checkPrice(
   league?: string
 ): Promise<PriceResult> {
   if (!league) {
-    league = useSettingsStore.getState().settings.league || "Mirage";
+    league = useSettingsStore.getState().settings.league || "Allflame";
   }
   const category = getCategory(item);
   console.log(`[ExiledOrb] Price check: "${item.name || item.baseType}" category=${category} league=${league} game=${item.game}`);

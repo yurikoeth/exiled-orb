@@ -232,7 +232,7 @@ Esc → back to home. No settings window — settings UI not built yet
 
 - **Client.txt paths**: PoE1 `...\Path of Exile\logs\Client.txt`, PoE2 `...\Path of Exile 2\logs\Client.txt`. Both scanned for character history; the most-recently-modified one is watched live.
 - **Auto-detect**: Checks C:\, D:\, E:\, F:\ SteamLibrary paths + GGG standalone, picks newest mtime
-- **Current league**: Mirage (hardcoded PoE1 league in DEFAULT_SETTINGS + usePriceCheck fallback). NOTE: still PoE1-only — per-game league default is an open gap. Mirage ENDED 2026-07-20; 3.29 (name TBA) launches 2026-07-24 — league default needs renaming at launch.
+- **Current league**: Allflame ("Curse of the Allflame", 3.29 — hardcoded PoE1 league in DEFAULT_SETTINGS + usePriceCheck/MarketTab fallbacks). NOTE: still PoE1-only — per-game league default is an open gap. Rename the default when the next league launches.
 - **Season dates**: `packages/shared/src/data/seasons.ts` — MANUAL config, update once per league. GGG APIs can't provide end dates (verified 2026-07-21: legacy /api/leagues ignores realm=poe2, omits challenge leagues, endAt always null; OAuth /league needs service:leagues + confidential client). Rendered by SeasonTimers (home tile) + a ZoneTracker line via getSeasonState/seasonLabel.
 - **Item text format**: Sections split by "--------", starts with "Item Class:" (PoE2) or "Rarity:" (PoE1)
 
@@ -240,7 +240,7 @@ Esc → back to home. No settings window — settings UI not built yet
 
 - Settings UI (settings-store + SQLite persistence exist but nothing edits them;
   the old placeholder settings window/tray item were removed 2026-07-21)
-- Per-game league default (DEFAULT_SETTINGS league is hardcoded PoE1 "Mirage")
+- Per-game league default (DEFAULT_SETTINGS league is hardcoded PoE1 "Allflame")
 - MapTimer — not yet game-aware audited for PoE2
 - AtlasHelper — removed 2026-05-28; rebuild scoped in README roadmap (curated library + pick-and-track + clipboard integration + profit tracking); old implementation in git history pre-2026-05-28
 - Tauri Windows packaging/installer (.msi/.exe)

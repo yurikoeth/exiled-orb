@@ -147,7 +147,7 @@ export default function MarketTab() {
     setLoading(true);
     setError(null);
     try {
-      const data = await fetchCategory(game, league || "Mirage", category);
+      const data = await fetchCategory(game, league || "Allflame", category);
       setItems(data);
     } catch (err) {
       setError(String(err));
