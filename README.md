@@ -97,7 +97,7 @@ ExiledOrb uses the same safe, non-invasive techniques as other GGG-sanctioned co
 
 - **Client.txt polling** — A Rust background thread polls the game's Client.txt log file every second, reading only new lines appended since the last check. This detects zone changes, deaths, trade whispers, level-ups, and more. On startup, it scans the last 64KB to recover current state.
 
-- **Official GGG OAuth API** — Character data comes from `api.pathofexile.com` via an OAuth2 PKCE flow implemented in Rust (loopback callback server, CSRF state validation, automatic token refresh). Only the official developer API is used.
+- **Official GGG OAuth API** — Character data comes from `api.pathofexile.com` via an OAuth2 PKCE flow implemented in Rust (loopback callback server, CSRF state validation, automatic token refresh). Requests honor GGG's `X-Rate-Limit-*` headers with sliding-window throttling and `Retry-After` back-off. Only the official developer API is used.
 
 - **poe.ninja via Rust proxy** — All market data comes from poe.ninja, fetched through a Rust-side HTTP proxy to avoid browser CORS restrictions. Prices are cached with a 5-minute TTL.
 

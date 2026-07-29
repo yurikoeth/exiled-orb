@@ -81,6 +81,25 @@ Scopes are limited to `account:characters account:profile`. Only the official
 OAuth API is used — the legacy `character-window/*` endpoints are a ToS breach
 and are deliberately absent.
 
+### GGG Rate Limiting
+
+Every `api.pathofexile.com` request goes through `rate_limit::send`
+(`src-tauri/src/rate_limit.rs`):
+
+- A process-wide sliding window of request timestamps is checked against the
+  limits GGG advertises in `X-Rate-Limit-<Policy>` response headers
+  (multi-tuple `max:window:penalty` format, learned dynamically per response).
+- `X-Rate-Limit-<Policy>-State` restriction times and HTTP 429 `Retry-After`
+  values trigger a bounded back-off with a single retry.
+- Waits are capped (60s) so a saturated limit fails fast with a user-facing
+  message instead of hanging the UI, and the limiter mutex is never held
+  across an await.
+- All GGG clients carry a 15s request timeout and a `User-Agent`.
+
+The poe.ninja proxy has no header protocol to honor; it instead enforces a
+host allow-list (`poe.ninja` / `poe2.ninja` only) and a minimum spacing
+between upstream requests, beneath the frontend's 5-minute response cache.
+
 ### PoE2 Fallbacks (no OAuth required)
 
 1. **Character history mining** — a full scan of every Client.txt aggregates

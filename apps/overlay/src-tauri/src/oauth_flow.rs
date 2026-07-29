@@ -228,7 +228,10 @@ fn tokens_from_response(tr: TokenResponse) -> StoredTokens {
 }
 
 async fn exchange_code(code: &str, verifier: &str) -> Result<StoredTokens, String> {
-    let client = reqwest::Client::new();
+    let client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(15))
+        .build()
+        .map_err(|e| format!("Failed to create HTTP client: {e}"))?;
     let params = [
         ("grant_type", "authorization_code"),
         ("client_id", CLIENT_ID),
@@ -253,7 +256,10 @@ async fn exchange_code(code: &str, verifier: &str) -> Result<StoredTokens, Strin
 }
 
 async fn refresh_tokens(refresh_token: &str) -> Result<StoredTokens, String> {
-    let client = reqwest::Client::new();
+    let client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(15))
+        .build()
+        .map_err(|e| format!("Failed to create HTTP client: {e}"))?;
     let params = [
         ("grant_type", "refresh_token"),
         ("client_id", CLIENT_ID),

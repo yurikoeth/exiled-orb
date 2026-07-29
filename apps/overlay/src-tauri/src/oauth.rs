@@ -2,8 +2,18 @@ use serde::{Deserialize, Serialize};
 use tauri::AppHandle;
 
 use crate::oauth_flow;
+use crate::rate_limit;
 
 const CHAR_API_BASE: &str = "https://api.pathofexile.com/character";
+
+/// Shared client for GGG API calls — always with a timeout so a stalled
+/// request can't hang the UI.
+fn api_client() -> Result<reqwest::Client, String> {
+    reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(15))
+        .build()
+        .map_err(|e| format!("Failed to create HTTP client: {}", e))
+}
 
 /// GGG Character data
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -30,12 +40,13 @@ async fn fetch_realm(client: &reqwest::Client, token: &str, realm: Option<&str>)
         _ => "poe1",
     };
 
-    let res = match client
-        .get(&url)
-        .bearer_auth(token)
-        .header("User-Agent", "exiled-orb/0.1.0")
-        .send()
-        .await
+    let res = match rate_limit::send(
+        client
+            .get(&url)
+            .bearer_auth(token)
+            .header("User-Agent", "exiled-orb/0.1.0"),
+    )
+    .await
     {
         Ok(r) => r,
         Err(e) => {
@@ -89,7 +100,7 @@ async fn fetch_realm(client: &reqwest::Client, token: &str, realm: Option<&str>)
 #[tauri::command]
 pub async fn fetch_characters(app: AppHandle) -> Result<Vec<GggCharacter>, String> {
     let token = oauth_flow::get_access_token(&app).await?;
-    let client = reqwest::Client::new();
+    let client = api_client()?;
 
     let (poe1, poe2) = tokio::join!(
         fetch_realm(&client, &token, None),
@@ -106,7 +117,12 @@ pub async fn fetch_characters(app: AppHandle) -> Result<Vec<GggCharacter>, Strin
         );
     }
 
-    // Dedupe by name — keep the higher-level entry
+    Ok(dedupe_by_name_keep_max_level(all))
+}
+
+/// Dedupe characters by name (the same character can appear in both realm
+/// responses), keeping the higher-level entry, sorted by level descending.
+fn dedupe_by_name_keep_max_level(all: Vec<GggCharacter>) -> Vec<GggCharacter> {
     let mut seen = std::collections::HashMap::new();
     for char in &all {
         let entry = seen.entry(char.name.clone()).or_insert(char.clone());
@@ -116,7 +132,7 @@ pub async fn fetch_characters(app: AppHandle) -> Result<Vec<GggCharacter>, Strin
     }
     let mut deduped: Vec<GggCharacter> = seen.into_values().collect();
     deduped.sort_by(|a, b| b.level.cmp(&a.level));
-    Ok(deduped)
+    deduped
 }
 
 /// A single socket with color and link group
@@ -153,7 +169,7 @@ pub async fn fetch_character_items(
     game: String,
 ) -> Result<Vec<GggItem>, String> {
     let token = oauth_flow::get_access_token(&app).await?;
-    let client = reqwest::Client::new();
+    let client = api_client()?;
 
     let encoded_name = oauth_flow::urlencode(&character);
     let url = if game == "poe2" {
@@ -162,13 +178,13 @@ pub async fn fetch_character_items(
         format!("{}/{}", CHAR_API_BASE, encoded_name)
     };
 
-    let res = client
-        .get(&url)
-        .bearer_auth(&token)
-        .header("User-Agent", "exiled-orb/0.1.0")
-        .send()
-        .await
-        .map_err(|e| format!("Request failed: {}", e))?;
+    let res = rate_limit::send(
+        client
+            .get(&url)
+            .bearer_auth(&token)
+            .header("User-Agent", "exiled-orb/0.1.0"),
+    )
+    .await?;
 
     if !res.status().is_success() {
         let status = res.status();

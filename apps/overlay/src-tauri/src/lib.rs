@@ -4,6 +4,7 @@ mod log_watcher;
 mod ninja;
 mod oauth;
 mod oauth_flow;
+mod rate_limit;
 mod settings;
 
 use std::path::PathBuf;
