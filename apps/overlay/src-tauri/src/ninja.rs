@@ -3,8 +3,9 @@ use std::time::{Duration, Instant};
 use tokio::sync::Mutex;
 
 /// Hosts the proxy may talk to — the frontend builds the URL, so restrict it
-/// server-side rather than trusting the caller.
-const ALLOWED_HOSTS: [&str; 2] = ["poe.ninja", "poe2.ninja"];
+/// server-side rather than trusting the caller. Both games live under
+/// poe.ninja (the poe2.ninja domain is NOT theirs — unrelated site).
+const ALLOWED_HOSTS: [&str; 1] = ["poe.ninja"];
 
 /// Minimum spacing between upstream requests. poe.ninja has no documented
 /// rate-limit protocol; the frontend already caches responses for 5 minutes

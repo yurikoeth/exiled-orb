@@ -14,6 +14,12 @@ export interface SeasonInfo {
   game: Game;
   /** Challenge league name, e.g. "Mirage". */
   name: string;
+  /**
+   * League id used by APIs (poe.ninja, trade) when it differs from the
+   * display name — e.g. PoE2 0.5 displays as "Return of the Ancients" but
+   * the economy league is "Runes of Aldur".
+   */
+  leagueId?: string;
   /** League launch, ISO UTC. */
   startAt: string;
   /** League end, ISO UTC — null while GGG hasn't announced it. */
@@ -38,6 +44,9 @@ export const SEASONS: Record<Game, SeasonInfo> = {
   poe2: {
     game: "poe2",
     name: "Return of the Ancients",
+    // poe.ninja economy league id for 0.5 (verified 2026-07-30 via
+    // /poe2/api/data/index-state).
+    leagueId: "Runes of Aldur",
     // 0.5.0 launched May 29, 2026 1:00 PM PDT.
     startAt: "2026-05-29T20:00:00Z",
     // End not announced (community estimates range Sept–Dec 2026).
@@ -48,6 +57,12 @@ export const SEASONS: Record<Game, SeasonInfo> = {
 
 export function getSeason(game: Game): SeasonInfo {
   return SEASONS[game];
+}
+
+/** The league id to use for API calls (price lookups, market data). */
+export function getCurrentLeague(game: Game): string {
+  const season = SEASONS[game];
+  return season.leagueId ?? season.name;
 }
 
 /** What the countdown should display for a season at time `now`. */

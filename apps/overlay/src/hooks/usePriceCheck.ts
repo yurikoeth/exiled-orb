@@ -1,5 +1,5 @@
-import type { ParsedItem, PriceResult, PoeNinjaCategory, Game } from "@exiled-orb/shared";
-import { buildNinjaUrl } from "@exiled-orb/shared";
+import type { ParsedItem, PriceResult, PoeNinjaCategory, Game, NinjaLine } from "@exiled-orb/shared";
+import { buildNinjaUrl, parseNinjaResponse, getCurrentLeague } from "@exiled-orb/shared";
 import { useSettingsStore } from "../stores/settings-store";
 import { fetchNinjaCached } from "../utils/ninja-cache";
 
@@ -49,20 +49,6 @@ function getCategory(item: ParsedItem): PoeNinjaCategory | null {
   return null;
 }
 
-/** Shape of a poe.ninja line (union of Currency + Item endpoints; all optional). */
-interface NinjaLine {
-  name?: string;
-  currencyTypeName?: string;
-  links?: number;
-  gemLevel?: number;
-  chaosValue?: number;
-  chaosEquivalent?: number;
-  receive?: { value?: number };
-  divineValue?: number;
-  listingCount?: number;
-  count?: number;
-}
-
 /** Fetch from poe.ninja via Rust proxy (CORS) — cached 5 min per URL. */
 async function ninjaFetch(game: Game, league: string, category: string): Promise<NinjaLine[]> {
   const url = buildNinjaUrl(game, league, category);
@@ -73,8 +59,7 @@ async function ninjaFetch(game: Game, league: string, category: string): Promise
       console.warn("[ExiledOrb] poe.ninja returned HTML (possibly wrong league or API error)");
       return [];
     }
-    const data = JSON.parse(raw);
-    return data.lines || [];
+    return parseNinjaResponse(JSON.parse(raw));
   } catch (err) {
     console.error("[ExiledOrb] poe.ninja fetch failed:", err);
     return [];
@@ -95,8 +80,7 @@ async function ninjaLookup(
   const lower = name.toLowerCase();
 
   for (const line of lines) {
-    const itemName = (line.name || line.currencyTypeName || "").toLowerCase();
-    if (itemName !== lower) continue;
+    if (line.name.toLowerCase() !== lower) continue;
 
     // Check links filter
     if (opts?.links && line.links !== undefined && line.links !== opts.links) continue;
@@ -104,9 +88,9 @@ async function ninjaLookup(
     if (opts?.gemLevel && line.gemLevel !== undefined && line.gemLevel !== opts.gemLevel) continue;
 
     return {
-      chaosValue: line.chaosValue ?? line.chaosEquivalent ?? line.receive?.value ?? 0,
-      divineValue: line.divineValue ?? 0,
-      listingCount: line.listingCount ?? line.count ?? 0,
+      chaosValue: line.chaosValue,
+      divineValue: line.divineValue,
+      listingCount: line.listingCount,
     };
   }
 
@@ -135,7 +119,13 @@ export function getDivineRateCached(): number {
  */
 export async function checkPrice(item: ParsedItem, league?: string): Promise<PriceResult> {
   if (!league) {
-    league = useSettingsStore.getState().settings.league || "Allflame";
+    // The stored league is a single value with no game attached (settings UI
+    // pending); only trust it for PoE1 and resolve PoE2 from season data so
+    // each game hits its own economy league.
+    league =
+      item.game === "poe1"
+        ? useSettingsStore.getState().settings.league || getCurrentLeague("poe1")
+        : getCurrentLeague("poe2");
   }
   const category = getCategory(item);
   console.log(

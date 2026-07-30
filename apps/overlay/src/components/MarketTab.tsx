@@ -1,35 +1,13 @@
 import { useState, useEffect } from "react";
 import { useSettingsStore } from "../stores/settings-store";
 import { fetchNinjaCached } from "../utils/ninja-cache";
-import type { Game } from "@exiled-orb/shared";
-import { buildNinjaUrl, NINJA_CURRENCY_CATEGORIES } from "@exiled-orb/shared";
+import type { Game, NinjaLine } from "@exiled-orb/shared";
+import { buildNinjaUrl, parseNinjaResponse, getCurrentLeague } from "@exiled-orb/shared";
 import poe1Logo from "../assets/poe1-logo.png";
 import poe2Logo from "../assets/poe2-logo.png";
 import { COLORS, Panel } from "./ui";
 
-interface NinjaItem {
-  name: string;
-  chaosValue: number;
-  divineValue: number;
-  icon: string;
-  change: number;
-}
-
-interface NinjaCurrencyLine {
-  currencyTypeName: string;
-  chaosEquivalent?: number;
-  receive?: { value: number };
-  receiveSparkLine?: { totalChange?: number };
-}
-
-interface NinjaItemLine {
-  name?: string;
-  currencyTypeName?: string;
-  chaosValue?: number;
-  divineValue?: number;
-  icon?: string;
-  sparkline?: { totalChange?: number };
-}
+type NinjaItem = NinjaLine;
 
 type Category =
   | "Currency"
@@ -52,6 +30,13 @@ const CATEGORIES: { id: Category; label: string }[] = [
   { id: "Scarab", label: "Scarabs" },
 ];
 
+/** PoE2 economy data currently comes from the exchange only (verified 2026-07-30). */
+const POE2_CATEGORIES: Category[] = ["Currency"];
+
+function categoriesFor(game: Game): { id: Category; label: string }[] {
+  return game === "poe2" ? CATEGORIES.filter((c) => POE2_CATEGORIES.includes(c.id)) : CATEGORIES;
+}
+
 async function fetchCategory(game: Game, league: string, category: Category): Promise<NinjaItem[]> {
   const url = buildNinjaUrl(game, league, category);
 
@@ -65,29 +50,7 @@ async function fetchCategory(game: Game, league: string, category: Category): Pr
   if (raw.trimStart().startsWith("<!")) {
     throw new Error("League not found on poe.ninja. Check your league name in settings.");
   }
-  const data = JSON.parse(raw);
-
-  if (NINJA_CURRENCY_CATEGORIES.has(category)) {
-    return (data.lines || [])
-      .map((line: NinjaCurrencyLine) => ({
-        name: line.currencyTypeName,
-        chaosValue: line.chaosEquivalent ?? line.receive?.value ?? 0,
-        divineValue: 0,
-        icon: line.currencyTypeName === "Divine Orb" ? "" : "",
-        change: line.receiveSparkLine?.totalChange ?? 0,
-      }))
-      .sort((a: NinjaItem, b: NinjaItem) => b.chaosValue - a.chaosValue);
-  }
-
-  return (data.lines || [])
-    .map((line: NinjaItemLine) => ({
-      name: line.name || line.currencyTypeName,
-      chaosValue: line.chaosValue ?? 0,
-      divineValue: line.divineValue ?? 0,
-      icon: line.icon || "",
-      change: line.sparkline?.totalChange ?? 0,
-    }))
-    .sort((a: NinjaItem, b: NinjaItem) => b.chaosValue - a.chaosValue);
+  return parseNinjaResponse(JSON.parse(raw)).sort((a, b) => b.chaosValue - a.chaosValue);
 }
 
 function MarketItem({ item }: { item: NinjaItem }) {
@@ -109,7 +72,7 @@ function MarketItem({ item }: { item: NinjaItem }) {
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <span className="text-xs font-bold" style={{ color: "var(--accent)" }}>
-            {item.chaosValue >= 1 ? Math.round(item.chaosValue) : item.chaosValue.toFixed(1)}c
+            {item.chaosValue >= 1 ? Math.round(item.chaosValue) : item.chaosValue.toFixed(2)}c
           </span>
           {item.change !== 0 && (
             <span
@@ -175,7 +138,11 @@ export default function MarketTab() {
     setLoading(true);
     setError(null);
     try {
-      const data = await fetchCategory(game, league || "Allflame", category);
+      // Stored league is PoE1-only until per-game leagues exist in settings;
+      // PoE2 always resolves from season data.
+      const effLeague =
+        game === "poe1" ? league || getCurrentLeague("poe1") : getCurrentLeague("poe2");
+      const data = await fetchCategory(game, effLeague, category);
       setItems(data);
     } catch (err) {
       setError(String(err));
@@ -195,7 +162,11 @@ export default function MarketTab() {
         {(["poe1", "poe2"] as const).map((g) => (
           <button
             key={g}
-            onClick={() => setGame(g)}
+            onClick={() => {
+              setGame(g);
+              // Keep the selected category valid for the target game.
+              if (!categoriesFor(g).some((c) => c.id === category)) setCategory("Currency");
+            }}
             className="flex-1 py-1.5 rounded flex items-center justify-center transition-all"
             style={{
               background: game === g ? "rgba(255,255,255,0.08)" : "transparent",
@@ -210,7 +181,7 @@ export default function MarketTab() {
 
       {/* Category selector */}
       <div className="flex gap-0.5 flex-wrap">
-        {CATEGORIES.map((cat) => (
+        {categoriesFor(game).map((cat) => (
           <button
             key={cat.id}
             onClick={() => setCategory(cat.id)}

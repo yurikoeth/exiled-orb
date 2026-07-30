@@ -298,6 +298,16 @@ const POE1_MODS: ModTierRange[] = [
     weight: 10,
   },
   {
+    // Weapon prefix: "+1/+2 to Level of Socketed Melee/Bow/Spell/... Gems"
+    // (also matches the rarer unqualified "Socketed Gems" roll).
+    pattern: /\+(\d+) to Level of Socketed (?:\w+ )?Gems/i,
+    name: "Socketed Gem Lvl",
+    category: "gem",
+    tiers: [2, 1, 1, 1, 1],
+    maxRolls: [2, 1, 1, 1, 1],
+    weight: 9,
+  },
+  {
     pattern: /\+(\d+) to Accuracy Rating/i,
     name: "Accuracy",
     category: "utility",
