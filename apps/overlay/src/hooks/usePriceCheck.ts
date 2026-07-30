@@ -1,4 +1,10 @@
-import type { ParsedItem, PriceResult, PoeNinjaCategory, Game, NinjaLine } from "@exiled-orb/shared";
+import type {
+  ParsedItem,
+  PriceResult,
+  PoeNinjaCategory,
+  Game,
+  NinjaLine,
+} from "@exiled-orb/shared";
 import { buildNinjaUrl, parseNinjaResponse, getCurrentLeague } from "@exiled-orb/shared";
 import { useSettingsStore } from "../stores/settings-store";
 import { fetchNinjaCached } from "../utils/ninja-cache";

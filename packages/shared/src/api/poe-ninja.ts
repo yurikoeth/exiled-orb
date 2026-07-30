@@ -81,22 +81,20 @@ export function parseNinjaResponse(data: unknown): NinjaLine[] {
   }
 
   // PoE1 currency + item overviews: flat `lines` array.
-  return (Array.isArray(d.lines) ? d.lines : []).map(
-    (line: any): NinjaLine => ({
-      name: line.name ?? line.currencyTypeName ?? "",
-      chaosValue: line.chaosValue ?? line.chaosEquivalent ?? line.receive?.value ?? 0,
-      divineValue: line.divineValue ?? 0,
-      icon: line.icon ?? "",
-      change:
-        line.sparkLine?.totalChange ??
-        line.sparkline?.totalChange ??
-        line.receiveSparkLine?.totalChange ??
-        0,
-      listingCount: line.listingCount ?? line.count ?? 0,
-      links: line.links,
-      gemLevel: line.gemLevel,
-    })
-  );
+  return (Array.isArray(d.lines) ? d.lines : []).map((line: any): NinjaLine => ({
+    name: line.name ?? line.currencyTypeName ?? "",
+    chaosValue: line.chaosValue ?? line.chaosEquivalent ?? line.receive?.value ?? 0,
+    divineValue: line.divineValue ?? 0,
+    icon: line.icon ?? "",
+    change:
+      line.sparkLine?.totalChange ??
+      line.sparkline?.totalChange ??
+      line.receiveSparkLine?.totalChange ??
+      0,
+    listingCount: line.listingCount ?? line.count ?? 0,
+    links: line.links,
+    gemLevel: line.gemLevel,
+  }));
 }
 
 /* eslint-enable @typescript-eslint/no-explicit-any */
