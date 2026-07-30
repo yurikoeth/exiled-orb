@@ -536,7 +536,7 @@ fn scan_character_history_blocking() -> Vec<DetectedCharacter> {
     }
 
     let mut result: Vec<DetectedCharacter> = by_key.into_values().collect();
-    result.sort_by(|a, b| b.level.cmp(&a.level));
+    result.sort_by_key(|c| std::cmp::Reverse(c.level));
 
     println!(
         "[ExiledOrb] scan_character_history: {} characters detected",

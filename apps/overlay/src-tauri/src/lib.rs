@@ -104,7 +104,7 @@ pub fn run() {
                     Some((p, modified))
                 })
                 .collect();
-            candidates.sort_by(|a, b| b.1.cmp(&a.1));
+            candidates.sort_by_key(|c| std::cmp::Reverse(c.1));
             if let Some((path, _)) = candidates.into_iter().next() {
                 println!("Auto-detected log file (most recent): {:?}", path);
                 log_watcher::start_log_watcher(handle, path);

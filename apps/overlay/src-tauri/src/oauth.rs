@@ -138,7 +138,7 @@ fn dedupe_by_name_keep_max_level(all: Vec<GggCharacter>) -> Vec<GggCharacter> {
         }
     }
     let mut deduped: Vec<GggCharacter> = seen.into_values().collect();
-    deduped.sort_by(|a, b| b.level.cmp(&a.level));
+    deduped.sort_by_key(|c| std::cmp::Reverse(c.level));
     deduped
 }
 
