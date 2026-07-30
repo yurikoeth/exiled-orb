@@ -1,5 +1,7 @@
 # ExiledOrb
 
+[![CI](https://github.com/yurikoeth/poe-helper/actions/workflows/ci.yml/badge.svg)](https://github.com/yurikoeth/poe-helper/actions/workflows/ci.yml)
+
 **All-in-one Path of Exile companion** — desktop overlay for PoE1 and PoE2.
 
 ExiledOrb is an always-on-top desktop companion that monitors your clipboard and game log in real time to provide instant price checks, map-run tracking, AI-powered trade analysis, and character/build tools — using only sanctioned techniques (no memory reading, no input injection, official OAuth API only).

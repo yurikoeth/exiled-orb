@@ -13,6 +13,8 @@ apps/overlay/src-tauri/.cargo/
 .claude/
 Plan.txt
 PRODUCTION-PLAN.txt
+API-BULLET-ANSWER.txt
+BUG-TESTS-TOMORROW.txt
 
 # Environment
 .env
