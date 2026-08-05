@@ -1,6 +1,6 @@
 # ExiledOrb
 
-[![CI](https://github.com/yurikoeth/poe-helper/actions/workflows/ci.yml/badge.svg)](https://github.com/yurikoeth/poe-helper/actions/workflows/ci.yml)
+[![CI](https://github.com/yurikoeth/exiled-orb/actions/workflows/ci.yml/badge.svg)](https://github.com/yurikoeth/exiled-orb/actions/workflows/ci.yml)
 
 **All-in-one Path of Exile companion** — desktop overlay for PoE1 and PoE2.
 
