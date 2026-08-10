@@ -14,5 +14,5 @@ export {
 export type { LevelingStep, LevelingGuide } from "./leveling-guide.js";
 export { getModDB, evaluateMod, evaluateItem } from "./mod-tiers.js";
 export type { ModTierRange, ModEvaluation, ItemEvaluation } from "./mod-tiers.js";
-export { SEASONS, getSeason, getSeasonState, getCurrentLeague } from "./seasons.js";
+export { SEASONS, getSeason, getSeasonState, getCurrentLeague, resolveLeague } from "./seasons.js";
 export type { SeasonInfo, SeasonState } from "./seasons.js";

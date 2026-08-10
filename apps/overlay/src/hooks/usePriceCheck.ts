@@ -5,7 +5,7 @@ import type {
   Game,
   NinjaLine,
 } from "@exiled-orb/shared";
-import { buildNinjaUrl, parseNinjaResponse, getCurrentLeague } from "@exiled-orb/shared";
+import { buildNinjaUrl, parseNinjaResponse, resolveLeague } from "@exiled-orb/shared";
 import { useSettingsStore } from "../stores/settings-store";
 import { fetchNinjaCached } from "../utils/ninja-cache";
 
@@ -125,13 +125,8 @@ export function getDivineRateCached(): number {
  */
 export async function checkPrice(item: ParsedItem, league?: string): Promise<PriceResult> {
   if (!league) {
-    // The stored league is a single value with no game attached (settings UI
-    // pending); only trust it for PoE1 and resolve PoE2 from season data so
-    // each game hits its own economy league.
-    league =
-      item.game === "poe1"
-        ? useSettingsStore.getState().settings.league || getCurrentLeague("poe1")
-        : getCurrentLeague("poe2");
+    // Per-game override from settings, else the current season's league.
+    league = resolveLeague(item.game, useSettingsStore.getState().settings.leagues);
   }
   const category = getCategory(item);
   console.log(

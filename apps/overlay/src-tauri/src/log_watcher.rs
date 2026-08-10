@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::fs::File;
 use std::io::{BufRead, BufReader, Seek, SeekFrom};
 use std::path::PathBuf;
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Mutex;
 use std::thread;
 use std::time::Duration;
@@ -280,8 +281,15 @@ fn scan_log_history(log_path: &PathBuf) -> InitialGameState {
     state
 }
 
+/// Generation counter for watcher threads. Starting a new watcher bumps the
+/// generation; superseded threads notice at their next poll tick and exit, so
+/// `start_log_watcher` can safely be called again (e.g. when the user sets a
+/// custom log path) without leaving duplicate watchers emitting events.
+static WATCHER_GEN: AtomicU64 = AtomicU64::new(0);
+
 /// Start watching a Client.txt file for new log events.
 /// Seeks to end of file on startup, only reads new lines.
+/// Replaces any previously started watcher.
 pub fn start_log_watcher(app: AppHandle, log_path: PathBuf) {
     // Scan history and store in managed state BEFORE spawning the thread
     let initial = scan_log_history(&log_path);
@@ -290,6 +298,7 @@ pub fn start_log_watcher(app: AppHandle, log_path: PathBuf) {
     }
 
     let game = detect_game_from_path(&log_path);
+    let generation = WATCHER_GEN.fetch_add(1, Ordering::SeqCst) + 1;
 
     std::thread::spawn(move || {
         // Open file and seek to end
@@ -313,6 +322,12 @@ pub fn start_log_watcher(app: AppHandle, log_path: PathBuf) {
 
         // Poll for new lines every 500ms — reliable on all drives
         loop {
+            // A newer watcher has been started (log path changed) — exit.
+            if WATCHER_GEN.load(Ordering::SeqCst) != generation {
+                println!("Stopping superseded log watcher for {:?}", log_path);
+                return;
+            }
+
             let mut line = String::new();
             while reader.read_line(&mut line).unwrap_or(0) > 0 {
                 if let Some(log_event) = parse_log_line(line.trim(), game) {

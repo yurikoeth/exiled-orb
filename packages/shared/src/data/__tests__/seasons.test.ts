@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { getSeasonState, type SeasonInfo } from "../seasons.js";
+import { getCurrentLeague, getSeasonState, resolveLeague, type SeasonInfo } from "../seasons.js";
 import { formatDaysHours } from "../../utils/format.js";
 
 const DAY = 86_400_000;
@@ -71,5 +71,22 @@ describe("formatDaysHours", () => {
     expect(formatDaysHours(30 * 60_000)).toBe("<1h");
     expect(formatDaysHours(0)).toBe("<1h");
     expect(formatDaysHours(-5000)).toBe("<1h");
+  });
+});
+
+describe("resolveLeague", () => {
+  it("falls back to the season league with no overrides", () => {
+    expect(resolveLeague("poe1")).toBe(getCurrentLeague("poe1"));
+    expect(resolveLeague("poe2", {})).toBe(getCurrentLeague("poe2"));
+  });
+
+  it("uses the per-game override when set", () => {
+    const overrides = { poe1: "Standard", poe2: null };
+    expect(resolveLeague("poe1", overrides)).toBe("Standard");
+    expect(resolveLeague("poe2", overrides)).toBe(getCurrentLeague("poe2"));
+  });
+
+  it("treats an empty-string override as auto", () => {
+    expect(resolveLeague("poe1", { poe1: "", poe2: null })).toBe(getCurrentLeague("poe1"));
   });
 });

@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useSettingsStore } from "../stores/settings-store";
 import { fetchNinjaCached } from "../utils/ninja-cache";
 import type { Game, NinjaLine } from "@exiled-orb/shared";
-import { buildNinjaUrl, parseNinjaResponse, getCurrentLeague } from "@exiled-orb/shared";
+import { buildNinjaUrl, parseNinjaResponse, resolveLeague } from "@exiled-orb/shared";
 import poe1Logo from "../assets/poe1-logo.png";
 import poe2Logo from "../assets/poe2-logo.png";
 import { COLORS, Panel } from "./ui";
@@ -122,7 +122,7 @@ function MarketItem({ item }: { item: NinjaItem }) {
 
 export default function MarketTab() {
   const settingsGame = useSettingsStore((s) => s.settings.game);
-  const league = useSettingsStore((s) => s.settings.league);
+  const leagues = useSettingsStore((s) => s.settings.leagues);
   const [game, setGame] = useState<Game>(settingsGame);
   const [category, setCategory] = useState<Category>("Currency");
   const [items, setItems] = useState<NinjaItem[]>([]);
@@ -132,17 +132,14 @@ export default function MarketTab() {
 
   useEffect(() => {
     load();
-  }, [game, category]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [game, category, leagues]);
 
   const load = async () => {
     setLoading(true);
     setError(null);
     try {
-      // Stored league is PoE1-only until per-game leagues exist in settings;
-      // PoE2 always resolves from season data.
-      const effLeague =
-        game === "poe1" ? league || getCurrentLeague("poe1") : getCurrentLeague("poe2");
-      const data = await fetchCategory(game, effLeague, category);
+      const data = await fetchCategory(game, resolveLeague(game, leagues), category);
       setItems(data);
     } catch (err) {
       setError(String(err));

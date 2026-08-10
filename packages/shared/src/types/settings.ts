@@ -20,12 +20,14 @@ export interface OverlayPrefs {
 export interface AiConfig {
   enabled: boolean;
   enableTradeAssistant: boolean;
-  enableMarketTrends: boolean;
 }
+
+/** Per-game league override; null = auto-resolve from season data. */
+export type LeagueOverrides = Record<Game, string | null>;
 
 export interface AppSettings {
   game: Game;
-  league: string;
+  leagues: LeagueOverrides;
   clientLogPath: string | null;
   autoDetectLog: boolean;
   overlay: OverlayPrefs;
@@ -35,7 +37,7 @@ export interface AppSettings {
 
 export const DEFAULT_SETTINGS: AppSettings = {
   game: "poe2",
-  league: "Allflame",
+  leagues: { poe1: null, poe2: null },
   clientLogPath: null,
   autoDetectLog: true,
   overlay: {
@@ -53,6 +55,5 @@ export const DEFAULT_SETTINGS: AppSettings = {
   ai: {
     enabled: false,
     enableTradeAssistant: false,
-    enableMarketTrends: false,
   },
 };

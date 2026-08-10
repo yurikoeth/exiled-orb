@@ -16,8 +16,10 @@ import GggAccount from "./components/characters/GggAccount";
 import SeasonTimers from "./components/SeasonTimers";
 import AskAi from "./components/AskAi";
 import MarketTab from "./components/MarketTab";
+import SettingsTab from "./components/SettingsTab";
+import { invoke } from "@tauri-apps/api/core";
 import { useClipboard } from "./hooks/useClipboard";
-import { useClientLog } from "./hooks/useClientLog";
+import { useClientLog, syncInitialGameState } from "./hooks/useClientLog";
 import { useMapSpeedrun } from "./hooks/useMapSpeedrun";
 import { useTradeWhispers } from "./hooks/useTradeWhispers";
 import { useOverlayStore } from "./stores/overlay-store";
@@ -32,14 +34,15 @@ import menuMaps from "./assets/menu/maps.png";
 import menuAsk from "./assets/menu/ask.png";
 import menuChar from "./assets/menu/char.png";
 
-type Page = "home" | "market" | "leveling" | "maps" | "ask" | "char";
+type Page = "home" | "market" | "leveling" | "maps" | "ask" | "char" | "settings";
 
-const MENU_ITEMS: { id: Page; label: string; desc: string; bg: string }[] = [
+const MENU_ITEMS: { id: Page; label: string; desc: string; bg?: string }[] = [
   { id: "market", label: "Market", desc: "Live prices from poe.ninja", bg: menuMarket },
   { id: "leveling", label: "Leveling", desc: "Act-by-act progression", bg: menuLeveling },
   { id: "maps", label: "Maps", desc: "Speedrun timer & stats", bg: menuMaps },
   { id: "ask", label: "Ask AI", desc: "Ask anything about PoE", bg: menuAsk },
   { id: "char", label: "Characters", desc: "Gear & build analysis", bg: menuChar },
+  { id: "settings", label: "Settings", desc: "Game, league, log & AI" },
 ];
 
 export default function App() {
@@ -53,10 +56,23 @@ export default function App() {
     useSettingsStore
       .getState()
       .loadSettings()
-      .then(() => {
-        const game = useSettingsStore.getState().settings.game;
-        useSpeedrunStore.getState().loadPBsFromDB(game);
+      .then(async () => {
+        const { settings, firstRun } = useSettingsStore.getState();
+        useSpeedrunStore.getState().loadPBsFromDB(settings.game);
         useSpeedrunStore.getState().loadGoals();
+
+        // First launch → open onboarding (Settings page).
+        if (firstRun) setPage("settings");
+
+        // Custom log path configured → replace the auto-detected watcher.
+        if (!settings.autoDetectLog && settings.clientLogPath) {
+          try {
+            await invoke("set_log_path", { path: settings.clientLogPath });
+            await syncInitialGameState();
+          } catch (err) {
+            console.error("[ExiledOrb] Custom log path failed, keeping auto-detected:", err);
+          }
+        }
       });
     useBuildStore.getState().loadBuilds();
   }, []);
@@ -140,15 +156,17 @@ export default function App() {
                   borderColor: "var(--border-color)",
                 }}
               >
-                <div
-                  className="absolute inset-0 pointer-events-none opacity-20 group-hover:opacity-30 transition-opacity"
-                  style={{
-                    backgroundImage: `url(${item.bg})`,
-                    backgroundSize: "contain",
-                    backgroundRepeat: "no-repeat",
-                    backgroundPosition: "right center",
-                  }}
-                />
+                {item.bg && (
+                  <div
+                    className="absolute inset-0 pointer-events-none opacity-20 group-hover:opacity-30 transition-opacity"
+                    style={{
+                      backgroundImage: `url(${item.bg})`,
+                      backgroundSize: "contain",
+                      backgroundRepeat: "no-repeat",
+                      backgroundPosition: "right center",
+                    }}
+                  />
+                )}
                 <div className="relative z-10">
                   <div className="text-sm font-bold" style={{ color: "var(--accent)" }}>
                     {item.label}
@@ -197,6 +215,7 @@ export default function App() {
       )}
       {page === "ask" && <AskAi />}
       {page === "char" && <GggAccount />}
+      {page === "settings" && <SettingsTab />}
     </div>
   );
 }

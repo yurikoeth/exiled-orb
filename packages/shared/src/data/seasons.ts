@@ -65,6 +65,17 @@ export function getCurrentLeague(game: Game): string {
   return season.leagueId ?? season.name;
 }
 
+/**
+ * Resolve the effective league for a game: the user's override if set,
+ * otherwise the current season's league id.
+ */
+export function resolveLeague(
+  game: Game,
+  overrides?: Partial<Record<Game, string | null>>
+): string {
+  return overrides?.[game] || getCurrentLeague(game);
+}
+
 /** What the countdown should display for a season at time `now`. */
 export type SeasonState =
   | { kind: "running"; msLeft: number }

@@ -13,20 +13,42 @@ use tauri::tray::TrayIconBuilder;
 use tauri::Manager;
 
 /// Tauri command: set the Client.txt log path and start watching it
+/// (replaces the current watcher). Errors if the file doesn't exist.
 #[tauri::command]
-fn set_log_path(app: tauri::AppHandle, path: String) {
-    let log_path = PathBuf::from(path);
-    if log_path.exists() {
-        log_watcher::start_log_watcher(app, log_path);
-    } else {
+fn set_log_path(app: tauri::AppHandle, path: String) -> Result<(), String> {
+    let log_path = PathBuf::from(&path);
+    if !log_path.exists() {
         eprintln!("Log file does not exist: {:?}", log_path);
+        return Err(format!("File not found: {}", path));
     }
+    log_watcher::start_log_watcher(app, log_path);
+    Ok(())
 }
 
 /// Tauri command: get default log file paths to check
 #[tauri::command]
 fn get_default_log_paths() -> Vec<String> {
     log_watcher::log_path_candidates()
+}
+
+/// Pick the most-recently-modified existing candidate Client.txt and start
+/// watching it (the actively-played game wins when both are installed).
+/// Returns the chosen path, or None when no candidate exists.
+#[tauri::command]
+fn autodetect_log_path(app: tauri::AppHandle) -> Option<String> {
+    let mut candidates: Vec<(PathBuf, std::time::SystemTime)> = log_watcher::log_path_candidates()
+        .iter()
+        .map(PathBuf::from)
+        .filter_map(|p| {
+            let modified = std::fs::metadata(&p).ok()?.modified().ok()?;
+            Some((p, modified))
+        })
+        .collect();
+    candidates.sort_by_key(|c| std::cmp::Reverse(c.1));
+    let (path, _) = candidates.into_iter().next()?;
+    println!("Auto-detected log file (most recent): {:?}", path);
+    log_watcher::start_log_watcher(app, path.clone());
+    Some(path.to_string_lossy().to_string())
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -45,6 +67,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             set_log_path,
             get_default_log_paths,
+            autodetect_log_path,
             log_watcher::get_initial_game_state,
             log_watcher::scan_character_history,
             ai::ask_poe_question,
@@ -94,21 +117,9 @@ pub fn run() {
 
             // Auto-detect Client.txt: pick the most-recently-modified existing log
             // so the active game wins when both PoE1 and PoE2 are installed.
-            let handle = app.handle().clone();
-            let paths = get_default_log_paths();
-            let mut candidates: Vec<(PathBuf, std::time::SystemTime)> = paths
-                .iter()
-                .map(PathBuf::from)
-                .filter_map(|p| {
-                    let modified = std::fs::metadata(&p).ok()?.modified().ok()?;
-                    Some((p, modified))
-                })
-                .collect();
-            candidates.sort_by_key(|c| std::cmp::Reverse(c.1));
-            if let Some((path, _)) = candidates.into_iter().next() {
-                println!("Auto-detected log file (most recent): {:?}", path);
-                log_watcher::start_log_watcher(handle, path);
-            }
+            // (If the user has a custom path configured, the frontend replaces
+            // this watcher via set_log_path once settings load.)
+            autodetect_log_path(app.handle().clone());
 
             Ok(())
         })

@@ -22,6 +22,8 @@ ExiledOrb is an always-on-top desktop companion that monitors your clipboard and
 
 - **Leveling Guide** — Step-by-step guides for PoE1 (Acts 1–10) and PoE2 (Acts 1–6) with per-character checklists that auto-advance as you change zones.
 
+- **Settings & Onboarding** — First-launch setup and an in-overlay Settings page: default game, per-game league override (auto-follows the current season otherwise), Client.txt auto-detect or custom path, and AI feature toggles.
+
 > The overlay runs as a normal always-on-top window; hotkeys (F5 toggle, Esc back) apply while the overlay window has focus. Global in-game hotkeys and click-through transparency are on the roadmap.
 
 ---
@@ -125,7 +127,6 @@ ExiledOrb is fully game-agnostic. All types, parsers, APIs, and data are paramet
 ## Roadmap
 
 - Global in-game hotkeys (tauri-plugin-global-shortcut) and click-through transparency
-- Settings UI (league/game/log-path overrides — persistence layer already in place)
 - Windows installer (`.msi`/`.exe` via `tauri build`) and GitHub Releases
 - Trade API integration for live rare pricing (client written, parked — see [ARCHITECTURE.md](docs/ARCHITECTURE.md#parked--work-in-progress))
 - Atlas farming strategies: curated per-game strategy library, pick-and-track, map-mod alignment hints, per-strategy profit tracking

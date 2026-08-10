@@ -2,7 +2,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { useAiStore } from "../stores/ai-store";
 import { useSettingsStore } from "../stores/settings-store";
 import { getApiKey } from "../utils/store";
-import { evaluateItem } from "@exiled-orb/shared";
+import { evaluateItem, resolveLeague } from "@exiled-orb/shared";
 import type { ParsedItem, PriceResult, AiPriceAnalysis } from "@exiled-orb/shared";
 
 /** Cache of recent AI analyses keyed by item hash */
@@ -118,7 +118,7 @@ export async function analyzeItemWithAi(
       source: priceResult?.source ?? null,
       confidence: priceResult?.confidence ?? null,
       listingCount: priceResult?.listingCount ?? null,
-      league: settings.league,
+      league: resolveLeague(item.game, settings.leagues),
     });
 
     const result: string = await invoke("analyze_item_price", {

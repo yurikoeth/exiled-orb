@@ -1,6 +1,8 @@
 import { create } from "zustand";
 import type { MapRun, MapRunOutcome, SpeedrunSession, SpeedrunGoals } from "@exiled-orb/shared";
-import { computeSessionStats } from "@exiled-orb/shared";
+import { computeSessionStats, resolveLeague } from "@exiled-orb/shared";
+import { useOverlayStore } from "./overlay-store";
+import { useSettingsStore } from "./settings-store";
 import {
   saveMapRun,
   deleteMapRun,
@@ -117,9 +119,12 @@ export const useSpeedrunStore = create<SpeedrunState>((set, get) => ({
       state.resolveRun("completed");
     }
 
-    // Auto-start session if not running
+    // Auto-start session if not running — use the live-detected game (falling
+    // back to the settings default) and its effective league.
     if (!state.session) {
-      state.startSession("poe2", "Standard");
+      const settings = useSettingsStore.getState().settings;
+      const game = useOverlayStore.getState().detectedGame ?? settings.game;
+      state.startSession(game, resolveLeague(game, settings.leagues));
     }
 
     const run: MapRun = {
