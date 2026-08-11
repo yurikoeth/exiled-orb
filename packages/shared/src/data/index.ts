@@ -2,7 +2,7 @@ export { DANGEROUS_MODS, analyzeMod, analyzeMap } from "./dangerous-mods.js";
 export { STAT_MAPPINGS, matchMod } from "./stat-mappings.js";
 export type { StatMapping } from "./stat-mappings.js";
 export { HIDEOUT_NAMES, isHideout } from "./hideout-names.js";
-export { MAP_DATABASE, findMap, isMapZone, isBossArena } from "./map-data.js";
+export { MAP_DATABASE, findMap, isMapZone, isBossArena, tierFromAreaLevel } from "./map-data.js";
 export type { MapInfo } from "./map-data.js";
 export {
   POE1_LEVELING,

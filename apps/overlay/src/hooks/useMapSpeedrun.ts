@@ -1,7 +1,8 @@
 import { useEffect, useRef } from "react";
 import { useOverlayStore } from "../stores/overlay-store";
+import { useSettingsStore } from "../stores/settings-store";
 import { useSpeedrunStore } from "../stores/speedrun-store";
-import { isMapZone, isHideout, isBossArena, findMap } from "@exiled-orb/shared";
+import { isMapZone, isHideout, isBossArena, findMap, tierFromAreaLevel } from "@exiled-orb/shared";
 
 /**
  * Hook that monitors zone changes and death events to automatically
@@ -15,6 +16,8 @@ export function useMapSpeedrun() {
   const sessionDeaths = useOverlayStore((s) => s.sessionDeaths);
   const areaLevel = useOverlayStore((s) => s.areaLevel);
   const characterName = useOverlayStore((s) => s.characterName);
+  const detectedGame = useOverlayStore((s) => s.detectedGame);
+  const settingsGame = useSettingsStore((s) => s.settings.game);
   const lastDeathCountRef = useRef<number | null>(null);
 
   useEffect(() => {
@@ -24,20 +27,29 @@ export function useMapSpeedrun() {
     if (!store.tracking) return;
 
     const now = Date.now();
+    // Every lookup below is game-scoped: several PoE2 waystone names contain
+    // a PoE1 map name, so an unscoped search can resolve to the wrong game's
+    // map (and tier).
+    const game = detectedGame ?? settingsGame;
 
-    if (isMapZone(currentZone)) {
+    if (store.currentRun && isBossArena(currentZone, game)) {
+      // Entered a boss arena during the run. Checked before isMapZone: a
+      // boss arena isn't necessarily a map zone itself (PoE1 pinnacle
+      // arenas), and nesting this under isMapZone missed those entirely.
+      // Only the first entry counts — this effect re-runs on any dependency
+      // change while the zone is unchanged, which would otherwise keep
+      // pushing bossEnteredAt forward and shrink the recorded boss phase.
+      if (!store.currentRun.bossEnteredAt) store.enterBossArena(now);
+    } else if (isMapZone(currentZone, game)) {
       if (!store.currentRun) {
-        // New map run — use areaLevel as tier fallback
-        const mapInfo = findMap(currentZone);
-        store.startMapRun(
-          mapInfo?.name ?? currentZone,
-          mapInfo?.tier ?? areaLevel ?? null,
-          now,
-          characterName
-        );
-      } else if (isBossArena(currentZone)) {
-        // Entered boss arena within current map
-        store.enterBossArena(now);
+        // New map run. Maps missing from the curated database fall back to a
+        // tier estimated from the area level — the two are NOT the same
+        // number (a T16 PoE1 map is area level 83), so the raw area level
+        // must never be displayed as a tier.
+        const mapInfo = findMap(currentZone, game);
+        const tier =
+          mapInfo?.tier ?? (areaLevel != null ? tierFromAreaLevel(areaLevel, game) : null);
+        store.startMapRun(mapInfo?.name ?? currentZone, tier, now, characterName);
       }
     } else if (isHideout(currentZone)) {
       // Returned to hideout — stop timer, await user decision (Clear/Brick)
@@ -46,7 +58,7 @@ export function useMapSpeedrun() {
       }
     }
     // Town/campaign zones don't end the run — player may portal back
-  }, [currentZone, areaLevel]);
+  }, [currentZone, areaLevel, detectedGame, settingsGame, characterName]);
 
   // Track deaths during map runs — use ref to avoid re-counting on re-renders
   useEffect(() => {

@@ -584,14 +584,46 @@ export const MAP_DATABASE: MapInfo[] = [
 /**
  * Lookup a map by zone name. Matches if the zone name contains the map name
  * (e.g., "Strand Map" matches "Strand", "Tier 5 Strand" matches "Strand").
+ *
+ * Returns the BEST match, not the first: an exact name wins, otherwise the
+ * longest contained name. Several PoE2 waystones contain a shorter PoE1 map
+ * name ("Blighted Bog" ⊃ "Bog", "Bone Pit" ⊃ "Pit", "Haunted Shipyard",
+ * "Scorched Summit", "Twilight Temple"), and PoE1 entries come first in the
+ * database — first-match returned the wrong map and its tier. Pass `game`
+ * when it's known; this ordering is the safety net for when it isn't.
  */
 export function findMap(zoneName: string, game?: Game): MapInfo | null {
   const lower = zoneName.toLowerCase();
+  let best: MapInfo | null = null;
   for (const map of MAP_DATABASE) {
     if (game && map.game !== game) continue;
-    if (lower.includes(map.name.toLowerCase())) return map;
+    const name = map.name.toLowerCase();
+    if (lower === name) return map;
+    if (!lower.includes(name)) continue;
+    if (!best || name.length > best.name.length) best = map;
   }
-  return null;
+  return best;
+}
+
+/** Lowest area (monster) level of a tier-1 map, per game. */
+const TIER_1_AREA_LEVEL: Record<Game, number> = {
+  // PoE1: T1 maps are level 68 through T16 at level 83.
+  poe1: 68,
+  // PoE2: T1 waystones are level 65.
+  poe2: 65,
+};
+
+/**
+ * Estimate a map tier from its area (monster) level, for maps missing from
+ * the curated database. Area level is NOT the tier — a T16 PoE1 map is level
+ * 83 — so displaying one as the other is always wrong.
+ *
+ * Returns null for levels below tier 1 (campaign zones), so callers show no
+ * tier rather than a nonsensical one.
+ */
+export function tierFromAreaLevel(areaLevel: number, game: Game): number | null {
+  const tier = areaLevel - TIER_1_AREA_LEVEL[game] + 1;
+  return tier >= 1 ? tier : null;
 }
 
 /**

@@ -267,12 +267,14 @@ whisper analysis — both were unreachable before the Settings UI existed.
 
 ## Not Yet Implemented
 
-- MapTimer — not yet game-aware audited for PoE2
+- MAP_DATABASE is curated, not exhaustive (73 PoE1 / 26 PoE2 entries). A map
+  missing from it still starts a run in PoE1 (the " Map" suffix is a reliable
+  tell) but NOT in PoE2, whose waystone zones have no distinguishing suffix —
+  PoE2 coverage is only as good as the database.
 - AtlasHelper — removed 2026-05-28; rebuild scoped in README roadmap (curated library + pick-and-track + clipboard integration + profit tracking); old implementation in git history pre-2026-05-28
 - Tauri Windows packaging/installer (.msi/.exe)
 - Snipe alerts (background trade polling)
 - GGG Trade API for rare pricing (currently mod-tier estimation only)
-- tauri-plugin-opener migration (oauth_flow.rs uses deprecated Shell::open — works, one warning)
 
 ## GGG API notes (OAuth2 — IMPLEMENTED 2026-07-21)
 

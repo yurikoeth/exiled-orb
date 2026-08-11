@@ -19,7 +19,7 @@ use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use tauri::{AppHandle, Manager};
-use tauri_plugin_shell::ShellExt;
+use tauri_plugin_opener::OpenerExt;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpListener;
 use tokio::time::timeout;
@@ -323,12 +323,9 @@ pub async fn start_oauth_flow(app: AppHandle) -> Result<(), String> {
 
     // Open browser.
     let url = build_authorize_url(&state, &challenge);
-    // Shell::open is deprecated in favor of tauri-plugin-opener; migrating is
-    // tracked in CLAUDE.md ("Not Yet Implemented") — the shell plugin is still
-    // needed elsewhere, so silence the lint rather than half-migrate.
-    #[allow(deprecated)]
-    app.shell()
-        .open(&url, None)
+    // `None` = the system default browser rather than a named application.
+    app.opener()
+        .open_url(url.as_str(), None::<&str>)
         .map_err(|e| format!("Cannot open browser: {e}"))?;
     eprintln!("[ExiledOrb] OAuth: opened authorize URL in browser");
 
