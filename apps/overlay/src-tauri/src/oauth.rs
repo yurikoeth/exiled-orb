@@ -44,12 +44,10 @@ async fn fetch_realm(
         _ => "poe1",
     };
 
-    let res = match rate_limit::send(
-        client
-            .get(&url)
-            .bearer_auth(token)
-            .header("User-Agent", "exiled-orb/0.1.0"),
-    )
+    let res = match rate_limit::send(client.get(&url).bearer_auth(token).header(
+        "User-Agent",
+        concat!("exiled-orb/", env!("CARGO_PKG_VERSION")),
+    ))
     .await
     {
         Ok(r) => r,
@@ -223,12 +221,10 @@ pub async fn fetch_character_items(
         format!("{}/{}", CHAR_API_BASE, encoded_name)
     };
 
-    let res = rate_limit::send(
-        client
-            .get(&url)
-            .bearer_auth(&token)
-            .header("User-Agent", "exiled-orb/0.1.0"),
-    )
+    let res = rate_limit::send(client.get(&url).bearer_auth(&token).header(
+        "User-Agent",
+        concat!("exiled-orb/", env!("CARGO_PKG_VERSION")),
+    ))
     .await?;
 
     if !res.status().is_success() {

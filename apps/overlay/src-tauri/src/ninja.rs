@@ -50,7 +50,10 @@ pub async fn fetch_ninja(url: String) -> Result<String, String> {
         .map_err(|e| format!("Failed to create HTTP client: {}", e))?;
     let res = client
         .get(parsed)
-        .header("User-Agent", "exiled-orb/0.1.0")
+        .header(
+            "User-Agent",
+            concat!("exiled-orb/", env!("CARGO_PKG_VERSION")),
+        )
         .send()
         .await
         .map_err(|e| format!("Request failed: {}", e))?;

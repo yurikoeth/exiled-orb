@@ -122,7 +122,7 @@ export async function fetchCategory(
   const url = buildNinjaUrl(game, league, category);
 
   const response = await fetch(url, {
-    headers: { "User-Agent": "exiled-orb/0.1.0" },
+    headers: { "User-Agent": "exiled-orb/1.0.0" },
   });
 
   if (!response.ok) {

@@ -30,7 +30,17 @@ ExiledOrb is an always-on-top desktop companion that monitors your clipboard and
 
 ## Screenshots
 
-<!-- TODO: add screenshots/GIF — overlay next to the game: price check panel, map timer, characters tab -->
+<!--
+TODO shot list (capture on Windows, overlay next to the game):
+  1. HERO GIF (ScreenToGif): Ctrl+C an item in-game -> price check panel pops
+     with tier bars + verdict. Keep it under ~10s / ~15MB.
+  2. Map timer mid-run: live timer + splits vs PB.
+  3. Characters tab: gear viewer with socket colors/links.
+  4. Ask AI: a Witch-persona response.
+  Save to docs/screenshots/, reference like:
+  ![Price check](docs/screenshots/price-check.gif)
+-->
+
 _Screenshots coming soon._
 
 ---
@@ -52,17 +62,25 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the data-flow pipelines and
 
 ---
 
-## Getting Started
+## Installation
+
+Requires Windows 10/11 (clipboard + log watching use Win32 APIs).
+
+Download the latest installer from [Releases](https://github.com/yurikoeth/exiled-orb/releases) — `.exe` (NSIS, recommended) or `.msi` — run it, and launch **ExiledOrb** from the Start menu. No admin rights needed; it installs per-user.
+
+---
+
+## Development
 
 ### Prerequisites
 
-- Windows 10/11 (clipboard + log watching use Win32 APIs)
+- Windows 10/11
 - [Node.js](https://nodejs.org/) (v20+)
 - [pnpm](https://pnpm.io/) (v10+)
 - [Rust](https://www.rust-lang.org/tools/install) (latest stable)
 - [Tauri v2 prerequisites](https://v2.tauri.app/start/prerequisites/) (Visual Studio Build Tools)
 
-### Installation
+### Setup
 
 ```bash
 git clone https://github.com/yurikoeth/exiled-orb.git
@@ -70,7 +88,7 @@ cd exiled-orb
 pnpm install
 ```
 
-### Development
+### Running
 
 ```bash
 # Start the overlay (Tauri dev mode with hot reload)
@@ -127,7 +145,6 @@ ExiledOrb is fully game-agnostic. All types, parsers, APIs, and data are paramet
 ## Roadmap
 
 - Global in-game hotkeys (tauri-plugin-global-shortcut) and click-through transparency
-- Windows installer (`.msi`/`.exe` via `tauri build`) and GitHub Releases
 - Trade API integration for live rare pricing (client written, parked — see [ARCHITECTURE.md](docs/ARCHITECTURE.md#parked--work-in-progress))
 - Atlas farming strategies: curated per-game strategy library, pick-and-track, map-mod alignment hints, per-strategy profit tracking
 

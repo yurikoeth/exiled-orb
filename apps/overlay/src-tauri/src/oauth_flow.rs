@@ -244,7 +244,10 @@ async fn exchange_code(code: &str, verifier: &str) -> Result<StoredTokens, Strin
     ];
     let resp = client
         .post(TOKEN_URL)
-        .header("User-Agent", "exiled-orb/0.1.0")
+        .header(
+            "User-Agent",
+            concat!("exiled-orb/", env!("CARGO_PKG_VERSION")),
+        )
         .form(&params)
         .send()
         .await
@@ -270,7 +273,10 @@ async fn refresh_tokens(refresh_token: &str) -> Result<StoredTokens, String> {
     ];
     let resp = client
         .post(TOKEN_URL)
-        .header("User-Agent", "exiled-orb/0.1.0")
+        .header(
+            "User-Agent",
+            concat!("exiled-orb/", env!("CARGO_PKG_VERSION")),
+        )
         .form(&params)
         .send()
         .await
