@@ -20,6 +20,7 @@ export async function syncInitialGameState(): Promise<InitialGameState | null> {
     const store = useOverlayStore.getState();
     if (state.character_name) store.setCharacterName(state.character_name);
     if (state.character_level) store.setCharacterLevel(state.character_level);
+    if (state.character_class) store.setCharacterClass(state.character_class);
     if (state.zone) store.setZone(state.zone);
     if (state.area_level) store.setAreaLevel(state.area_level);
     if (state.game === "poe1" || state.game === "poe2") store.setDetectedGame(state.game);
@@ -35,6 +36,17 @@ export function useClientLog() {
   // Fetch initial state from Rust on mount (no race condition)
   useEffect(() => {
     syncInitialGameState();
+  }, []);
+
+  // The backend's deep log scan found the character after startup
+  // (no recent level-up in the tail — e.g. a max-level char). Re-sync.
+  useEffect(() => {
+    const unlisten = listen("initial-state-updated", () => {
+      syncInitialGameState();
+    });
+    return () => {
+      unlisten.then((fn) => fn());
+    };
   }, []);
 
   // Listen for live events
@@ -60,6 +72,9 @@ export function useClientLog() {
         case "level_up":
           if (data.character_name) {
             store.setCharacterName(data.character_name);
+          }
+          if (data.class) {
+            store.setCharacterClass(data.class);
           }
           if (data.level && data.level > 0) {
             store.setCharacterLevel(data.level);

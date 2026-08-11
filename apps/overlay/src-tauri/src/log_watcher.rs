@@ -1,6 +1,6 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::fs::File;
-use std::io::{BufRead, BufReader, Seek, SeekFrom};
+use std::io::{BufRead, BufReader, Read, Seek, SeekFrom};
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Mutex;
@@ -72,11 +72,22 @@ pub enum LogEvent {
         message: String,
     },
     #[serde(rename = "level_up")]
-    LevelUp { character_name: String, level: u32 },
+    LevelUp {
+        character_name: String,
+        level: u32,
+        /// PoE2 level-up lines carry the class ("Name (Witch) is now level N").
+        class: Option<String>,
+    },
     #[serde(rename = "connected")]
     Connected { server: String },
     #[serde(rename = "area_level")]
     AreaLevel { level: u32 },
+    /// "{name} has joined/left the area." — always ANOTHER player (your own
+    /// name never appears in these in your own log). Used to build the
+    /// exclusion set so party members' deaths/level-ups aren't attributed to
+    /// the local character. Never emitted to the frontend.
+    #[serde(rename = "other_player")]
+    OtherPlayer { character_name: String },
 }
 
 /// Initial state scanned from Client.txt history, stored in Tauri managed state
@@ -85,6 +96,7 @@ pub enum LogEvent {
 pub struct InitialGameState {
     pub character_name: Option<String>,
     pub character_level: Option<u32>,
+    pub character_class: Option<String>,
     pub zone: Option<String>,
     pub area_level: Option<u32>,
     pub game: Option<String>,
@@ -125,9 +137,13 @@ fn apply_event(state: &mut InitialGameState, event: &LogEvent) {
         LogEvent::LevelUp {
             character_name,
             level,
+            class,
         } => {
             state.character_name = Some(character_name.clone());
             state.character_level = Some(*level);
+            if class.is_some() {
+                state.character_class = class.clone();
+            }
         }
         LogEvent::Zone { zone_name } => {
             state.zone = Some(zone_name.clone());
@@ -198,6 +214,16 @@ fn parse_log_line(line: &str, game: &str) -> Option<LogEvent> {
         });
     }
 
+    // Other players entering/leaving your area — never the local character.
+    if let Some(name) = message
+        .strip_suffix(" has joined the area.")
+        .or_else(|| message.strip_suffix(" has left the area."))
+    {
+        return Some(LogEvent::OtherPlayer {
+            character_name: name.to_string(),
+        });
+    }
+
     // Incoming whisper: "@From {name}: {message}"
     if let Some(rest) = message.strip_prefix("@From ") {
         if let Some(colon_idx) = rest.find(": ") {
@@ -221,21 +247,23 @@ fn parse_log_line(line: &str, game: &str) -> Option<LogEvent> {
     }
 
     // Level up: "{name} is now level {level}"
-    // PoE2 emits "{name} ({class}) is now level {N}", so strip a trailing
-    // " (Class)" suffix to keep the stored character name clean.
+    // PoE2 emits "{name} ({class}) is now level {N}" — split the class off
+    // to keep the stored character name clean, and carry it as data.
     if message.contains(" is now level ") {
         let parts: Vec<&str> = message.split(" is now level ").collect();
         if parts.len() == 2 {
             if let Ok(level) = parts[1].trim().parse::<u32>() {
                 let raw = parts[0].trim();
-                let name = raw
-                    .rsplit_once(" (")
-                    .filter(|(_, suffix)| suffix.ends_with(')'))
-                    .map(|(name, _)| name)
-                    .unwrap_or(raw);
+                let (name, class) = match raw.rsplit_once(" (") {
+                    Some((name, suffix)) if suffix.ends_with(')') => {
+                        (name, Some(suffix.trim_end_matches(')').to_string()))
+                    }
+                    _ => (raw, None),
+                };
                 return Some(LogEvent::LevelUp {
                     character_name: name.to_string(),
                     level,
+                    class,
                 });
             }
         }
@@ -252,33 +280,169 @@ fn parse_log_line(line: &str, game: &str) -> Option<LogEvent> {
 }
 
 /// Scan the last 64KB of Client.txt for initial state
-fn scan_log_history(log_path: &PathBuf) -> InitialGameState {
-    let mut state = InitialGameState::default();
+/// Bytes covered by the fast synchronous tail scan at startup.
+const QUICK_SCAN_BYTES: u64 = 65536;
+/// Chunk size for the backward deep scan.
+const SCAN_CHUNK: u64 = 262_144;
+/// After adopting a character candidate, keep scanning this many additional
+/// bytes for contradicting evidence before trusting it (see BackwardScan).
+const CONFIRM_BYTES: u64 = 1_048_576;
 
-    // Detect game from path
-    let game = detect_game_from_path(log_path);
-    state.game = Some(game.to_string());
-    state.log_path = Some(log_path.to_string_lossy().to_string());
+/// State accumulated while scanning a Client.txt backward (most recent line
+/// first). Character identity comes from level-up/death lines; names in
+/// "has joined/left the area" lines are always OTHER players (your own name
+/// never appears in those in your own log).
+///
+/// Because the scan runs newest-to-oldest, another player's death/level-up is
+/// seen BEFORE the join line that would expose them (they join, then die).
+/// Candidates are therefore adopted provisionally and DEMOTED when an older
+/// join/left line names them — the scan then continues looking for the real
+/// character. A candidate is only trusted after `CONFIRM_BYTES` of older log
+/// yield no contradiction.
+#[derive(Default)]
+struct BackwardScan {
+    zone: Option<String>,
+    area_level: Option<u32>,
+    character_name: Option<String>,
+    character_level: Option<u32>,
+    character_class: Option<String>,
+    /// Names known to be other players.
+    others: HashSet<String>,
+    /// True once a level-up matching the candidate has been found.
+    level_found: bool,
+}
 
-    if let Ok(mut file) = File::open(log_path) {
-        let file_len = file.metadata().map(|m| m.len()).unwrap_or(0);
-        let seek_pos = file_len.saturating_sub(65536);
-        let _ = file.seek(SeekFrom::Start(seek_pos));
-
-        let reader = BufReader::new(file);
-        for line in reader.lines().map_while(Result::ok) {
-            if let Some(event) = parse_log_line(line.trim(), game) {
-                apply_event(&mut state, &event);
+impl BackwardScan {
+    /// Fold one log line (lines arrive most-recent-first).
+    fn fold(&mut self, line: &str, game: &str) {
+        let Some(event) = parse_log_line(line.trim(), game) else {
+            return;
+        };
+        match event {
+            LogEvent::OtherPlayer { character_name } => {
+                // The current candidate turns out to be another player —
+                // demote and keep looking.
+                if self.character_name.as_ref() == Some(&character_name) {
+                    self.character_name = None;
+                    self.character_level = None;
+                    self.character_class = None;
+                    self.level_found = false;
+                }
+                self.others.insert(character_name);
             }
+            LogEvent::Zone { zone_name } => {
+                if self.zone.is_none() {
+                    self.zone = Some(zone_name);
+                }
+            }
+            LogEvent::AreaLevel { level } => {
+                if self.area_level.is_none() {
+                    self.area_level = Some(level);
+                }
+            }
+            // Most recent non-excluded death names the candidate (its level
+            // must still come from a level-up line).
+            LogEvent::Death { character_name } => {
+                if self.character_name.is_none() && !self.others.contains(&character_name) {
+                    self.character_name = Some(character_name);
+                }
+            }
+            LogEvent::LevelUp {
+                character_name,
+                level,
+                class,
+            } => {
+                if self.level_found || self.others.contains(&character_name) {
+                    return;
+                }
+                // If a more recent death already named the candidate, only a
+                // level-up for the SAME name may set the level (an older
+                // level-up for a different name is an alt or another player).
+                match &self.character_name {
+                    Some(current) if *current != character_name => return,
+                    _ => {}
+                }
+                self.character_name = Some(character_name);
+                self.character_level = Some(level);
+                if class.is_some() {
+                    self.character_class = class;
+                }
+                self.level_found = true;
+            }
+            _ => {}
         }
     }
 
-    println!(
-        "Scanned log history: char={:?}, char_level={:?}, zone={:?}, area_level={:?}, game={:?}",
-        state.character_name, state.character_level, state.zone, state.area_level, state.game
-    );
+    fn to_initial(&self, game: &str, log_path: &std::path::Path) -> InitialGameState {
+        InitialGameState {
+            character_name: self.character_name.clone(),
+            character_level: self.character_level,
+            character_class: self.character_class.clone(),
+            zone: self.zone.clone(),
+            area_level: self.area_level,
+            game: Some(game.to_string()),
+            log_path: Some(log_path.to_string_lossy().to_string()),
+        }
+    }
+}
 
-    state
+/// Scan a log file backward in chunks, folding each line (most recent first)
+/// into `scan`. Stops when a character candidate has survived `CONFIRM_BYTES`
+/// of older log without a contradicting join/left line (and zone/area are
+/// known), when `max_bytes` (from the end) is exhausted, or when `abort()`
+/// returns true (superseded watcher).
+fn scan_log_backward(
+    log_path: &PathBuf,
+    game: &str,
+    max_bytes: Option<u64>,
+    scan: &mut BackwardScan,
+    abort: &dyn Fn() -> bool,
+) {
+    let Ok(mut file) = File::open(log_path) else {
+        return;
+    };
+    let len = file.metadata().map(|m| m.len()).unwrap_or(0);
+    let stop = max_bytes.map_or(0, |m| len.saturating_sub(m));
+    let mut end = len;
+    // Byte offset below which the current candidate counts as confirmed.
+    let mut confirm_below: Option<u64> = None;
+    // Partial first line of the previously processed (chronologically later)
+    // chunk — its beginning lives in the chunk we read next.
+    let mut carry: Vec<u8> = Vec::new();
+
+    while end > stop && !abort() {
+        let start = end.saturating_sub(SCAN_CHUNK).max(stop);
+        let size = (end - start) as usize;
+        let mut buf = vec![0u8; size];
+        if file.seek(SeekFrom::Start(start)).is_err() || file.read_exact(&mut buf).is_err() {
+            return;
+        }
+        buf.extend_from_slice(&carry);
+
+        let mut lines: Vec<&[u8]> = buf.split(|&b| b == b'\n').collect();
+        // The first piece is incomplete unless this chunk starts at the file
+        // start — its beginning is in the next (earlier) chunk.
+        carry = if start > 0 {
+            lines.remove(0).to_vec()
+        } else {
+            Vec::new()
+        };
+
+        for line in lines.iter().rev() {
+            scan.fold(String::from_utf8_lossy(line).trim(), game);
+        }
+        end = start;
+
+        // Track/refresh the confirmation window at chunk granularity.
+        if scan.level_found {
+            let below = *confirm_below.get_or_insert(end.saturating_sub(CONFIRM_BYTES));
+            if end <= below && scan.zone.is_some() && scan.area_level.is_some() {
+                return;
+            }
+        } else {
+            confirm_below = None;
+        }
+    }
 }
 
 /// Generation counter for watcher threads. Starting a new watcher bumps the
@@ -291,17 +455,32 @@ static WATCHER_GEN: AtomicU64 = AtomicU64::new(0);
 /// Seeks to end of file on startup, only reads new lines.
 /// Replaces any previously started watcher.
 pub fn start_log_watcher(app: AppHandle, log_path: PathBuf) {
-    // Scan history and store in managed state BEFORE spawning the thread
-    let initial = scan_log_history(&log_path);
+    let game = detect_game_from_path(&log_path);
+    let generation = WATCHER_GEN.fetch_add(1, Ordering::SeqCst) + 1;
+    let superseded = move || WATCHER_GEN.load(Ordering::SeqCst) != generation;
+
+    // Fast synchronous tail scan so the frontend has zone/area (and usually
+    // the character) the moment it mounts.
+    let mut scan = BackwardScan::default();
+    scan_log_backward(&log_path, game, Some(QUICK_SCAN_BYTES), &mut scan, &|| {
+        false
+    });
+    let initial = scan.to_initial(game, &log_path);
+    println!(
+        "Scanned log tail: char={:?}, char_level={:?}, zone={:?}, area_level={:?}, game={:?}",
+        initial.character_name,
+        initial.character_level,
+        initial.zone,
+        initial.area_level,
+        initial.game
+    );
     if let Some(game_state) = app.try_state::<GameState>() {
         *game_state.0.lock().unwrap() = initial;
     }
 
-    let game = detect_game_from_path(&log_path);
-    let generation = WATCHER_GEN.fetch_add(1, Ordering::SeqCst) + 1;
-
     std::thread::spawn(move || {
-        // Open file and seek to end
+        // Open file and seek to end FIRST so lines appended while the deep
+        // scan below runs are not lost.
         let mut file = match File::open(&log_path) {
             Ok(f) => f,
             Err(e) => {
@@ -318,12 +497,52 @@ pub fn start_log_watcher(app: AppHandle, log_path: PathBuf) {
 
         let mut reader = BufReader::new(file);
 
+        // Continue the scan past the tail window: confirm (or correct) the
+        // tail's provisional candidate, and find the most recent level-up for
+        // characters that haven't leveled recently (e.g. max level). Stops
+        // ~1MB after a candidate survives unchallenged, so this is cheap.
+        let tail_char = (
+            scan.character_name.clone(),
+            scan.character_level,
+            scan.character_class.clone(),
+        );
+        scan_log_backward(&log_path, game, None, &mut scan, &superseded);
+        let deep_char = (
+            scan.character_name.clone(),
+            scan.character_level,
+            scan.character_class.clone(),
+        );
+        if deep_char != tail_char && !superseded() {
+            println!(
+                "Deep scan resolved character: {:?} (level {:?})",
+                scan.character_name, scan.character_level
+            );
+            let mut changed = false;
+            if let Some(game_state) = app.try_state::<GameState>() {
+                let mut state = game_state.0.lock().unwrap();
+                // Don't clobber live events that arrived while scanning.
+                if state.character_name == tail_char.0 && state.character_level == tail_char.1 {
+                    state.character_name = deep_char.0.clone();
+                    state.character_level = deep_char.1;
+                    state.character_class = deep_char.2.clone();
+                    changed = true;
+                }
+            }
+            if changed {
+                let _ = app.emit("initial-state-updated", ());
+            }
+        }
+
+        // Names of other players (party members etc.) — their deaths and
+        // level-ups must not be attributed to the local character.
+        let mut others = scan.others;
+
         println!("Watching log file (polling): {:?}", log_path);
 
         // Poll for new lines every 500ms — reliable on all drives
         loop {
             // A newer watcher has been started (log path changed) — exit.
-            if WATCHER_GEN.load(Ordering::SeqCst) != generation {
+            if superseded() {
                 println!("Stopping superseded log watcher for {:?}", log_path);
                 return;
             }
@@ -331,6 +550,24 @@ pub fn start_log_watcher(app: AppHandle, log_path: PathBuf) {
             let mut line = String::new();
             while reader.read_line(&mut line).unwrap_or(0) > 0 {
                 if let Some(log_event) = parse_log_line(line.trim(), game) {
+                    match &log_event {
+                        // Track other players; never emit these.
+                        LogEvent::OtherPlayer { character_name } => {
+                            others.insert(character_name.clone());
+                            line.clear();
+                            continue;
+                        }
+                        // Drop deaths/level-ups of known other players.
+                        LogEvent::Death { character_name }
+                        | LogEvent::LevelUp { character_name, .. }
+                            if others.contains(character_name) =>
+                        {
+                            line.clear();
+                            continue;
+                        }
+                        _ => {}
+                    }
+
                     // Update managed state
                     if let Some(game_state) = app.try_state::<GameState>() {
                         apply_event(&mut game_state.0.lock().unwrap(), &log_event);
@@ -656,27 +893,117 @@ mod tests {
             Some(LogEvent::LevelUp {
                 character_name,
                 level,
+                class,
             }) => {
                 assert_eq!(character_name, "Witchtimeee");
                 assert_eq!(level, 42);
+                assert_eq!(class, None);
             }
             other => panic!("expected LevelUp, got {:?}", other.is_some()),
         }
     }
 
     #[test]
-    fn poe2_level_up_strips_class_suffix() {
+    fn poe2_level_up_splits_class_suffix() {
         let line = info("Sorceress (Witch) is now level 8");
         match parse_log_line(&line, "poe2") {
             Some(LogEvent::LevelUp {
                 character_name,
                 level,
+                class,
             }) => {
                 assert_eq!(character_name, "Sorceress");
                 assert_eq!(level, 8);
+                assert_eq!(class.as_deref(), Some("Witch"));
             }
             other => panic!("expected LevelUp, got {:?}", other.is_some()),
         }
+    }
+
+    #[test]
+    fn joined_and_left_area_are_other_players() {
+        for msg in [
+            "PartyFriend has joined the area.",
+            "PartyFriend has left the area.",
+        ] {
+            match parse_log_line(&info(msg), "poe1") {
+                Some(LogEvent::OtherPlayer { character_name }) => {
+                    assert_eq!(character_name, "PartyFriend");
+                }
+                other => panic!("expected OtherPlayer, got {:?}", other.is_some()),
+            }
+        }
+    }
+
+    #[test]
+    fn backward_scan_excludes_party_members() {
+        // Chronological order; the scan folds in REVERSE (most recent first).
+        let lines = [
+            info("MyChar is now level 97"),
+            info("PartyFriend has joined the area."),
+            info("PartyFriend is now level 80"),
+            info("PartyFriend has been slain."),
+        ];
+        let mut scan = BackwardScan::default();
+        for line in lines.iter().rev() {
+            scan.fold(line, "poe1");
+        }
+        // PartyFriend's death and level-up are excluded; MyChar's older
+        // level-up is the character.
+        assert_eq!(scan.character_name.as_deref(), Some("MyChar"));
+        assert_eq!(scan.character_level, Some(97));
+    }
+
+    #[test]
+    fn backward_scan_death_name_locks_level_lookup() {
+        // Most recent death names the char; an older level-up for a DIFFERENT
+        // name (an alt) must not override, but the matching one sets level.
+        let lines = [
+            info("MyAlt is now level 12"),
+            info("MyChar is now level 100"),
+            info("MyChar has been slain."),
+        ];
+        let mut scan = BackwardScan::default();
+        for line in lines.iter().rev() {
+            scan.fold(line, "poe1");
+        }
+        assert_eq!(scan.character_name.as_deref(), Some("MyChar"));
+        assert_eq!(scan.character_level, Some(100));
+    }
+
+    #[test]
+    fn backward_file_scan_finds_old_levelup_across_chunks() {
+        // A max-level char whose last level-up is deep in the file: the quick
+        // tail scan misses it, the unbounded scan walks back and finds it.
+        let dir = std::env::temp_dir().join("exiled-orb-test-scan");
+        let _ = std::fs::create_dir_all(&dir);
+        let path = dir.join("Client.txt");
+        let mut content = String::new();
+        content.push_str(&info("MaxLevel is now level 100"));
+        content.push('\n');
+        // ~1MB of filler so the level-up sits several chunks back.
+        let filler = info("Async connecting to login server");
+        for _ in 0..8000 {
+            content.push_str(&filler);
+            content.push('\n');
+        }
+        content.push_str(&info("You have entered Oriath."));
+        content.push('\n');
+        std::fs::write(&path, &content).unwrap();
+
+        let mut quick = BackwardScan::default();
+        scan_log_backward(&path, "poe1", Some(QUICK_SCAN_BYTES), &mut quick, &|| false);
+        assert_eq!(quick.zone.as_deref(), Some("Oriath"));
+        assert!(
+            !quick.level_found,
+            "level-up must be beyond the quick window"
+        );
+
+        scan_log_backward(&path, "poe1", None, &mut quick, &|| false);
+        assert_eq!(quick.character_name.as_deref(), Some("MaxLevel"));
+        assert_eq!(quick.character_level, Some(100));
+
+        let _ = std::fs::remove_file(&path);
     }
 
     #[test]

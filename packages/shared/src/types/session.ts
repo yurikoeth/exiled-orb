@@ -44,6 +44,8 @@ export interface LogEventPayload {
   player_name?: string;
   message?: string;
   level?: number;
+  /** PoE2 level-up events carry the character class. */
+  class?: string | null;
   server?: string;
   game?: string;
   log_path?: string;
@@ -53,6 +55,7 @@ export interface LogEventPayload {
 export interface InitialGameState {
   character_name: string | null;
   character_level: number | null;
+  character_class: string | null;
   zone: string | null;
   area_level: number | null;
   game: string | null;

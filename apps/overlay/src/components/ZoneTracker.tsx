@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { invoke } from "@tauri-apps/api/core";
 import { useOverlayStore } from "../stores/overlay-store";
+import { syncInitialGameState } from "../hooks/useClientLog";
 import { formatDuration } from "@exiled-orb/shared";
 import poe1Logo from "../assets/poe1-logo.png";
 import poe2Logo from "../assets/poe2-logo.png";
@@ -104,6 +104,7 @@ export default function ZoneTracker() {
   const detectedGame = useOverlayStore((s) => s.detectedGame);
   const characterName = useOverlayStore((s) => s.characterName);
   const characterClass = useOverlayStore((s) => s.characterClass);
+  const characterLevel = useOverlayStore((s) => s.characterLevel);
   const areaLevel = useOverlayStore((s) => s.areaLevel);
   const [elapsed, setElapsed] = useState(0);
 
@@ -124,18 +125,7 @@ export default function ZoneTracker() {
   const season = seasonLabel(detectedGame ?? settingsGame, now);
 
   const refresh = () => {
-    invoke<{
-      character_name: string | null;
-      zone: string | null;
-      area_level: number | null;
-      game: string | null;
-    }>("get_initial_game_state").then((state) => {
-      const store = useOverlayStore.getState();
-      if (state.character_name) store.setCharacterName(state.character_name);
-      if (state.zone) store.setZone(state.zone);
-      if (state.area_level) store.setAreaLevel(state.area_level);
-      if (state.game === "poe1" || state.game === "poe2") store.setDetectedGame(state.game);
-    });
+    syncInitialGameState();
   };
 
   return (
@@ -161,6 +151,15 @@ export default function ZoneTracker() {
             {characterName && (
               <span className="text-sm font-bold truncate" style={{ color: "var(--accent)" }}>
                 {characterName}
+              </span>
+            )}
+            {characterLevel != null && (
+              <span
+                className="text-xs shrink-0"
+                style={{ color: "var(--text-primary)" }}
+                title="Character level"
+              >
+                Lv.{characterLevel}
               </span>
             )}
             {characterClass && (
@@ -201,8 +200,12 @@ export default function ZoneTracker() {
               {currentZone || "Waiting for zone..."}
             </span>
             {areaLevel != null && (
-              <span className="text-xs shrink-0" style={{ color: "var(--text-secondary)" }}>
-                Lv.{areaLevel}
+              <span
+                className="text-xs shrink-0"
+                style={{ color: "var(--text-secondary)" }}
+                title="Area (monster) level"
+              >
+                Area {areaLevel}
               </span>
             )}
           </div>

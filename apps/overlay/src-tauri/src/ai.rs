@@ -47,6 +47,10 @@ async fn send_claude(api_key: &str, body: &Value) -> Result<String, String> {
     if !response.status().is_success() {
         let status = response.status();
         let text = response.text().await.unwrap_or_default();
+        // Also log to stderr — frontend catches are only visible in the
+        // webview console, which made API failures look like "no key".
+        let preview: String = text.chars().take(300).collect();
+        eprintln!("[ExiledOrb] Claude API error {}: {}", status, preview);
         return Err(format!("Claude API error {}: {}", status, text));
     }
 

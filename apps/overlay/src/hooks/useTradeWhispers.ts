@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { listen } from "@tauri-apps/api/event";
 import { invoke } from "@tauri-apps/api/core";
 import { getApiKey } from "../utils/store";
+import { parseAiJson } from "../utils/parseAiJson";
 import { useSettingsStore } from "../stores/settings-store";
 import { useAiStore } from "../stores/ai-store";
 import type { TradeWhisperAnalysis } from "@exiled-orb/shared";
@@ -44,7 +45,8 @@ export function useTradeWhispers() {
           itemContext: "No additional context available.",
         });
 
-        const analysis: TradeWhisperAnalysis = JSON.parse(result);
+        const analysis = parseAiJson<TradeWhisperAnalysis | null>(result, null);
+        if (!analysis) throw new Error("Unparseable AI response");
         useAiStore.getState().addWhisperAnalysis(whisperText, analysis);
       } catch (err) {
         console.error("[ExiledOrb] Trade whisper analysis failed:", err);

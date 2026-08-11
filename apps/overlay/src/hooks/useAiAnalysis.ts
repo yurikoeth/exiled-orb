@@ -2,6 +2,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { useAiStore } from "../stores/ai-store";
 import { useSettingsStore } from "../stores/settings-store";
 import { getApiKey } from "../utils/store";
+import { parseAiJson } from "../utils/parseAiJson";
 import { evaluateItem, resolveLeague } from "@exiled-orb/shared";
 import type { ParsedItem, PriceResult, AiPriceAnalysis } from "@exiled-orb/shared";
 
@@ -88,11 +89,12 @@ export async function analyzeItemWithAi(
 
   const apiKey = await getApiKey();
 
-  // No API key — use local mod tier analysis as fallback
+  // No API key — use local mod tier analysis as fallback. NOT cached:
+  // it's instant local math, and caching it would keep serving the keyless
+  // result (with its "add an API key" hint) after the user adds a key.
   if (!apiKey) {
     if (item.rarity === "Rare" && item.explicits.length > 0) {
       const local = generateLocalAnalysis(item, priceResult);
-      analysisCache.set(hash, local);
       useAiStore.getState().setAnalysis(local, false);
     }
     return;
@@ -127,7 +129,10 @@ export async function analyzeItemWithAi(
       marketContext,
     });
 
-    const analysis: AiPriceAnalysis = JSON.parse(result);
+    // Claude sometimes wraps the JSON in ```json fences despite instructions —
+    // parseAiJson strips fences and repairs trailing commas/truncation.
+    const analysis = parseAiJson<AiPriceAnalysis | null>(result, null);
+    if (!analysis) throw new Error("Unparseable AI response");
     analysisCache.set(hash, analysis);
     useAiStore.getState().setAnalysis(analysis, false);
   } catch (err) {

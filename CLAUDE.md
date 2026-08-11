@@ -130,10 +130,22 @@ Ctrl+C in PoE → Win32 clipboard API (polls 500ms)
 ### Client.txt → Zone/Death Tracking
 ```
 PoE writes Client.txt → log_watcher.rs (polls 1s, tail-only)
-  → parse_log_line(line, game): zone/death/whisper/level_up/connected/area_level
+  → parse_log_line(line, game): zone/death/whisper/level_up/connected/
+    area_level/other_player ("has joined/left the area" = another player)
   → Tauri "log-event" event (LogEventEnvelope adds `game`) → useClientLog hook
-  → Startup: scans last 64KB for char name, char level, zone, area level
+  → Startup (BackwardScan): quick 64KB tail scan (sync), then the watcher
+    thread continues scanning the file BACKWARD in 256KB chunks until the
+    char's most recent level-up is found (handles max-level chars whose last
+    level-up is months back) + a 1MB confirmation window. Candidates are
+    demoted if an older join/left line names them (they were a party member).
+    Deep-scan result → "initial-state-updated" event → frontend re-syncs.
+  → Live loop keeps an `others` exclusion set: party members' deaths and
+    level-ups are dropped, so they can't hijack the displayed character or
+    inflate the death counter.
   → Stores in Tauri managed state (GameState) → get_initial_game_state IPC
+  → PoE2 level-up lines carry the class → auto-populates characterClass
+ZoneTracker shows charName + Lv.{charLevel} + class; zone row shows
+"Area {N}" (monster level) — do not conflate the two levels.
 ```
 
 ### Active-Game Detection (PoE1 + PoE2)
