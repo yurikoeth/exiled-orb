@@ -1,0 +1,50 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build Windows installers · draft GitHub Release
+    # windows-latest is required: clipboard.rs uses Win32 FFI that does not
+    # compile on Linux, and the app only targets Windows anyway.
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4 # reads packageManager from package.json
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: apps/overlay/src-tauri
+
+      - run: pnpm install --frozen-lockfile
+
+      # Build the shared workspace package first (turbo orders deps); the
+      # overlay frontend itself is rebuilt by tauri build's beforeBuildCommand.
+      - run: pnpm build
+
+      - uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          projectPath: apps/overlay
+          tagName: ${{ github.ref_name }}
+          releaseName: "ExiledOrb ${{ github.ref_name }}"
+          releaseBody: |
+            Download the installer below — `.exe` (NSIS, recommended) or `.msi` (WiX).
+
+            ExiledOrb requires Windows 10/11. See the [README](https://github.com/yurikoeth/exiled-orb#readme) for features and setup.
+          releaseDraft: true
+          prerelease: ${{ contains(github.ref_name, '-') }}
