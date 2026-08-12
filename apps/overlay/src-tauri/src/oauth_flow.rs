@@ -349,7 +349,12 @@ pub async fn start_oauth_flow(app: AppHandle) -> Result<(), String> {
 
 #[tauri::command]
 pub async fn is_authenticated(app: AppHandle) -> bool {
-    load_tokens(&app).is_some()
+    // A tokens file alone is not enough: an expired access token with no
+    // refresh token cannot be used or refreshed, and reporting it as
+    // authenticated strands the user in the "Connected" view with no
+    // reconnect button. Treat that state as not authenticated so the UI
+    // offers the Connect flow instead.
+    load_tokens(&app).is_some_and(|t| t.expires_at > now_secs() + 60 || t.refresh_token.is_some())
 }
 
 #[tauri::command]
