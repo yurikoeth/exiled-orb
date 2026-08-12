@@ -272,7 +272,11 @@ whisper analysis — both were unreachable before the Settings UI existed.
   tell) but NOT in PoE2, whose waystone zones have no distinguishing suffix —
   PoE2 coverage is only as good as the database.
 - AtlasHelper — removed 2026-05-28; rebuild scoped in README roadmap (curated library + pick-and-track + clipboard integration + profit tracking); old implementation in git history pre-2026-05-28
-- Tauri Windows packaging/installer (.msi/.exe)
+- PoE1 log-mined character tiles (planned v1.0.1) — scan_character_history
+  already reads PoE1 logs, but GggAccount's section grouping surfaces detected
+  characters only under PoE2 (and only in the OAuth-connected view). Parity =
+  filter by section game + rescan button in both headers; full fix also
+  renders mined sections when OAuth is not connected.
 - Snipe alerts (background trade polling)
 - GGG Trade API for rare pricing (currently mod-tier estimation only)
 
