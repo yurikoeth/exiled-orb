@@ -26,6 +26,16 @@ pub struct GggCharacter {
     pub game: String,
 }
 
+/// Why a realm fetch failed — auth failures must NOT be silently folded into
+/// "no characters": a user who revoked ExiledOrb on pathofexile.com would
+/// otherwise be told to go check that they own characters.
+enum RealmError {
+    /// 401/403 — token revoked or otherwise rejected by GGG.
+    Auth,
+    /// Network / HTTP / parse failure.
+    Other(String),
+}
+
 /// Fetch a single realm's characters via the documented OAuth endpoint.
 /// Path is `/character` for PoE1 (default) and `/character/poe2` for PoE2.
 /// Response shape: `{ "characters": [...] }` (per developer docs).
@@ -33,7 +43,7 @@ async fn fetch_realm(
     client: &reqwest::Client,
     token: &str,
     realm: Option<&str>,
-) -> Vec<GggCharacter> {
+) -> Result<Vec<GggCharacter>, RealmError> {
     let url = match realm {
         Some(r) => format!("{}/{}", CHAR_API_BASE, r),
         None => CHAR_API_BASE.to_string(),
@@ -53,7 +63,7 @@ async fn fetch_realm(
         Ok(r) => r,
         Err(e) => {
             eprintln!("[ExiledOrb] fetch_realm {:?} network error: {}", realm, e);
-            return vec![];
+            return Err(RealmError::Other(e));
         }
     };
 
@@ -64,14 +74,17 @@ async fn fetch_realm(
             "[ExiledOrb] fetch_realm {:?} HTTP {}: {}",
             realm, status, body
         );
-        return vec![];
+        if status == reqwest::StatusCode::UNAUTHORIZED || status == reqwest::StatusCode::FORBIDDEN {
+            return Err(RealmError::Auth);
+        }
+        return Err(RealmError::Other(format!("GGG API error ({status})")));
     }
 
     let data: serde_json::Value = match res.json().await {
         Ok(d) => d,
         Err(e) => {
             eprintln!("[ExiledOrb] fetch_realm {:?} parse error: {}", realm, e);
-            return vec![];
+            return Err(RealmError::Other(format!("Response parse error: {e}")));
         }
     };
 
@@ -84,7 +97,7 @@ async fn fetch_realm(
         .or_else(|| data.as_array().cloned())
         .unwrap_or_default();
 
-    chars
+    Ok(chars
         .iter()
         .filter_map(|c| {
             Some(GggCharacter {
@@ -96,7 +109,7 @@ async fn fetch_realm(
                 game: game_tag.to_string(),
             })
         })
-        .collect()
+        .collect())
 }
 
 /// Fetch characters from both PoE1 and PoE2 via the OAuth-authenticated
@@ -112,16 +125,40 @@ pub async fn fetch_characters(app: AppHandle) -> Result<Vec<GggCharacter>, Strin
         fetch_realm(&client, &token, Some("poe2")),
     );
 
-    let mut all = poe1;
-    all.extend(poe2);
-
-    if all.is_empty() {
+    // Either realm rejecting the token means the authorization is gone
+    // (revoked on pathofexile.com, or otherwise invalidated) — say so
+    // instead of pretending the account is empty.
+    if matches!(poe1, Err(RealmError::Auth)) || matches!(poe2, Err(RealmError::Auth)) {
         return Err(
-            "No characters returned from GGG. The OAuth call succeeded but the response was empty — make sure you have characters on this account."
-                .to_string(),
+            "GGG rejected the authorization — it may have been revoked on pathofexile.com. Disconnect (✕) and connect again.".to_string(),
         );
     }
 
+    // Both realms failed outright (network down, GGG outage): report it.
+    // One realm failing while the other succeeds is fine — a PoE2-only
+    // account can error on the PoE1 endpoint and vice versa.
+    let (all, err) = match (poe1, poe2) {
+        (Err(RealmError::Other(e1)), Err(RealmError::Other(e2))) => {
+            return Err(format!(
+                "Could not reach the GGG API. PoE1: {e1} — PoE2: {e2}"
+            ));
+        }
+        (Ok(a), Ok(b)) => {
+            let mut v = a;
+            v.extend(b);
+            (v, None)
+        }
+        (Ok(a), Err(RealmError::Other(e))) | (Err(RealmError::Other(e)), Ok(a)) => (a, Some(e)),
+        // Auth errors were handled above.
+        _ => unreachable!("RealmError::Auth handled before the match"),
+    };
+
+    if let Some(e) = err {
+        eprintln!("[ExiledOrb] fetch_characters: one realm failed: {e}");
+    }
+
+    // An empty result with no errors is a legitimately empty account — the
+    // frontend renders its empty state; this is NOT an error.
     Ok(dedupe_by_name_keep_max_level(all))
 }
 
