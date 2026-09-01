@@ -1,4 +1,3 @@
-use std::sync::{Arc, Mutex};
 use std::time::Duration;
 use tauri::{AppHandle, Emitter};
 
@@ -61,40 +60,48 @@ extern "system" {
     fn GetClipboardData(format: u32) -> *mut std::ffi::c_void;
     fn GlobalLock(hmem: *mut std::ffi::c_void) -> *mut std::ffi::c_void;
     fn GlobalUnlock(hmem: *mut std::ffi::c_void) -> i32;
+    fn GetClipboardSequenceNumber() -> u32;
 }
 
 /// Continuously polls the clipboard for PoE item text.
 /// When a new item is detected, emits a "clipboard-item" event to the frontend.
+///
+/// Change detection uses the Windows clipboard SEQUENCE NUMBER, not the text
+/// content: every copy bumps the sequence, so Ctrl+C-ing the SAME item again
+/// (check price → dismiss → re-copy to re-check) re-emits. Content comparison
+/// silently swallowed that — the panel never reappeared. The sequence also
+/// means whatever is already on the clipboard at app launch is NOT emitted;
+/// only copies made while the app is running trigger.
 pub fn start_clipboard_watcher(app: AppHandle) {
-    let last_content: Arc<Mutex<String>> = Arc::new(Mutex::new(String::new()));
-
     std::thread::spawn(move || {
-        eprintln!("[ExiledOrb] Clipboard watcher started (Win32 API)");
+        eprintln!("[ExiledOrb] Clipboard watcher started (Win32 API, sequence-number)");
+
+        // GetClipboardSequenceNumber needs no open clipboard and never blocks.
+        let mut last_seq = unsafe { GetClipboardSequenceNumber() };
 
         loop {
             std::thread::sleep(Duration::from_millis(500));
+
+            let seq = unsafe { GetClipboardSequenceNumber() };
+            if seq == last_seq {
+                continue;
+            }
+            last_seq = seq;
 
             let text = match read_clipboard_win32() {
                 Some(t) if !t.is_empty() => t,
                 _ => continue,
             };
 
-            let mut last = last_content.lock().unwrap();
-            if text != *last {
-                if is_poe_item(&text) {
-                    eprintln!(
-                        "[ExiledOrb] Clipboard: detected PoE item ({} chars)",
-                        text.len()
-                    );
-                    *last = text.clone();
-                    drop(last);
-
-                    match app.emit("clipboard-item", text) {
-                        Ok(_) => eprintln!("[ExiledOrb] Clipboard: event emitted OK"),
-                        Err(e) => eprintln!("[ExiledOrb] Clipboard: emit failed: {}", e),
-                    }
-                } else {
-                    *last = text;
+            if is_poe_item(&text) {
+                eprintln!(
+                    "[ExiledOrb] Clipboard: detected PoE item ({} chars, seq {})",
+                    text.len(),
+                    seq
+                );
+                match app.emit("clipboard-item", text) {
+                    Ok(_) => eprintln!("[ExiledOrb] Clipboard: event emitted OK"),
+                    Err(e) => eprintln!("[ExiledOrb] Clipboard: emit failed: {}", e),
                 }
             }
         }
