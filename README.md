@@ -22,9 +22,9 @@ ExiledOrb is an always-on-top desktop companion that monitors your clipboard and
 
 - **Leveling Guide** — Step-by-step guides for PoE1 (Acts 1–10) and PoE2 (Acts 1–6) with per-character checklists that auto-advance as you change zones.
 
-- **Settings & Onboarding** — First-launch setup and an in-overlay Settings page: default game, per-game league override (auto-follows the current season otherwise), Client.txt auto-detect or custom path, and AI feature toggles.
+- **Settings & Onboarding** — First-launch setup and an in-overlay Settings page: default game, per-game league override (auto-follows the current season otherwise), Client.txt auto-detect or custom path, overlay hotkey, and AI feature toggles.
 
-> The overlay runs as a normal always-on-top window; hotkeys (F5 toggle, Esc back) apply while the overlay window has focus. Global in-game hotkeys and click-through transparency are on the roadmap.
+> The overlay runs as a normal always-on-top window. The show/hide toggle (default **F5**, rebindable in Settings) is a **global hotkey** — it works while the game has focus. Esc navigates back within the overlay. Click-through transparency is on the roadmap.
 
 ---
 
@@ -67,6 +67,11 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the data-flow pipelines and
 Requires Windows 10/11 (clipboard + log watching use Win32 APIs).
 
 Download the latest installer from [Releases](https://github.com/yurikoeth/exiled-orb/releases) — `.exe` (NSIS, recommended) or `.msi` — run it, and launch **ExiledOrb** from the Start menu. No admin rights needed; it installs per-user.
+
+> **Windows SmartScreen:** the installer is not yet code-signed, so Windows may show
+> *"Windows protected your PC"*. Click **More info → Run anyway**. ExiledOrb is fully
+> open source — everything the app does is in this repository, and you can build the
+> identical installer yourself.
 
 ---
 
@@ -144,7 +149,8 @@ ExiledOrb is fully game-agnostic. All types, parsers, APIs, and data are paramet
 
 ## Roadmap
 
-- Global in-game hotkeys (tauri-plugin-global-shortcut) and click-through transparency
+- Click-through transparency
+- Code signing for the installer (removes the SmartScreen warning)
 - Trade API integration for live rare pricing (client written, parked — see [ARCHITECTURE.md](docs/ARCHITECTURE.md#parked--work-in-progress))
 - Atlas farming strategies: curated per-game strategy library, pick-and-track, map-mod alignment hints, per-strategy profit tracking
 

@@ -117,7 +117,9 @@ Tauri's file watcher triggers Rust rebuilds when `src-tauri/` files change. If i
 
 ### Clipboard → Price Check
 ```
-Ctrl+C in PoE → Win32 clipboard API (polls 500ms)
+Ctrl+C in PoE → Win32 clipboard API (polls 500ms, change detection via
+  GetClipboardSequenceNumber so RE-copying the same item re-triggers;
+  content already on the clipboard at app launch does NOT trigger)
   → detects "Item Class:" or "Rarity:" + "--------"
   → Tauri "clipboard-item" event → useClipboard hook
   → item-parser.ts → ParsedItem
@@ -170,7 +172,10 @@ oauth_flow.rs: PKCE flow against pathofexile.com
   (client_id "exiledorb"; account:stashes NOT granted).
 oauth.rs: documented api.pathofexile.com endpoints (Bearer auth)
   fetch_characters  → GET /character + /character/poe2 (parallel, deduped by
-                      name keeping higher level)
+                      name keeping higher level). 401/403 from either realm →
+                      distinct "authorization revoked, reconnect" error (never
+                      folded into "no characters"); empty account → Ok(empty),
+                      frontend renders its empty state.
   fetch_character_items → GET /character[/poe2]/<name> → equipment → GggItem
 The legacy character-window/* endpoints are a TOS breach (GGG email
 2026-05-28) — never reintroduce them.
@@ -208,6 +213,14 @@ Home: ZoneTracker header + menu grid (6 pages)
   Market | Leveling | Maps | Ask AI | Characters | Settings
 Esc → back to home. First launch (no settings row in SQLite) opens the
 Settings page as onboarding; settings-store.firstRun carries the flag.
+Overlay show/hide is a GLOBAL hotkey (default F5, hotkey.rs via
+tauri-plugin-global-shortcut, registered from settings.overlay.hotkey on
+startup and editable in SettingsTab) — it hides the real window, works
+while the game has focus.
+A home-screen banner appears when no Client.txt watcher is active
+("missing") or the watcher errors — driven by get_initial_game_state()
+log_path + "log-watch-started"/"log-error" events (overlay-store
+logStatus/logError, wired in useClientLog).
 ```
 
 ### Settings & league resolution
