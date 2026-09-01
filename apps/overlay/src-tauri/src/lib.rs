@@ -63,6 +63,16 @@ pub fn run() {
                 .build(),
         )
         .plugin(tauri_plugin_store::Builder::new().build())
+        // Overlay lifecycle: the window's X hides to tray instead of exiting —
+        // the tray menu (Quit) owns app exit. Without this, closing the window
+        // killed the whole app, tray icon included, which reads as "the app
+        // vanished" to anyone aiming for the minimize button next door.
+        .on_window_event(|window, event| {
+            if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                let _ = window.hide();
+                api.prevent_close();
+            }
+        })
         .manage(log_watcher::GameState(std::sync::Mutex::new(
             log_watcher::InitialGameState::default(),
         )))
@@ -103,6 +113,9 @@ pub fn run() {
                 .on_menu_event(|app, event| match event.id().as_ref() {
                     "show" => {
                         if let Some(window) = app.get_webview_window("overlay") {
+                            // unminimize first — show() alone leaves a
+                            // minimized window in the taskbar, still unseen.
+                            let _ = window.unminimize();
                             let _ = window.show();
                             let _ = window.set_focus();
                         }

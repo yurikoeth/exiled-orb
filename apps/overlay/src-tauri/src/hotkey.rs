@@ -9,13 +9,17 @@ use tauri::Manager;
 use tauri_plugin_global_shortcut::{GlobalShortcutExt, Shortcut, ShortcutState};
 
 /// Hide the overlay window if visible, show it (without stealing focus) if not.
+/// A minimized window reports is_visible() == true but is effectively unseen,
+/// so treat it as hidden: unminimize + show instead of hiding it further.
 fn toggle_overlay(app: &tauri::AppHandle) {
     if let Some(window) = app.get_webview_window("overlay") {
+        let minimized = window.is_minimized().unwrap_or(false);
         match window.is_visible() {
-            Ok(true) => {
+            Ok(true) if !minimized => {
                 let _ = window.hide();
             }
             _ => {
+                let _ = window.unminimize();
                 let _ = window.show();
             }
         }

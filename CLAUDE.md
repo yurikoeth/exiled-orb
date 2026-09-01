@@ -217,6 +217,10 @@ Overlay show/hide is a GLOBAL hotkey (default F5, hotkey.rs via
 tauri-plugin-global-shortcut, registered from settings.overlay.hotkey on
 startup and editable in SettingsTab) — it hides the real window, works
 while the game has focus.
+Window lifecycle: the X button HIDES to tray (CloseRequested →
+prevent_close + hide in lib.rs); only tray → Quit exits the app. Toggle
+and tray → Show unminimize before show() — a minimized window reports
+is_visible() true, so naive toggling strands it.
 A home-screen banner appears when no Client.txt watcher is active
 ("missing") or the watcher errors — driven by get_initial_game_state()
 log_path + "log-watch-started"/"log-error" events (overlay-store
