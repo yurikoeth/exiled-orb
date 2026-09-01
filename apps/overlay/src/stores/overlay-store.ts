@@ -4,7 +4,6 @@ import type { ParsedItem, PriceResult, MapAnalysis } from "@exiled-orb/shared";
 type ActivePanel = "price" | "map" | null;
 
 interface OverlayState {
-  visible: boolean;
   activePanel: ActivePanel;
 
   // Price check state
@@ -27,8 +26,15 @@ interface OverlayState {
   characterLevel: number | null;
   areaLevel: number | null;
 
+  // Client.txt watcher status — "pending" until the initial state loads,
+  // then "watching" (logWatchPath set) or "missing" (no Client.txt found,
+  // log-driven features are inert). logError carries watcher failures
+  // (e.g. the file disappeared) emitted by Rust as "log-error".
+  logStatus: "pending" | "watching" | "missing";
+  logWatchPath: string | null;
+  logError: string | null;
+
   // Actions
-  toggleVisibility: () => void;
   dismissPanel: () => void;
   setPriceCheck: (item: ParsedItem, result: PriceResult | null, loading: boolean) => void;
   setMapAnalysis: (analysis: MapAnalysis) => void;
@@ -39,11 +45,13 @@ interface OverlayState {
   setCharacterLevel: (level: number) => void;
   setDetectedGame: (game: "poe1" | "poe2") => void;
   setAreaLevel: (level: number) => void;
+  setLogWatching: (path: string) => void;
+  setLogMissing: () => void;
+  setLogError: (error: string) => void;
   resetSession: () => void;
 }
 
 export const useOverlayStore = create<OverlayState>((set) => ({
-  visible: true,
   activePanel: null,
 
   currentItem: null,
@@ -62,7 +70,9 @@ export const useOverlayStore = create<OverlayState>((set) => ({
   characterLevel: null,
   areaLevel: null,
 
-  toggleVisibility: () => set((s) => ({ visible: !s.visible })),
+  logStatus: "pending",
+  logWatchPath: null,
+  logError: null,
 
   dismissPanel: () => set({ activePanel: null, priceLoading: false }),
 
@@ -101,6 +111,12 @@ export const useOverlayStore = create<OverlayState>((set) => ({
   setDetectedGame: (game) => set({ detectedGame: game }),
 
   setAreaLevel: (level) => set({ areaLevel: level }),
+
+  setLogWatching: (path) => set({ logStatus: "watching", logWatchPath: path, logError: null }),
+
+  setLogMissing: () => set({ logStatus: "missing", logWatchPath: null }),
+
+  setLogError: (error) => set({ logError: error }),
 
   resetSession: () =>
     set({

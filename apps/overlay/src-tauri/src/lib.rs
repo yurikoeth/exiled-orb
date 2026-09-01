@@ -1,5 +1,6 @@
 mod ai;
 mod clipboard;
+mod hotkey;
 mod log_watcher;
 mod ninja;
 mod oauth;
@@ -55,6 +56,7 @@ fn autodetect_log_path(app: tauri::AppHandle) -> Option<String> {
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .plugin(
             tauri_plugin_sql::Builder::new()
                 .add_migrations(settings::DB_URL, settings::migrations())
@@ -68,6 +70,7 @@ pub fn run() {
             set_log_path,
             get_default_log_paths,
             autodetect_log_path,
+            hotkey::set_overlay_hotkey,
             log_watcher::get_initial_game_state,
             log_watcher::scan_character_history,
             ai::ask_poe_question,

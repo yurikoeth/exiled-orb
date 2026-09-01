@@ -478,6 +478,12 @@ pub fn start_log_watcher(app: AppHandle, log_path: PathBuf) {
         *game_state.0.lock().unwrap() = initial;
     }
 
+    // Tell the frontend a watcher is (re)starting so it can clear any
+    // "Client.txt not found" banner. Harmless no-op during startup autodetect
+    // (the webview isn't listening yet — it learns the same fact from
+    // get_initial_game_state's log_path on mount).
+    let _ = app.emit("log-watch-started", log_path.to_string_lossy().to_string());
+
     std::thread::spawn(move || {
         // Open file and seek to end FIRST so lines appended while the deep
         // scan below runs are not lost.

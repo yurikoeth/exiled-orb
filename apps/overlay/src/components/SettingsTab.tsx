@@ -150,6 +150,55 @@ function LogSection() {
   );
 }
 
+/** Global overlay show/hide hotkey (registered in Rust, works in-game). */
+function HotkeySection() {
+  const overlay = useSettingsStore((s) => s.settings.overlay);
+  const updateSettings = useSettingsStore((s) => s.updateSettings);
+  const [draft, setDraft] = useState(overlay.hotkey);
+  const [status, setStatus] = useState<{ ok: boolean; text: string } | null>(null);
+
+  const apply = async () => {
+    const hotkey = draft.trim();
+    if (!hotkey) return;
+    setStatus(null);
+    try {
+      await invoke("set_overlay_hotkey", { hotkey });
+      await updateSettings({ overlay: { ...overlay, hotkey } });
+      setStatus({ ok: true, text: `Global toggle bound to ${hotkey}.` });
+    } catch (err) {
+      setStatus({ ok: false, text: String(err) });
+    }
+  };
+
+  return (
+    <div className="space-y-1.5">
+      <div className="flex gap-1.5">
+        <input
+          type="text"
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && apply()}
+          placeholder="F5"
+          className="flex-1 min-w-0 px-2 py-1 rounded text-xs"
+          style={inputStyle}
+        />
+        <Btn variant="outline" size="sm" onClick={apply} disabled={!draft.trim()}>
+          Apply
+        </Btn>
+      </div>
+      <div className="text-xs" style={{ color: "var(--text-secondary)", fontSize: "0.65rem" }}>
+        Global — hides/shows the overlay while the game has focus. Examples: "F5", "Ctrl+Shift+O",
+        "Alt+X".
+      </div>
+      {status && (
+        <div className="text-xs" style={{ color: status.ok ? COLORS.green : COLORS.redSoft }}>
+          {status.text}
+        </div>
+      )}
+    </div>
+  );
+}
+
 /** Labeled on/off toggle row for AI feature flags. */
 function ToggleRow({
   label,
@@ -240,6 +289,11 @@ export default function SettingsTab() {
       <Panel className="px-3 py-2 space-y-1.5">
         <SectionTitle>Client.txt</SectionTitle>
         <LogSection />
+      </Panel>
+
+      <Panel className="px-3 py-2 space-y-1.5">
+        <SectionTitle>Overlay toggle hotkey</SectionTitle>
+        <HotkeySection />
       </Panel>
 
       <Panel className="px-3 py-2 space-y-1.5">

@@ -47,6 +47,8 @@ const MENU_ITEMS: { id: Page; label: string; desc: string; bg?: string }[] = [
 
 export default function App() {
   const activePanel = useOverlayStore((s) => s.activePanel);
+  const logStatus = useOverlayStore((s) => s.logStatus);
+  const logError = useOverlayStore((s) => s.logError);
   const currentRun = useSpeedrunStore((s) => s.currentRun);
   const [page, setPage] = useState<Page>("home");
   const [leaderboardMap, setLeaderboardMap] = useState<{ name: string; game: string } | null>(null);
@@ -63,6 +65,11 @@ export default function App() {
 
         // First launch → open onboarding (Settings page).
         if (firstRun) setPage("settings");
+
+        // Register the global overlay toggle (works while the game has focus).
+        invoke("set_overlay_hotkey", { hotkey: settings.overlay.hotkey }).catch((err) =>
+          console.error("[ExiledOrb] Failed to register global hotkey:", err)
+        );
 
         // Custom log path configured → replace the auto-detected watcher.
         if (!settings.autoDetectLog && settings.clientLogPath) {
@@ -83,12 +90,12 @@ export default function App() {
   useMapSpeedrun();
   useTradeWhispers();
 
-  // Listen for toggle hotkey
+  // In-window navigation keys. The show/hide toggle is a GLOBAL hotkey
+  // (default F5) registered in Rust via set_overlay_hotkey — it hides the
+  // real window, so it works while the game has focus and costs nothing
+  // to render when hidden.
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
-      if (e.key === "F5") {
-        useOverlayStore.getState().toggleVisibility();
-      }
       if (e.key === "Escape") {
         if (page !== "home") {
           setPage("home");
@@ -100,9 +107,6 @@ export default function App() {
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
   }, [page]);
-
-  const visible = useOverlayStore((s) => s.visible);
-  if (!visible) return null;
 
   return (
     <div className="w-full min-h-0 h-screen flex flex-col gap-2 p-2 overflow-y-auto">
@@ -137,6 +141,24 @@ export default function App() {
       {/* HOME — menu grid + live panels */}
       {page === "home" && (
         <>
+          {/* Client.txt watcher problems — without a watched log, zone
+              tracking, deaths, map timer and leveling are all inert, so
+              never fail silently. */}
+          {(logStatus === "missing" || logError) && (
+            <Panel dashed className="px-3 py-2">
+              <div className="text-xs font-bold" style={{ color: "var(--danger-deadly)" }}>
+                {logStatus === "missing" ? "Client.txt not found" : "Client.txt watcher error"}
+              </div>
+              <div className="text-xs mt-1" style={{ color: "var(--text-secondary)" }}>
+                {logStatus === "missing"
+                  ? "No Path of Exile log was detected, so zone tracking, deaths, the map timer and leveling progress won't update. If PoE is installed somewhere unusual, point ExiledOrb at its Client.txt."
+                  : logError}
+              </div>
+              <Btn variant="outline" className="mt-1.5" onClick={() => setPage("settings")}>
+                Open Settings
+              </Btn>
+            </Panel>
+          )}
           {activePanel === "map" && <MapModWarnings />}
           <MapSplitDisplay />
           <SpeedrunStats />

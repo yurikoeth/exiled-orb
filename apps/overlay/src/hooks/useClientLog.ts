@@ -24,6 +24,14 @@ export async function syncInitialGameState(): Promise<InitialGameState | null> {
     if (state.zone) store.setZone(state.zone);
     if (state.area_level) store.setAreaLevel(state.area_level);
     if (state.game === "poe1" || state.game === "poe2") store.setDetectedGame(state.game);
+    // log_path is only set once a watcher actually started — null means
+    // auto-detection found no Client.txt anywhere, so every log-driven
+    // feature is inert. Surface that instead of staying silent.
+    if (state.log_path) {
+      store.setLogWatching(state.log_path);
+    } else {
+      store.setLogMissing();
+    }
     console.log("[ExiledOrb] Initial state loaded:", state);
     return state;
   } catch (err) {
@@ -46,6 +54,24 @@ export function useClientLog() {
     });
     return () => {
       unlisten.then((fn) => fn());
+    };
+  }, []);
+
+  // Watcher lifecycle events: a new watcher started (manual path applied or
+  // auto-detect re-run) clears the missing/error banner; a watcher failure
+  // ("log-error", e.g. the file can't be opened) surfaces it.
+  useEffect(() => {
+    const unlistenStarted = listen<string>("log-watch-started", (event) => {
+      console.log("[ExiledOrb] log watcher started:", event.payload);
+      useOverlayStore.getState().setLogWatching(event.payload);
+    });
+    const unlistenError = listen<string>("log-error", (event) => {
+      console.error("[ExiledOrb] log watcher error:", event.payload);
+      useOverlayStore.getState().setLogError(event.payload);
+    });
+    return () => {
+      unlistenStarted.then((fn) => fn());
+      unlistenError.then((fn) => fn());
     };
   }, []);
 
