@@ -190,9 +190,6 @@ export function parseItem(raw: string): ParsedItem {
     properties: {},
   };
 
-  // Track which section contains what
-  let foundImplicitSeparator = false;
-
   for (let i = 1; i < sections.length; i++) {
     const section = sections[i];
     const lines = section.split("\n").map((l) => l.trim());
@@ -218,11 +215,7 @@ export function parseItem(raw: string): ParsedItem {
     const ilvlLine = lines.find((l) => l.startsWith("Item Level:"));
     if (ilvlLine) {
       result.itemLevel = extractNumber(ilvlLine);
-      // If this section ONLY has "Item Level: X", next section is implicits (if any before explicits)
-      if (lines.length === 1) {
-        foundImplicitSeparator = true;
-        continue;
-      }
+      if (lines.length === 1) continue;
     }
 
     // Quality
@@ -294,8 +287,9 @@ export function parseItem(raw: string): ParsedItem {
       continue;
     }
 
-    // Mod sections — distinguish implicits from explicits
-    // After item level, the first mod section is implicits, then explicits
+    // Mod sections. The game tags every non-explicit line ("(implicit)",
+    // "(enchant)", "(crafted)", "(fractured)") in both PoE1 and PoE2, so an
+    // untagged line is an explicit — there is no positional guessing.
     const isMods = lines.every(
       (l) =>
         !l.startsWith("Item Level:") &&
@@ -311,7 +305,9 @@ export function parseItem(raw: string): ParsedItem {
 
     if (isMods && lines.length > 0 && !isPropertySection && !ilvlLine) {
       const mods: ItemMod[] = lines
-        .filter((l) => l.length > 0)
+        // Trailing marker lines such as "Shaper Item", "Searing Exarch Item",
+        // "Synthesised Item" or "Fractured Item" are not mods.
+        .filter((l) => l.length > 0 && !/ Item$/.test(l))
         .map((l) => {
           let type: ItemMod["type"] = "explicit";
           let text = l;
@@ -333,35 +329,6 @@ export function parseItem(raw: string): ParsedItem {
           return { text, type };
         });
 
-      // If we just passed item level, first mod section = implicits
-      // Exception: maps don't have implicits — their mods are all explicits
-      const isMap =
-        itemClass.toLowerCase().includes("map") || itemClass.toLowerCase().includes("waystone");
-      if (foundImplicitSeparator && result.implicits.length === 0 && !isMap) {
-        // Check if mods are tagged — if tagged, respect tags; otherwise treat as implicits
-        const hasImplicitTag = mods.some((m) => m.type === "implicit");
-        if (hasImplicitTag) {
-          for (const mod of mods) {
-            if (mod.type === "implicit") {
-              result.implicits.push(mod);
-            } else if (mod.type === "enchant") {
-              result.enchants.push(mod);
-            } else {
-              result.explicits.push(mod);
-            }
-          }
-          foundImplicitSeparator = false;
-          continue;
-        }
-        // Untagged mods right after ilvl = implicits (for non-map items)
-        for (const mod of mods) {
-          result.implicits.push({ ...mod, type: "implicit" });
-        }
-        foundImplicitSeparator = false;
-        continue;
-      }
-
-      // Otherwise, these are explicit mods
       for (const mod of mods) {
         if (mod.type === "implicit") {
           result.implicits.push(mod);
@@ -371,7 +338,6 @@ export function parseItem(raw: string): ParsedItem {
           result.explicits.push(mod);
         }
       }
-      foundImplicitSeparator = false;
     }
   }
 

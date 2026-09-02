@@ -126,14 +126,17 @@ export const useSpeedrunStore = create<SpeedrunState>((set, get) => ({
       const game = useOverlayStore.getState().detectedGame ?? settings.game;
       state.startSession(game, resolveLeague(game, settings.leagues));
     }
+    // Re-read: `state` is a snapshot from before the auto-start (and the
+    // pending-run resolve above), so its session is stale for the first run.
+    const session = get().session;
 
     const run: MapRun = {
       id: genId(),
-      sessionId: state.session?.id ?? "",
+      sessionId: session?.id ?? "",
       mapName,
       mapTier,
-      game: (state.session?.game ?? "poe2") as "poe1" | "poe2",
-      league: state.session?.league ?? "Standard",
+      game: (session?.game ?? "poe2") as "poe1" | "poe2",
+      league: session?.league ?? "Standard",
       characterName: characterName ?? null,
       startedAt: timestamp,
       bossEnteredAt: null,
