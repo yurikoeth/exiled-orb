@@ -17,6 +17,7 @@ interface LevelingState {
  */
 export function useLevelingTracker(): LevelingState {
   const currentZone = useOverlayStore((s) => s.currentZone);
+  const characterLevel = useOverlayStore((s) => s.characterLevel);
   const game = useSettingsStore((s) => s.settings.game);
   const [state, setState] = useState<LevelingState>({
     currentStep: null,
@@ -33,14 +34,16 @@ export function useLevelingTracker(): LevelingState {
       return;
     }
 
+    // The character level disambiguates zone names the campaign reuses
+    // (The Twilight Strand in Act 1 and Act 6).
     const guide = getLevelingGuide(game);
-    const current = findCurrentStep(guide, currentZone);
-    const next = current ? getNextStep(guide, currentZone) : null;
+    const current = findCurrentStep(guide, currentZone, characterLevel);
+    const next = current ? getNextStep(guide, currentZone, characterLevel) : null;
 
     if (current) {
       setState({ currentStep: current, nextStep: next, isLeveling: true });
     }
-  }, [currentZone, game]);
+  }, [currentZone, characterLevel, game]);
 
   return state;
 }

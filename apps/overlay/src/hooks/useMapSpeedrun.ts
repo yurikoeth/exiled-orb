@@ -42,13 +42,14 @@ export function useMapSpeedrun() {
       if (!store.currentRun.bossEnteredAt) store.enterBossArena(now);
     } else if (isMapZone(currentZone, game)) {
       if (!store.currentRun) {
-        // New map run. Maps missing from the curated database fall back to a
-        // tier estimated from the area level — the two are NOT the same
-        // number (a T16 PoE1 map is area level 83), so the raw area level
-        // must never be displayed as a tier.
+        // New map run. The tier comes from the area level — PoE1 rotates map
+        // tiers every league and a PoE2 waystone's tier isn't tied to the map
+        // name, so the database never carries one (MapInfo.tier is always
+        // null and only a fallback here). Area level is NOT the tier (a T16
+        // PoE1 map is level 83), so it must go through tierFromAreaLevel.
         const mapInfo = findMap(currentZone, game);
         const tier =
-          mapInfo?.tier ?? (areaLevel != null ? tierFromAreaLevel(areaLevel, game) : null);
+          (areaLevel != null ? tierFromAreaLevel(areaLevel, game) : null) ?? mapInfo?.tier ?? null;
         store.startMapRun(mapInfo?.name ?? currentZone, tier, now, characterName);
       }
     } else if (isHideout(currentZone)) {
