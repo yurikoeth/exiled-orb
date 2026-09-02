@@ -1,9 +1,13 @@
 /**
  * Mapping of common mod text patterns to GGG Trade API stat IDs.
  *
+ * ONLY consumed by the parked `api/ggg-trade.ts` (documented WIP, not wired
+ * into the overlay). The stat ids have not been re-verified against
+ * https://www.pathofexile.com/api/trade/data/stats since they were written;
+ * do that before wiring the trade client. PoE2 wording ("Critical Hit
+ * Chance", "+# to Spirit") is not covered — the trade client is PoE1-only.
+ *
  * The pattern is matched case-insensitively against the mod text.
- * The `#` in the pattern matches a numeric value.
- * Stat IDs sourced from https://www.pathofexile.com/api/trade/data/stats
  */
 export interface StatMapping {
   pattern: RegExp;
@@ -221,7 +225,8 @@ export const STAT_MAPPINGS: StatMapping[] = [
 
   // --- Life/Mana Regen ---
   {
-    pattern: /(\d+(?:\.\d+)?) life regenerated per second/i,
+    // Wording since 3.16: "Regenerate 20 Life per second"
+    pattern: /Regenerate (\d+(?:\.\d+)?) Life per second/i,
     statId: "explicit.stat_836936635",
     extractMin: true,
   },

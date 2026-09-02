@@ -1,54 +1,22 @@
 /**
- * Known hideout zone names for detecting map completion (return to hideout).
- * When a player zones into one of these, an active map run is considered completed.
+ * Hideout detection — returning to a hideout ends the active map run.
  *
- * Includes default hideouts, MTX hideouts, and guild hideouts for both PoE1 and PoE2.
+ * Every hideout in both games is literally named "<Tileset> Hideout": all
+ * ~100 PoE1 tilesets/MTX hideouts (poedb Hideouts, checked 2026-09-02) and
+ * the six PoE2 ones (Felled, Limestone, Shrine, Canal, Farmlands, Prison —
+ * poe2db). The substring test in `isHideout` is therefore the real rule; the
+ * explicit set only exists for names that would NOT contain the word, and
+ * currently none do.
+ *
+ * Towns (Lioneye's Watch, Clearfell Encampment, The Ardura Caravan,
+ * Ziggurat Encampment, Kingsmarch, …) and campaign zones such as The Twilight
+ * Strand are deliberately NOT hideouts: useMapSpeedrun keeps a run open on a
+ * town visit so a portal back into the map still counts.
  */
-export const HIDEOUT_NAMES: Set<string> = new Set([
-  // Default / Common
-  "Hideout",
-  "The Twilight Strand",
-
-  // PoE1 Hideout Tilesets
-  "Coastal Hideout",
-  "Backstreet Hideout",
-  "Immaculate Hideout",
-  "Alpine Hideout",
-  "Baleful Hideout",
-  "Brutal Hideout",
-  "Celestial Hideout",
-  "Desert Hideout",
-  "Enlightened Hideout",
-  "Glacial Hideout",
-  "Lush Hideout",
-  "Luxurious Hideout",
-  "Overgrown Hideout",
-  "Stately Hideout",
-  "Undercity Hideout",
-  "Unearthed Hideout",
-  "Coral Hideout",
-  "Battle-scarred Hideout",
-  "Divided Hideout",
-  "Robber's Trench Hideout",
-  "Sunken Hideout",
-  "Sanguine Hideout",
-  "Walled-off Hideout",
-
-  // PoE2 Hideouts
-  "Smuggler's Den",
-  "The Clearings",
-  "Ziggurat Encampment",
-  "Karui Hideout",
-
-  // Guild hideout
-  "Guild Hideout",
-]);
+export const HIDEOUT_NAMES: Set<string> = new Set(["Guild Hideout"]);
 
 /** Check if a zone name is a hideout */
 export function isHideout(zoneName: string): boolean {
-  // Direct match
   if (HIDEOUT_NAMES.has(zoneName)) return true;
-  // Fuzzy match: any zone containing "Hideout" or "hideout"
-  if (zoneName.toLowerCase().includes("hideout")) return true;
-  return false;
+  return zoneName.toLowerCase().includes("hideout");
 }

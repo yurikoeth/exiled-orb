@@ -1,60 +1,84 @@
 import { describe, it, expect } from "vitest";
 import { MAP_DATABASE, findMap, isMapZone, isBossArena, tierFromAreaLevel } from "../map-data.js";
 
-/**
- * PoE2 waystones whose names contain a shorter PoE1 map name. PoE1 entries
- * come first in MAP_DATABASE, so a first-match lookup resolved every one of
- * these to the wrong game's map — and reported that map's tier.
- */
-const CROSS_GAME_SUBSTRINGS: [poe2: string, poe1: string][] = [
-  ["Blighted Bog", "Bog"],
-  ["Bone Pit", "Pit"],
-  ["Haunted Shipyard", "Shipyard"],
-  ["Scorched Summit", "Summit"],
-  ["Twilight Temple", "Temple"],
-];
-
-describe("findMap", () => {
-  it("prefers the longest match over the first one in the database", () => {
-    for (const [poe2Name, poe1Name] of CROSS_GAME_SUBSTRINGS) {
-      const match = findMap(poe2Name);
-      expect(match?.name, `${poe2Name} must not resolve to ${poe1Name}`).toBe(poe2Name);
-      expect(match?.game).toBe("poe2");
+describe("MAP_DATABASE", () => {
+  it("never carries a tier — the area level is the only tier source", () => {
+    for (const map of MAP_DATABASE) {
+      expect(map.tier, map.name).toBeNull();
     }
   });
 
-  it("scopes to the requested game", () => {
-    expect(findMap("Bog", "poe1")?.game).toBe("poe1");
-    expect(findMap("Blighted Bog", "poe2")?.name).toBe("Blighted Bog");
-    // A PoE2-only waystone is not found when scoped to PoE1.
-    expect(findMap("Blighted Bog", "poe1")?.name).not.toBe("Blighted Bog");
+  it("has no placeholder boss arenas", () => {
+    for (const map of MAP_DATABASE) {
+      expect(map.bossArenas, map.name).toEqual([]);
+    }
   });
 
-  it("still matches decorated zone names", () => {
+  it("has no duplicate names within a game", () => {
+    const seen = new Set<string>();
+    for (const map of MAP_DATABASE) {
+      const key = `${map.game}:${map.name.toLowerCase()}`;
+      expect(seen.has(key), key).toBe(false);
+      seen.add(key);
+    }
+  });
+
+  it("uses the current pinnacle arena names", () => {
+    expect(findMap("Eye of the Storm", "poe1")?.tags).toContain("sirus");
+    expect(findMap("Absence of Value and Meaning", "poe1")?.tags).toContain("elder");
+    expect(findMap("Absence of Mercy and Empathy", "poe1")?.tags).toContain("maven");
+    expect(findMap("The Shaper's Realm", "poe1")?.tags).toContain("uber-elder");
+    expect(findMap("The Burning Monolith", "poe2")?.tags).toContain("pinnacle");
+    // Legacy / fabricated names are gone.
+    expect(findMap("The Maven's Crucible", "poe1")).toBeNull();
+    expect(findMap("The Elder's Domain", "poe1")).toBeNull();
+    expect(findMap("The Galvanic King", "poe2")).toBeNull();
+    expect(findMap("Torchlit Mines", "poe2")).toBeNull();
+  });
+});
+
+describe("findMap", () => {
+  it("resolves every entry to itself when scoped to its game", () => {
+    for (const map of MAP_DATABASE) {
+      expect(findMap(map.name, map.game)?.name, `${map.name} (${map.game})`).toBe(map.name);
+    }
+  });
+
+  it("scopes same-named maps to the requested game", () => {
+    for (const name of ["Canyon", "Mesa", "Caldera"]) {
+      expect(findMap(name, "poe1")?.game).toBe("poe1");
+      expect(findMap(name, "poe2")?.game).toBe("poe2");
+    }
+  });
+
+  it("matches decorated PoE1 zone names and prefers the longest contained name", () => {
     expect(findMap("Strand Map", "poe1")?.name).toBe("Strand");
-    expect(findMap("Tier 5 Strand", "poe1")?.name).toBe("Strand");
+    expect(findMap("Underground Sea Map", "poe1")?.name).toBe("Underground Sea");
+    expect(findMap("The Withered Willow")?.name).toBe("The Withered Willow");
+  });
+
+  it("is exact-only for PoE2 so campaign zones do not read as maps", () => {
+    expect(findMap("The Venom Crypts", "poe2")).toBeNull();
+    expect(findMap("Chimeral Wetlands", "poe2")).toBeNull();
+    expect(findMap("Crypt", "poe2")?.name).toBe("Crypt");
   });
 
   it("returns null for a zone that is not a map", () => {
     expect(findMap("Lioneye's Watch", "poe1")).toBeNull();
-  });
-
-  it("guards against new cross-game substring collisions", () => {
-    // Any future entry that is a substring of another game's entry must still
-    // resolve to itself — this is what keeps the fix from silently regressing.
-    for (const map of MAP_DATABASE) {
-      expect(findMap(map.name)?.name, `${map.name} (${map.game})`).toBe(map.name);
-    }
+    expect(findMap("The Twilight Strand", "poe2")).toBeNull();
   });
 });
 
 describe("isMapZone", () => {
-  it("recognises PoE2 waystones by database entry", () => {
-    expect(isMapZone("Blighted Bog", "poe2")).toBe(true);
+  it("recognises PoE2 waystones by database entry only", () => {
+    expect(isMapZone("Sinking Spire", "poe2")).toBe(true);
+    expect(isMapZone("The Venom Crypts", "poe2")).toBe(false);
+    expect(isMapZone("Clearfell Encampment", "poe2")).toBe(false);
   });
 
   it("recognises PoE1 maps by the 'X Map' suffix", () => {
     expect(isMapZone("Underground Sea Map", "poe1")).toBe(true);
+    expect(isMapZone("Lava Lake Map", "poe1")).toBe(true);
   });
 
   it("rejects hideouts and towns", () => {
@@ -64,12 +88,11 @@ describe("isMapZone", () => {
 });
 
 describe("isBossArena", () => {
-  it("matches a known arena for the right game", () => {
-    expect(isBossArena("Meadow Boss Arena", "poe2")).toBe(true);
-    expect(isBossArena("Strand Boss Room", "poe1")).toBe(true);
-  });
-
-  it("does not match a plain map zone", () => {
+  it("no longer flags other maps or campaign zones as a boss arena", () => {
+    // "Caldera" used to be Volcano's arena — it is a map in its own right.
+    expect(isBossArena("Caldera Map", "poe1")).toBe(false);
+    // "Tidal Island" used to be Beach's arena — it is an Act 1 zone.
+    expect(isBossArena("The Tidal Island", "poe1")).toBe(false);
     expect(isBossArena("Blighted Bog", "poe2")).toBe(false);
   });
 });
