@@ -114,6 +114,10 @@ pnpm run lint          # ESLint
 cargo test             # Rust tests (from apps/overlay/src-tauri)
 ```
 
+What the automated suites cannot prove (real clipboard, Client.txt, OAuth,
+window/tray/hotkey) is covered by the manual checklist in
+[docs/MANUAL-TEST-PLAN.md](docs/MANUAL-TEST-PLAN.md).
+
 ---
 
 ## How It Works
