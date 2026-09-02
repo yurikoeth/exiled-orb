@@ -20,7 +20,7 @@ ExiledOrb is an always-on-top desktop companion that monitors your clipboard and
 
 - **Market Browser** — Browse live poe.ninja prices across all item categories with search, 7-day trend indicators, and category filtering — proxied through Rust to avoid CORS restrictions and cached to keep lookups instant.
 
-- **Leveling Guide** — Step-by-step guides for PoE1 (Acts 1–10) and PoE2 (Acts 1–6) with per-character checklists that auto-advance as you change zones.
+- **Leveling Guide** — Step-by-step guides for PoE1 (Acts 1–10, all 24 quest passive points) and PoE2 (Acts 1–4) with per-character checklists that auto-advance as you change zones.
 
 - **Settings & Onboarding** — First-launch setup and an in-overlay Settings page: default game, per-game league override (auto-follows the current season otherwise), Client.txt auto-detect or custom path, overlay hotkey, and AI feature toggles.
 

@@ -284,10 +284,17 @@ whisper analysis — both were unreachable before the Settings UI existed.
 
 ## Not Yet Implemented
 
-- MAP_DATABASE is curated, not exhaustive (73 PoE1 / 26 PoE2 entries). A map
-  missing from it still starts a run in PoE1 (the " Map" suffix is a reliable
-  tell) but NOT in PoE2, whose waystone zones have no distinguishing suffix —
-  PoE2 coverage is only as good as the database.
+- MAP_DATABASE: PoE1 is a curated subset (a map missing from it still starts
+  a run — the " Map" suffix is the tell); PoE2 is the full 0.5 map pool from
+  poe2db (2026-09-02) and must be re-synced when a patch adds maps, because
+  waystone zones have no suffix and PoE2 lookups are exact-match only
+  (short names like "Crypt"/"Wetlands" are substrings of campaign zones).
+  `MapInfo.tier` is always null — tier comes from `tierFromAreaLevel` only.
+- Game data audit 2026-09-02 (`packages/shared/src/data/`): map names,
+  pinnacle arenas, hideouts, map-mod wording, PoE1 affix tiers, and both
+  leveling guides were verified against poedb/poe2db/poeaffix/maxroll (the
+  wikis are bot-blocked). Rows marked UNVERIFIED in mod-tiers.ts (most PoE2
+  affix ranges, PoE1 flat ES/evasion/suppression) kept their old numbers.
 - AtlasHelper — removed 2026-05-28; rebuild scoped in README roadmap (curated library + pick-and-track + clipboard integration + profit tracking); old implementation in git history pre-2026-05-28
 - PoE1 log-mined character tiles (planned v1.0.1) — scan_character_history
   already reads PoE1 logs, but GggAccount's section grouping surfaces detected
