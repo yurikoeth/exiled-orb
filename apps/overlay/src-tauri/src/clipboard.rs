@@ -107,3 +107,28 @@ pub fn start_clipboard_watcher(app: AppHandle) {
         }
     });
 }
+
+#[cfg(test)]
+mod tests {
+    use super::is_poe_item;
+
+    #[test]
+    fn item_class_header_is_an_item() {
+        assert!(is_poe_item("Item Class: Rings\nRarity: Rare\nDoom Loop"));
+    }
+
+    #[test]
+    fn rarity_needs_the_section_separator() {
+        assert!(is_poe_item(
+            "Rarity: Unique\nHeadhunter\n--------\nLeather Belt"
+        ));
+        assert!(!is_poe_item("Rarity: Unique\nHeadhunter"));
+    }
+
+    #[test]
+    fn ordinary_text_is_not_an_item() {
+        assert!(!is_poe_item(""));
+        assert!(!is_poe_item("https://poe.ninja"));
+        assert!(!is_poe_item("the rarity of this drop is amazing --------"));
+    }
+}

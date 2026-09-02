@@ -64,3 +64,38 @@ pub fn migrations() -> Vec<Migration> {
         },
     ]
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn migrations_are_sequential_up_migrations() {
+        let migrations = migrations();
+        let versions: Vec<i64> = migrations.iter().map(|m| m.version).collect();
+        assert_eq!(versions, vec![1, 2, 3, 4]);
+        for m in &migrations {
+            assert!(matches!(m.kind, MigrationKind::Up));
+            assert!(!m.sql.trim().is_empty());
+            assert!(!m.description.is_empty());
+        }
+    }
+
+    #[test]
+    fn schema_covers_the_tables_the_frontend_queries() {
+        let sql: String = migrations()
+            .iter()
+            .map(|m| m.sql)
+            .collect::<Vec<_>>()
+            .join("\n");
+        for needle in [
+            "CREATE TABLE IF NOT EXISTS settings",
+            "CREATE TABLE IF NOT EXISTS map_runs",
+            "ADD COLUMN outcome",
+            "ADD COLUMN character_name",
+            "idx_map_runs_started",
+        ] {
+            assert!(sql.contains(needle), "missing {needle}");
+        }
+    }
+}

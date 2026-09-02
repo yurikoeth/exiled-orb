@@ -264,3 +264,16 @@ IMPORTANT: Respond with ONLY a valid JSON object. No markdown, no code fences.
 
     call_claude(&api_key, CLAUDE_MODEL_DEEP, &system, &user_msg, 1024).await
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn witch_system_prompt_is_persona_then_task() {
+        let prompt = witch_system("Price this item.");
+        assert!(prompt.starts_with(WITCH_PERSONA));
+        assert!(prompt.ends_with("Price this item."));
+        assert!(prompt.contains("Address the user as \"exile.\""));
+    }
+}

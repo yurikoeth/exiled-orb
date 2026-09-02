@@ -1071,3 +1071,33 @@ mod tests {
         assert_eq!(parse_death_for_history(&info("no death here")), None);
     }
 }
+
+#[cfg(test)]
+mod path_tests {
+    use super::*;
+
+    #[test]
+    fn candidates_cover_both_games_and_all_drives_without_duplicates() {
+        let candidates = log_path_candidates();
+        assert!(candidates.iter().all(|p| p.ends_with("Client.txt")));
+        assert!(candidates.iter().any(|p| p.contains("Path of Exile 2")));
+        assert!(candidates
+            .iter()
+            .any(|p| p.contains("Path of Exile\\") || p.contains("Path of Exile/")));
+        let mut unique = candidates.clone();
+        unique.sort();
+        unique.dedup();
+        assert_eq!(unique.len(), candidates.len());
+    }
+
+    #[test]
+    fn game_is_derived_from_the_path() {
+        let poe2 = std::path::Path::new(
+            r"D:\SteamLibrary\steamapps\common\Path of Exile 2\logs\Client.txt",
+        );
+        let poe1 =
+            std::path::Path::new(r"D:\SteamLibrary\steamapps\common\Path of Exile\logs\Client.txt");
+        assert_eq!(detect_game_from_path(poe2), "poe2");
+        assert_eq!(detect_game_from_path(poe1), "poe1");
+    }
+}

@@ -363,3 +363,80 @@ pub async fn disconnect_oauth(app: AppHandle) -> Result<(), String> {
     eprintln!("[ExiledOrb] OAuth: disconnected (tokens deleted)");
     Ok(())
 }
+
+#[cfg(test)]
+mod pkce_tests {
+    use super::*;
+
+    #[test]
+    fn code_challenge_matches_the_rfc_7636_vector() {
+        assert_eq!(
+            code_challenge("dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk"),
+            "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM"
+        );
+    }
+
+    #[test]
+    fn verifier_is_64_unreserved_chars_and_random() {
+        let a = generate_code_verifier();
+        let b = generate_code_verifier();
+        assert_eq!(a.len(), 64);
+        assert!(a.bytes().all(|c| VERIFIER_CHARS.contains(&c)));
+        assert_ne!(a, b);
+    }
+
+    #[test]
+    fn state_is_32_alphanumerics_and_random() {
+        let a = generate_state();
+        assert_eq!(a.len(), 32);
+        assert!(a.bytes().all(|c| c.is_ascii_alphanumeric()));
+        assert_ne!(a, generate_state());
+    }
+
+    #[test]
+    fn urlencode_escapes_everything_but_unreserved() {
+        assert_eq!(urlencode("a-b_c.d~Z9"), "a-b_c.d~Z9");
+        assert_eq!(
+            urlencode("account:characters account:profile"),
+            "account%3Acharacters%20account%3Aprofile"
+        );
+        assert_eq!(
+            urlencode("http://localhost:11343/callback"),
+            "http%3A%2F%2Flocalhost%3A11343%2Fcallback"
+        );
+        assert_eq!(urlencode("é"), "%C3%A9");
+    }
+
+    #[test]
+    fn authorize_url_carries_every_pkce_parameter() {
+        let url = build_authorize_url("STATE123", "CHALLENGE");
+        assert!(url.starts_with("https://www.pathofexile.com/oauth/authorize?"));
+        for part in [
+            "response_type=code",
+            "client_id=exiledorb",
+            "redirect_uri=http%3A%2F%2Flocalhost%3A11343%2Fcallback",
+            "scope=account%3Acharacters%20account%3Aprofile",
+            "state=STATE123",
+            "code_challenge=CHALLENGE",
+            "code_challenge_method=S256",
+        ] {
+            assert!(url.contains(part), "missing {part} in {url}");
+        }
+    }
+
+    #[test]
+    fn tokens_from_response_sets_absolute_expiry() {
+        let before = now_secs();
+        let tokens = tokens_from_response(TokenResponse {
+            access_token: "access".into(),
+            refresh_token: Some("refresh".into()),
+            expires_in: 3600,
+            token_type: None,
+            scope: None,
+        });
+        assert_eq!(tokens.access_token, "access");
+        assert_eq!(tokens.refresh_token.as_deref(), Some("refresh"));
+        assert!(tokens.expires_at >= before + 3600);
+        assert!(tokens.expires_at <= now_secs() + 3600);
+    }
+}

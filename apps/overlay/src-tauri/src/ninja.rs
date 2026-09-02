@@ -64,3 +64,44 @@ pub async fn fetch_ninja(url: String) -> Result<String, String> {
 
     res.text().await.map_err(|e| format!("Read error: {}", e))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn refuses_plain_http() {
+        let err = fetch_ninja("http://poe.ninja/poe1/api/economy".into())
+            .await
+            .unwrap_err();
+        assert!(err.contains("Refusing to proxy"), "{err}");
+    }
+
+    #[tokio::test]
+    async fn refuses_other_hosts_including_lookalikes() {
+        for url in [
+            "https://poe2.ninja/x",
+            "https://example.com/poe.ninja",
+            "https://poe.ninja.evil.com/x",
+            "https://api.poe.ninja/x",
+        ] {
+            let err = fetch_ninja(url.into()).await.unwrap_err();
+            assert!(err.contains("Refusing to proxy"), "{url}: {err}");
+        }
+    }
+
+    #[tokio::test]
+    async fn refuses_unparseable_urls() {
+        let err = fetch_ninja("not a url".into()).await.unwrap_err();
+        assert!(err.starts_with("Invalid URL"), "{err}");
+    }
+
+    #[tokio::test]
+    async fn spacing_never_lets_two_requests_share_a_slot() {
+        let start = Instant::now();
+        space_requests().await;
+        space_requests().await;
+        // The second call must have waited for the previous slot to expire.
+        assert!(start.elapsed() >= MIN_INTERVAL);
+    }
+}
