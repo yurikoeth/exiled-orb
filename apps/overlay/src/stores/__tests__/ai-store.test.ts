@@ -37,7 +37,10 @@ describe("ai-store", () => {
 
   it("accumulates token usage and resets after midnight", () => {
     vi.useFakeTimers({ now: new Date("2026-09-02T10:00:00") });
-    useAiStore.setState({ dailyTokensUsed: 0, dailyResetAt: new Date("2026-09-03T00:00:00").getTime() });
+    useAiStore.setState({
+      dailyTokensUsed: 0,
+      dailyResetAt: new Date("2026-09-03T00:00:00").getTime(),
+    });
     useAiStore.getState().addTokenUsage(100);
     useAiStore.getState().addTokenUsage(50);
     expect(useAiStore.getState().dailyTokensUsed).toBe(150);

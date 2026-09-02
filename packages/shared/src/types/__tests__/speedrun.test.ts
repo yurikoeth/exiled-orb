@@ -4,7 +4,11 @@ import { computeSessionStats, type MapRun, type MapRunOutcome } from "../speedru
 const T0 = 1_700_000_000_000;
 
 function run(
-  overrides: Partial<MapRun> & { startedAt: number; totalMs?: number | null; outcome?: MapRunOutcome }
+  overrides: Partial<MapRun> & {
+    startedAt: number;
+    totalMs?: number | null;
+    outcome?: MapRunOutcome;
+  }
 ): MapRun {
   const outcome = overrides.outcome ?? "completed";
   const totalMs = overrides.totalMs === undefined ? 60_000 : overrides.totalMs;

@@ -20,7 +20,11 @@ describe("settings-store", () => {
   beforeEach(() => {
     fakeDb.execute.mockReset().mockResolvedValue({});
     fakeDb.select.mockReset().mockResolvedValue([]);
-    useSettingsStore.setState({ settings: { ...DEFAULT_SETTINGS }, loaded: false, firstRun: false });
+    useSettingsStore.setState({
+      settings: { ...DEFAULT_SETTINGS },
+      loaded: false,
+      firstRun: false,
+    });
     vi.spyOn(console, "error").mockImplementation(() => {});
   });
 

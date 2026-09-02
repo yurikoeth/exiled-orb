@@ -131,7 +131,11 @@ describe("saveActiveBuild", () => {
       gearSummary: "new",
       tags: { damageTypes: ["fire"], defenseTypes: [], recoveryTypes: [], mainSkill: "RF" },
     });
-    expect(useBuildStore.getState().activeBuild).toMatchObject({ level: 91, goal, mainSkill: "RF" });
+    expect(useBuildStore.getState().activeBuild).toMatchObject({
+      level: 91,
+      goal,
+      mainSkill: "RF",
+    });
 
     await saveActiveBuild({
       characterName: "Other",

@@ -28,8 +28,11 @@ git fetch && git status            # local main must not be behind origin
 pnpm run typecheck                 # TS strict, both packages
 pnpm run test                      # vitest: shared + overlay
 pnpm run lint                      # eslint (0 errors; MapCountStats warning is known)
-pnpm run format:check              # prettier — CRLF drift on untouched files is a Windows
-                                   #   checkout artefact, CI (Linux) is the authority
+pnpm exec prettier --check . --end-of-line auto
+                                   # prettier, ignoring CRLF drift from the Windows checkout.
+                                   # Plain `pnpm run format:check` flags ~20 untouched files
+                                   # for line endings only and hides real failures; CI (Linux)
+                                   # runs it without the flag and is the authority.
 cd apps\overlay\src-tauri
 cargo test                         # Rust unit tests
 cargo clippy --all-targets -- -D warnings

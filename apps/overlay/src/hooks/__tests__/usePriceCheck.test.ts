@@ -113,8 +113,11 @@ describe("checkPrice", () => {
     );
     expect(four.chaosValue).toBe(5);
     expect(
-      (await checkPrice(item({ rarity: "Unique", itemClass: "Two Hand Swords", name: "Starforge" })))
-        .chaosValue
+      (
+        await checkPrice(
+          item({ rarity: "Unique", itemClass: "Two Hand Swords", name: "Starforge" })
+        )
+      ).chaosValue
     ).toBe(400);
     expect(
       (await checkPrice(item({ rarity: "Unique", itemClass: "Belts", name: "Headhunter" })))
@@ -141,7 +144,12 @@ describe("checkPrice", () => {
     expect(
       (
         await checkPrice(
-          item({ rarity: "Gem", itemClass: "Support Gems", baseType: "Enlighten Support", gemLevel: 4 })
+          item({
+            rarity: "Gem",
+            itemClass: "Support Gems",
+            baseType: "Enlighten Support",
+            gemLevel: 4,
+          })
         )
       ).chaosValue
     ).toBe(300);
@@ -159,7 +167,9 @@ describe("checkPrice", () => {
 
   it("returns unavailable for rares, unknown items, and HTML/garbage responses", async () => {
     serve({ Currency: CURRENCY });
-    const rare = await checkPrice(item({ rarity: "Rare", itemClass: "Rings", baseType: "Ruby Ring" }));
+    const rare = await checkPrice(
+      item({ rarity: "Rare", itemClass: "Rings", baseType: "Ruby Ring" })
+    );
     expect(rare).toMatchObject({ source: "unavailable", chaosValue: null, confidence: "none" });
     expect(fetchNinjaCached).not.toHaveBeenCalled();
 

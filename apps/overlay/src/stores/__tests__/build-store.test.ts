@@ -64,7 +64,9 @@ describe("build-store", () => {
     expect(saved.find((b) => b.characterName === "A")?.goal).toBeNull();
     // A goal for a character that is not active is ignored.
     await useBuildStore.getState().setGoal("A", goal);
-    expect(useBuildStore.getState().savedBuilds.find((b) => b.characterName === "A")?.goal).toBeNull();
+    expect(
+      useBuildStore.getState().savedBuilds.find((b) => b.characterName === "A")?.goal
+    ).toBeNull();
   });
 
   it("loadBuilds restores persisted state and tolerates an empty store", async () => {
