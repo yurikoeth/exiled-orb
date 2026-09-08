@@ -146,7 +146,7 @@ export default function SpeedrunStats() {
             <button
               onClick={handleSaveGoals}
               className="text-xs px-2 py-0.5 rounded font-bold"
-              style={{ background: "var(--accent)", color: "#fff" }}
+              style={{ background: "var(--accent)", color: "#111" }}
             >
               Save
             </button>

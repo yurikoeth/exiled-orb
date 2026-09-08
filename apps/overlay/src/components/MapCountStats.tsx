@@ -6,6 +6,7 @@ import {
 } from "../stores/speedrun-db";
 import { useSpeedrunStore } from "../stores/speedrun-store";
 import { useSettingsStore } from "../stores/settings-store";
+import { useOverlayStore } from "../stores/overlay-store";
 import { SectionTitle } from "./ui";
 
 type ViewMode = "session" | "today" | "total" | "character" | "league";
@@ -14,24 +15,26 @@ type ViewMode = "session" | "today" | "total" | "character" | "league";
 export default function MapCountStats() {
   const session = useSpeedrunStore((s) => s.session);
   const dbLoaded = useSpeedrunStore((s) => s.dbLoaded);
-  const game = useSettingsStore((s) => s.settings.game);
-  const [view, setView] = useState<ViewMode>("session");
+  const settingsGame = useSettingsStore((s) => s.settings.game);
+  const detectedGame = useOverlayStore((s) => s.detectedGame);
+  // Stored runs belong to the game actually being played; the settings
+  // default only matters when nothing has been detected yet.
+  const game = detectedGame ?? settingsGame;
+  // Without a session the "Session" view is empty and the panel (toggle
+  // included) would hide itself, so start on the DB-backed "Total" view.
+  const [view, setView] = useState<ViewMode>(() =>
+    useSpeedrunStore.getState().session ? "session" : "total"
+  );
   const [dbCounts, setDbCounts] = useState<GroupedOutcomeCounts | null>(null);
 
-  // Load DB counts when switching away from session view
+  // Load DB counts for the non-session views; re-run when a session run is
+  // saved (mapCount grows) so the totals stay current.
+  const mapCount = session?.maps.length ?? 0;
   useEffect(() => {
     if (view !== "session" && dbLoaded) {
       getOutcomeCounts(game).then(setDbCounts);
     }
-  }, [view, dbLoaded, game]);
-
-  // Also refresh DB counts when session maps change (new run saved)
-  const mapCount = session?.maps.length ?? 0;
-  useEffect(() => {
-    if (view !== "session" && dbLoaded && mapCount > 0) {
-      getOutcomeCounts(game).then(setDbCounts);
-    }
-  }, [mapCount]);
+  }, [view, dbLoaded, game, mapCount]);
 
   // Session counts from in-memory store
   const sessionCounts: OutcomeCounts | null = session
@@ -73,7 +76,7 @@ export default function MapCountStats() {
               className="text-xs px-1 py-0.5 rounded"
               style={{
                 background: view === v.id ? "var(--accent)" : "rgba(255,255,255,0.08)",
-                color: view === v.id ? "#fff" : "var(--text-secondary)",
+                color: view === v.id ? "#111" : "var(--text-secondary)",
                 fontSize: "10px",
               }}
             >

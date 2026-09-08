@@ -15,7 +15,16 @@ type FilterMode = "session" | "all";
 export default function RunHistory({ onSelectMap }: RunHistoryProps) {
   const session = useSpeedrunStore((s) => s.session);
   const personalBests = useSpeedrunStore((s) => s.personalBests);
-  const [filter, setFilter] = useState<FilterMode>("session");
+  // Without an active session the "Session" list is empty and the panel would
+  // hide itself (toggle included), leaving stored history unreachable — so
+  // default to "all" until a session exists, then follow it.
+  const [filter, setFilter] = useState<FilterMode>(() =>
+    useSpeedrunStore.getState().session ? "session" : "all"
+  );
+  const sessionId = session?.id ?? null;
+  useEffect(() => {
+    if (sessionId) setFilter("session");
+  }, [sessionId]);
   const [dbRuns, setDbRuns] = useState<MapRun[]>([]);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(false);
@@ -72,7 +81,7 @@ export default function RunHistory({ onSelectMap }: RunHistoryProps) {
             className="text-xs px-1.5 py-0.5 rounded"
             style={{
               background: filter === "session" ? "var(--accent)" : "rgba(255,255,255,0.08)",
-              color: filter === "session" ? "#fff" : "var(--text-secondary)",
+              color: filter === "session" ? "#111" : "var(--text-secondary)",
             }}
           >
             Session
@@ -82,7 +91,7 @@ export default function RunHistory({ onSelectMap }: RunHistoryProps) {
             className="text-xs px-1.5 py-0.5 rounded"
             style={{
               background: filter === "all" ? "var(--accent)" : "rgba(255,255,255,0.08)",
-              color: filter === "all" ? "#fff" : "var(--text-secondary)",
+              color: filter === "all" ? "#111" : "var(--text-secondary)",
             }}
           >
             All Time

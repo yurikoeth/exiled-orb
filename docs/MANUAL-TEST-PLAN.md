@@ -184,9 +184,13 @@ Ctrl+C, and watch the overlay.
 - [ ] B10.1 Maps page loads history, leaderboard and outcome counts without
       `Failed to load` console lines.
 - [ ] B10.2 Mark a historical run as bricked → counts and PB update; delete
-      a run → it is gone after restart.
+      a run (the × on a history row) → it is gone after restart.
 - [ ] B10.3 Set goals (maps/hour, target time) → persist across restart.
-- [ ] B10.4 Export CSV/JSON → file opens and rows match the list.
+      The goal editor lives in the session stats card, so this needs at
+      least one completed run in the current session (C2 / D1).
+- [ ] B10.4 Export CSV/JSON → the text is copied to the clipboard ("CSV
+      copied!"); paste into Notepad and check the rows match the list.
+      Same session requirement as B10.3.
 
 ### B11. Offline behaviour
 
