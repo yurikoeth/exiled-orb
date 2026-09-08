@@ -37,7 +37,7 @@ export default function MapTimer() {
           {currentRun.mapTier != null && (
             <span
               className="text-xs px-1.5 py-0.5 rounded shrink-0"
-              style={{ backgroundColor: "var(--accent)", color: "#fff" }}
+              style={{ backgroundColor: "var(--accent)", color: "#111" }}
             >
               T{currentRun.mapTier}
             </span>

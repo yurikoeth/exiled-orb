@@ -48,8 +48,14 @@ export function useMapSpeedrun() {
         // null and only a fallback here). Area level is NOT the tier (a T16
         // PoE1 map is level 83), so it must go through tierFromAreaLevel.
         const mapInfo = findMap(currentZone, game);
-        const tier =
-          (areaLevel != null ? tierFromAreaLevel(areaLevel, game) : null) ?? mapInfo?.tier ?? null;
+        // Pinnacle arenas and invitations aren't tiered maps: their area level
+        // (83-85) would otherwise read as "T16", so leave the tier blank.
+        const isBossZone = mapInfo?.tags.includes("boss") ?? false;
+        const tier = isBossZone
+          ? null
+          : ((areaLevel != null ? tierFromAreaLevel(areaLevel, game) : null) ??
+            mapInfo?.tier ??
+            null);
         store.startMapRun(mapInfo?.name ?? currentZone, tier, now, characterName);
       }
     } else if (isHideout(currentZone)) {

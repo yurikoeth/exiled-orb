@@ -149,8 +149,9 @@ Ctrl+C, and watch the overlay.
       insight ("Based on mod tier analysis only — add Claude API key…").
 - [ ] B7.12 With a valid key: Witch-persona insight; copying the same item
       again is instant (cached, no second `Calling Claude API` line).
-- [ ] B7.13 With an invalid key: readable error in the panel, Rust stderr
-      `[ExiledOrb] Claude API error 401`, local fallback still shown.
+- [ ] B7.13 With an invalid key: Rust stderr `[ExiledOrb] Claude API error
+      401`, local fallback shown (the panel itself only says "add Claude API
+      key for deeper insight" — it does not surface the 401 text).
 
 ### B8. GGG OAuth (needs a GGG account, no game needed)
 
@@ -340,8 +341,10 @@ rewrite break anything" pass.
 - [ ] E2. Maven's Invitation (The Feared etc.) → boss run starts.
 - [ ] E3. A PoE1 map missing from the curated list (e.g. Lava Lake Map)
       still starts a run via the " Map" suffix.
-- [ ] E4. Ring with +79 life shows T4 (slot-approximate tiers are
-      documented, not a bug) — confirm the tooltip/roll % looks sane.
+- [ ] E4. Ring with +79 life shows NO tier and a VENDOR verdict: the life
+      table is the body-armour one (T5 floor 80), so a top ring roll reads
+      as untiered. Known slot-approximation gap, not a regression — but if
+      that verdict bothers you, per-slot tables are the fix.
 - [ ] E5. Old wording no longer matches: an item that says "Life
       Regenerated per second" cannot exist in-game any more; if you see one
       in a stash from years ago, note it.
