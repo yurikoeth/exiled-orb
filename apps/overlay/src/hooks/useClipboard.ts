@@ -7,6 +7,7 @@ import { useSettingsStore } from "../stores/settings-store";
 import { useGearCaptureStore } from "../stores/gear-capture-store";
 import { checkPrice } from "./usePriceCheck";
 import { analyzeItemWithAi } from "./useAiAnalysis";
+import { useAiStore } from "../stores/ai-store";
 
 /**
  * Listen for clipboard-item events from the Rust backend.
@@ -64,6 +65,18 @@ export function useClipboard() {
           "game:",
           item.game
         );
+
+        // Header-only / truncated text parses to an item with no name and no
+        // base — show the parse-error card instead of a blank "VENDOR" panel
+        // (and never spend an AI call on it).
+        if (!item.name && !item.baseType) {
+          throw new Error("item has no name or base type");
+        }
+
+        // A new item supersedes whatever the Witch said about the last one.
+        // analyzeItemWithAi only runs for rares/uniques, so without this a
+        // gem or currency check would sit above the previous item's insight.
+        useAiStore.getState().clearAnalysis();
 
         // Route based on item class
         if (

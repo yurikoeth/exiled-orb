@@ -125,8 +125,8 @@ Ctrl+C, and watch the overlay.
 - [ ] B7.1 Fixture 1 (PoE1 rare body armour): panel appears; tier bars for
       Life (T1), Fire Res (T1), Chaos Res (T1), **Life Regen (T1)** — regen
       was invisible before the 2026-09-02 fix; verdict "godly"/"great".
-- [ ] B7.2 Ctrl+C the SAME text again after dismissing → panel reappears
-      (sequence-number fix).
+- [ ] B7.2 Ctrl+C the SAME text again after dismissing (the × on the card;
+      Esc does not close it) → panel reappears (sequence-number fix).
 - [ ] B7.3 Fixture 2 (PoE1 map): MapModWarnings panel; "-Max Res" flagged
       DANGER, "Ele Reflect" DEADLY, "Fast Monsters" CAUTION; tier shows 16.
 - [ ] B7.4 Fixture 3 (PoE2 rare with Spirit + Critical Hit Chance): game
@@ -138,11 +138,13 @@ Ctrl+C, and watch the overlay.
       6-link Tabula prices the 6L variant.
 - [ ] B7.7 Fixture 6 (currency stack): price × 1 (not × stack size),
       divine rate sane (console `Price check: … category=Currency`).
-- [ ] B7.8 Fixture 7 (gem): priced with level 20 variant.
+- [ ] B7.8 Fixture 7 (gem): priced as the Lv.4 corrupted Enlighten variant
+      (poe.ninja listing count shown, not the tier estimate).
 - [ ] B7.9 Fixture 8 (garbage text): nothing happens; console
       `Not a PoE item, ignoring`.
-- [ ] B7.10 Fixture 9 (malformed item): panel shows "Parse Error" state,
-      app keeps working for the next copy.
+- [ ] B7.10 Fixture 9 (malformed item): panel shows the "Parse Error" card
+      (no blank-titled VENDOR card, no `Calling Claude API` line), app keeps
+      working for the next copy.
 - [ ] B7.11 With AI enabled but **no key**: rare shows the local mod-tier
       insight ("Based on mod tier analysis only — add Claude API key…").
 - [ ] B7.12 With a valid key: Witch-persona insight; copying the same item
