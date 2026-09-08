@@ -65,7 +65,7 @@ cargo fmt --check
 
 ### B2. First run and settings persistence
 
-- [ ] B2.1 Fresh install (or delete `%APPDATA%\com.exiledorb.app\exiled-orb.db`
+- [ ] B2.1 Fresh install (or delete `%APPDATA%\com.exiled-orb.overlay\exiled-orb.db`
       + `exiled-orb-store.json`): first launch opens Settings as onboarding.
 - [ ] B2.2 Change default game, per-game league override, hotkey, AI
       toggles → restart → all values survive. Console: none expected; a
@@ -73,7 +73,8 @@ cargo fmt --check
 - [ ] B2.3 League override set to "Standard" → home tile / price checks use
       Standard (see B5/B10). Clear the override → back to season league.
 - [ ] B2.4 Settings → custom Client.txt path pointing at a **non-existent**
-      file → visible error, previous watcher untouched.
+      file → visible error, previous watcher untouched. Try both Enter in
+      the field and the Apply button (Enter was not confirmed on 2026-09-08).
 - [ ] B2.5 Custom path pointing at a real Client.txt → home banner clears,
       console `[ExiledOrb] log watcher started: <path>`.
 
@@ -95,6 +96,10 @@ cargo fmt --check
       key toggles. Restart → still Ctrl+Shift+O.
 - [ ] B4.3 Bind a key already used by another app (e.g. Ctrl+C) → app shows
       an error rather than silently stealing it. Rebind back to F5.
+      Refused on purpose: Ctrl+C/V/X/A/Z/Y, Alt+F4, and any bare letter,
+      digit, Space or Enter (with or without Shift) — Windows reports no
+      conflict for these, so the app has to. The previous binding stays
+      registered after a refusal.
 
 ### B5. Market tab
 
