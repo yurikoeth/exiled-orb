@@ -86,9 +86,13 @@ and are deliberately absent.
 Every `api.pathofexile.com` request goes through `rate_limit::send`
 (`src-tauri/src/rate_limit.rs`):
 
-- A process-wide sliding window of request timestamps is checked against the
-  limits GGG advertises in `X-Rate-Limit-<Policy>` response headers
-  (multi-tuple `max:window:penalty` format, learned dynamically per response).
+- Callers name the rate-limit policy they are hitting (`"character-list"`,
+  `"character-items"`); each policy keeps its own sliding window of request
+  timestamps and its own limits, learned dynamically from the
+  `X-Rate-Limit-<Policy>` response headers (multi-tuple `max:window:penalty`
+  format). GGG's limits differ per endpoint — the character list allows only
+  5 requests per 5 minutes while single-character items allow 30 — so a
+  shared window would either over-throttle items or let the list hit a 429.
 - `X-Rate-Limit-<Policy>-State` restriction times and HTTP 429 `Retry-After`
   values trigger a bounded back-off with a single retry.
 - Waits are capped (60s) so a saturated limit fails fast with a user-facing

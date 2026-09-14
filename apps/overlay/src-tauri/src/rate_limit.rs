@@ -6,13 +6,16 @@
 //!   X-Rate-Limit-<Name>-State:     matching tuples "current:window_s:restricted_s"
 //!   Retry-After:                   seconds, sent with HTTP 429
 //!
-//! Strategy: keep a process-wide sliding window of our own request times and
-//! never exceed the most recently advertised limits. If a response reports an
-//! active restriction (State restricted_s > 0) or a 429 arrives, back off for
-//! the advertised duration and retry once. All GGG calls should go through
-//! [`send`].
+//! Strategy: keep a sliding window of our own request times PER POLICY and
+//! never exceed the limits most recently advertised for that policy. GGG
+//! applies different limits to different endpoints (the character list is
+//! far stricter than a single character's items), so callers name the policy
+//! they are hitting and each gets its own rules + history. If a response
+//! reports an active restriction (State restricted_s > 0) or a 429 arrives,
+//! back off for the advertised duration and retry once. All GGG calls should
+//! go through [`send`].
 
-use std::collections::VecDeque;
+use std::collections::{HashMap, VecDeque};
 use std::sync::LazyLock;
 use std::time::{Duration, Instant};
 use tokio::sync::Mutex;
@@ -99,13 +102,19 @@ fn default_rules() -> Vec<Rule> {
     }]
 }
 
-static LIMITER: LazyLock<Mutex<Limiter>> = LazyLock::new(|| {
-    Mutex::new(Limiter {
-        rules: default_rules(),
-        history: VecDeque::new(),
-        restricted_until: None,
-    })
-});
+impl Limiter {
+    fn new() -> Self {
+        Limiter {
+            rules: default_rules(),
+            history: VecDeque::new(),
+            restricted_until: None,
+        }
+    }
+}
+
+/// One limiter per GGG rate-limit policy, keyed by the caller-supplied name.
+static LIMITERS: LazyLock<Mutex<HashMap<&'static str, Limiter>>> =
+    LazyLock::new(|| Mutex::new(HashMap::new()));
 
 /// Hard cap on how long a caller may be parked waiting for a slot — beyond
 /// this we fail fast instead of hanging the UI.
@@ -113,11 +122,12 @@ const MAX_TOTAL_WAIT: Duration = Duration::from_secs(60);
 
 /// Wait until a request slot is free, then reserve it. The mutex is never held
 /// across an await: lock → compute (and reserve if free) → unlock → sleep.
-async fn acquire() -> Result<(), String> {
+async fn acquire(policy: &'static str) -> Result<(), String> {
     let deadline = Instant::now() + MAX_TOTAL_WAIT;
     loop {
         let wait = {
-            let mut l = LIMITER.lock().await;
+            let mut map = LIMITERS.lock().await;
+            let l = map.entry(policy).or_insert_with(Limiter::new);
             let now = Instant::now();
             let mut wait = l
                 .restricted_until
@@ -141,14 +151,32 @@ async fn acquire() -> Result<(), String> {
             return Ok(());
         }
         if Instant::now() + Duration::from_secs_f64(wait) > deadline {
-            return Err("GGG API rate limit reached — try again in a minute.".to_string());
+            let (restricted, history_len, rules) = {
+                let mut map = LIMITERS.lock().await;
+                let l = map.entry(policy).or_insert_with(Limiter::new);
+                let now = Instant::now();
+                (
+                    l.restricted_until
+                        .map(|t| t.saturating_duration_since(now).as_secs())
+                        .unwrap_or(0),
+                    l.history.len(),
+                    l.rules.clone(),
+                )
+            };
+            eprintln!(
+                "[ExiledOrb] GGG limiter [{policy}] fail-fast: wait={wait:.0}s                  restricted={restricted}s history={history_len} rules={rules:?}"
+            );
+            return Err(format!(
+                "GGG API rate limit reached — try again in {} s.",
+                wait.ceil() as u64
+            ));
         }
         tokio::time::sleep(Duration::from_secs_f64(wait.min(5.0) + 0.05)).await;
     }
 }
 
 /// Record the rate-limit headers of a GGG response.
-async fn record_headers(headers: &reqwest::header::HeaderMap) {
+async fn record_headers(policy: &'static str, headers: &reqwest::header::HeaderMap) {
     let rule_names: Vec<String> = headers
         .get("X-Rate-Limit-Rules")
         .and_then(|v| v.to_str().ok())
@@ -179,31 +207,41 @@ async fn record_headers(headers: &reqwest::header::HeaderMap) {
         }
     }
 
-    let mut l = LIMITER.lock().await;
+    let mut map = LIMITERS.lock().await;
+    let l = map.entry(policy).or_insert_with(Limiter::new);
     if !rules.is_empty() {
+        if l.rules != rules {
+            eprintln!("[ExiledOrb] GGG rate limits [{policy}]: {rule_names:?} {rules:?}");
+        }
         l.rules = rules;
     }
     if restricted_s > 0 {
+        eprintln!("[ExiledOrb] GGG reports active restriction [{policy}]: {restricted_s}s");
         l.restricted_until = Some(Instant::now() + Duration::from_secs(restricted_s.min(600)));
     }
 }
 
-async fn set_restricted(seconds: u64) {
-    let mut l = LIMITER.lock().await;
+async fn set_restricted(policy: &'static str, seconds: u64) {
+    let mut map = LIMITERS.lock().await;
+    let l = map.entry(policy).or_insert_with(Limiter::new);
     l.restricted_until = Some(Instant::now() + Duration::from_secs(seconds.min(600)));
 }
 
-/// Send a GGG API request through the rate limiter: wait for a slot, send,
-/// learn the advertised limits from the response, and on 429 honor
+/// Send a GGG API request through the rate limiter for `policy` (a stable
+/// name for the endpoint family, e.g. "character-list"): wait for a slot,
+/// send, learn the advertised limits from the response, and on 429 honor
 /// `Retry-After` with a single retry.
-pub async fn send(builder: reqwest::RequestBuilder) -> Result<reqwest::Response, String> {
+pub async fn send(
+    policy: &'static str,
+    builder: reqwest::RequestBuilder,
+) -> Result<reqwest::Response, String> {
     let retry_builder = builder.try_clone();
-    acquire().await?;
+    acquire(policy).await?;
     let resp = builder
         .send()
         .await
         .map_err(|e| format!("Request failed: {e}"))?;
-    record_headers(resp.headers()).await;
+    record_headers(policy, resp.headers()).await;
 
     if resp.status() == reqwest::StatusCode::TOO_MANY_REQUESTS {
         let retry_after = resp
@@ -213,16 +251,16 @@ pub async fn send(builder: reqwest::RequestBuilder) -> Result<reqwest::Response,
             .and_then(|s| s.trim().parse::<u64>().ok())
             .unwrap_or(5)
             .min(60);
-        set_restricted(retry_after).await;
+        set_restricted(policy, retry_after).await;
         if let Some(rb) = retry_builder {
             eprintln!("[ExiledOrb] GGG 429 — backing off {retry_after}s and retrying once");
             tokio::time::sleep(Duration::from_secs(retry_after)).await;
-            acquire().await?;
+            acquire(policy).await?;
             let resp2 = rb
                 .send()
                 .await
                 .map_err(|e| format!("Request failed: {e}"))?;
-            record_headers(resp2.headers()).await;
+            record_headers(policy, resp2.headers()).await;
             return Ok(resp2);
         }
     }
