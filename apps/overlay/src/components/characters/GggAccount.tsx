@@ -21,6 +21,13 @@ import BuildCapturePanel from "./BuildCapturePanel";
 import DetectedCharacterTile, { HiddenCharsManager } from "./DetectedCharacterTile";
 import GggCharacterRow from "./GggCharacterRow";
 import LiveSessionTile from "./LiveSessionTile";
+import { CharacterCache } from "./character-cache";
+
+// GGG allows 5 character-list requests per 5 min (a load costs 2, one per
+// realm): keep the list across tab visits, Refresh/Connect force a reload.
+const characterCache = new CharacterCache<GggCharacter[]>(() =>
+  invoke<GggCharacter[]>("fetch_characters")
+);
 
 export default function GggAccount() {
   // null = haven't checked yet, true = connected, false = not connected
@@ -134,11 +141,11 @@ export default function GggAccount() {
       });
   }, []);
 
-  const loadCharacters = async () => {
+  const loadCharacters = async (force = false) => {
     setLoading(true);
     setError(null);
     try {
-      const chars = await invoke<GggCharacter[]>("fetch_characters");
+      const chars = await characterCache.get(force);
       setCharacters(chars);
     } catch (err) {
       setError(String(err));
@@ -246,7 +253,7 @@ export default function GggAccount() {
     try {
       await invoke("start_oauth_flow");
       setIsAuthed(true);
-      await loadCharacters();
+      await loadCharacters(true);
     } catch (err) {
       console.error("[ExiledOrb] OAuth flow failed:", err);
       setError(String(err));
@@ -260,6 +267,7 @@ export default function GggAccount() {
     } catch (err) {
       console.error("[ExiledOrb] disconnect_oauth failed:", err);
     }
+    characterCache.clear();
     setIsAuthed(false);
     setCharacters([]);
     setCharItems({});
@@ -351,7 +359,7 @@ export default function GggAccount() {
             Connected to GGG
           </div>
           <div className="flex gap-1">
-            <Btn onClick={() => loadCharacters()} title="Refresh characters">
+            <Btn onClick={() => loadCharacters(true)} title="Refresh characters">
               ↻
             </Btn>
             <Btn onClick={disconnect} title="Disconnect (deletes local tokens)">

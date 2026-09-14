@@ -164,7 +164,7 @@ async fn acquire(policy: &'static str) -> Result<(), String> {
                 )
             };
             eprintln!(
-                "[ExiledOrb] GGG limiter [{policy}] fail-fast: wait={wait:.0}s                  restricted={restricted}s history={history_len} rules={rules:?}"
+                "[ExiledOrb] GGG limiter [{policy}] fail-fast: wait={wait:.0}s restricted={restricted}s history={history_len} rules={rules:?}"
             );
             return Err(format!(
                 "GGG API rate limit reached — try again in {} s.",
