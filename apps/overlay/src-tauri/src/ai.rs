@@ -3,7 +3,9 @@ use std::error::Error;
 
 const CLAUDE_API_URL: &str = "https://api.anthropic.com/v1/messages";
 const CLAUDE_MODEL_FAST: &str = "claude-haiku-4-5-20251001";
-const CLAUDE_MODEL_DEEP: &str = "claude-sonnet-4-6";
+const CLAUDE_MODEL_DEEP: &str = "claude-opus-5";
+/// Beta flag for server-side refusal fallbacks (`"fallbacks": "default"`).
+const FALLBACK_BETA: &str = "server-side-fallback-2026-07-01";
 
 /// The Witch persona injected into all AI prompts.
 const WITCH_PERSONA: &str = r#"You ARE the Witch from Path of Exile. Stay in character at all times. You are a powerful, exiled sorceress who commands the elements and the dead. You were driven from your village after they burned your home. You made them pay — you took their children. Now you wander Wraeclast, a godslayer who fears nothing.
@@ -30,7 +32,7 @@ Voice examples:
 /// text block from the response. Shared by the text and vision paths.
 async fn send_claude(api_key: &str, body: &Value) -> Result<String, String> {
     let client = reqwest::Client::builder()
-        .timeout(std::time::Duration::from_secs(60))
+        .timeout(std::time::Duration::from_secs(120))
         .build()
         .map_err(|e| format!("Failed to create HTTP client: {}", e))?;
 
@@ -38,6 +40,7 @@ async fn send_claude(api_key: &str, body: &Value) -> Result<String, String> {
         .post(CLAUDE_API_URL)
         .header("x-api-key", api_key)
         .header("anthropic-version", "2023-06-01")
+        .header("anthropic-beta", FALLBACK_BETA)
         .header("content-type", "application/json")
         .json(body)
         .send()
@@ -59,13 +62,27 @@ async fn send_claude(api_key: &str, body: &Value) -> Result<String, String> {
         .await
         .map_err(|e| format!("Failed to parse response: {}", e))?;
 
-    let content = data["content"]
-        .as_array()
-        .and_then(|arr| arr.first())
-        .and_then(|block| block["text"].as_str())
-        .ok_or("No text content in response")?;
+    extract_text(&data)
+}
 
-    Ok(content.to_string())
+/// Pull the first `text` block out of a Messages API response. Thinking
+/// models (Opus 5) put a `thinking` block first, so this cannot just take
+/// `content[0]`. A `refusal` stop reason is surfaced as an error.
+fn extract_text(data: &Value) -> Result<String, String> {
+    if data["stop_reason"].as_str() == Some("refusal") {
+        let why = data["stop_details"]["explanation"]
+            .as_str()
+            .unwrap_or("no explanation given");
+        return Err(format!("Claude declined this request: {why}"));
+    }
+    data["content"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .find(|block| block["type"].as_str() == Some("text"))
+        .and_then(|block| block["text"].as_str())
+        .map(str::to_string)
+        .ok_or_else(|| "No text content in response".to_string())
 }
 
 /// Call Claude API with a system prompt and user message.
@@ -76,7 +93,7 @@ async fn call_claude(
     user_message: &str,
     max_tokens: u32,
 ) -> Result<String, String> {
-    let body = json!({
+    let mut body = json!({
         "model": model,
         "max_tokens": max_tokens,
         "system": system,
@@ -84,6 +101,11 @@ async fn call_claude(
             { "role": "user", "content": user_message }
         ]
     });
+    // Opus-tier requests can hit a safety refusal (HTTP 200, stop_reason
+    // "refusal"); let the API re-run them on a fallback model in-call.
+    if model == CLAUDE_MODEL_DEEP {
+        body["fallbacks"] = json!("default");
+    }
 
     eprintln!(
         "[ExiledOrb] Calling Claude API: model={}, max_tokens={}, msg_len={}",
@@ -242,7 +264,7 @@ Write "buildSummary", "strengths", "weaknesses", and "nextSteps" in your Witch v
         character_json, items_json
     );
 
-    call_claude(&api_key, CLAUDE_MODEL_DEEP, &system, &user_msg, 4096).await
+    call_claude(&api_key, CLAUDE_MODEL_DEEP, &system, &user_msg, 8192).await
 }
 
 /// Analyze market trends from poe.ninja data.
@@ -262,7 +284,7 @@ IMPORTANT: Respond with ONLY a valid JSON object. No markdown, no code fences.
 
     let user_msg = format!("Analyze these Path of Exile market trends:\n{}", ninja_data);
 
-    call_claude(&api_key, CLAUDE_MODEL_DEEP, &system, &user_msg, 1024).await
+    call_claude(&api_key, CLAUDE_MODEL_DEEP, &system, &user_msg, 4096).await
 }
 
 #[cfg(test)]
@@ -275,5 +297,32 @@ mod tests {
         assert!(prompt.starts_with(WITCH_PERSONA));
         assert!(prompt.ends_with("Price this item."));
         assert!(prompt.contains("Address the user as \"exile.\""));
+    }
+
+    #[test]
+    fn extract_text_skips_thinking_blocks() {
+        let data = json!({
+            "stop_reason": "end_turn",
+            "content": [
+                { "type": "thinking", "thinking": "" },
+                { "type": "text", "text": "Vendor trash, exile." }
+            ]
+        });
+        assert_eq!(extract_text(&data).unwrap(), "Vendor trash, exile.");
+    }
+
+    #[test]
+    fn extract_text_reports_refusal_and_missing_text() {
+        let refused = json!({
+            "stop_reason": "refusal",
+            "stop_details": { "type": "refusal", "explanation": "policy" },
+            "content": []
+        });
+        assert!(extract_text(&refused).unwrap_err().contains("policy"));
+        let empty = json!({ "stop_reason": "end_turn", "content": [{ "type": "thinking" }] });
+        assert_eq!(
+            extract_text(&empty).unwrap_err(),
+            "No text content in response"
+        );
     }
 }

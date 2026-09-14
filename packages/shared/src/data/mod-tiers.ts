@@ -6,8 +6,9 @@
  *
  * Tiers are SLOT-APPROXIMATE: each table takes the five best tiers of the
  * slot where the mod rolls highest (body armour for life, weapons for attack
- * speed, amulets for crit multi…). A ring's T1 life (70–79) therefore shows
- * as T4 here — the score is a heuristic, not a crafting reference.
+ * speed, amulets for crit multi…). A ring's T1 life (70–79) therefore falls
+ * below the T5 floor (80) and shows untiered — the score is a heuristic,
+ * not a crafting reference.
  *
  * PoE1 numbers verified against poeaffix.net on 2026-09-02 unless a row says
  * UNVERIFIED (poeaffix had no data; values kept from the original table).

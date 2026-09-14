@@ -125,8 +125,9 @@ Ctrl+C, and watch the overlay.
 - [ ] B7.1 Fixture 1 (PoE1 rare body armour): panel appears; tier bars for
       Life (T1), Fire Res (T1), Chaos Res (T1), **Life Regen (T1)** — regen
       was invisible before the 2026-09-02 fix; verdict "godly"/"great".
-- [ ] B7.2 Ctrl+C the SAME text again after dismissing (the × on the card;
-      Esc does not close it) → panel reappears (sequence-number fix).
+- [ ] B7.2 Ctrl+C the SAME text again after dismissing (× on the card, or Esc
+      with the overlay focused; from another page Esc goes Home first) →
+      panel reappears (sequence-number fix).
 - [ ] B7.3 Fixture 2 (PoE1 map): MapModWarnings panel; "-Max Res" flagged
       DANGER, "Ele Reflect" DEADLY, "Fast Monsters" CAUTION; tier shows 16.
 - [ ] B7.4 Fixture 3 (PoE2 rare with Spirit + Critical Hit Chance): game
