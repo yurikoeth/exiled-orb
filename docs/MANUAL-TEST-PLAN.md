@@ -150,6 +150,9 @@ Ctrl+C, and watch the overlay.
       insight ("Based on mod tier analysis only — add Claude API key…").
 - [ ] B7.12 With a valid key: Witch-persona insight; copying the same item
       again is instant (cached, no second `Calling Claude API` line).
+- [ ] B7.14 Fixture 10 (PoE2 advanced copy, Alt held): the `{ Prefix
+      Modifier … (Tier: N) }` lines do NOT appear in the mod list, values
+      show without "(20-26)" ranges, and mods get tier badges.
 - [ ] B7.13 With an invalid key: Rust stderr `[ExiledOrb] Claude API error
       401`, local fallback shown (the panel itself only says "add Claude API
       key for deeper insight" — it does not surface the 401 text).
@@ -510,6 +513,40 @@ Just some text with the word Rarity: in it
 ```
 Item Class: Rings
 Rarity: Rare
+```
+
+### Fixture 10 — PoE2 rare, advanced mod descriptions (Alt-copy)
+
+```
+Item Class: Sceptres
+Rarity: Rare
+Plague Call
+Rattling Sceptre
+--------
+Spirit: 120 (augmented)
+--------
+Requires: Level 26
+--------
+Sockets: S 
+--------
+Item Level: 41
+--------
++9 to Intelligence (rune)
+--------
+Grants Skill: Level 11 Skeletal Warrior Minion
+--------
+{ Prefix Modifier "Heated" (Tier: 9) — Damage, Elemental, Fire, Attack }
+Allies in your Presence deal 2(1-2) to 3(3-4) added Attack Fire Damage
+{ Prefix Modifier "Lord's" (Tier: 8) }
+20(20-26)% increased Spirit
+{ Prefix Modifier "Honed" (Tier: 6) — Damage, Physical, Attack }
+Allies in your Presence deal 5(4-6) to 8(8-11) added Attack Physical Damage
+{ Suffix Modifier "of the Lion" (Tier: 5) — Attribute }
++20(17-20) to Strength
+{ Suffix Modifier "of the Despot" (Tier: 3) — Minion, Gem }
++2 to Level of all Minion Skills
+{ Suffix Modifier "of Joy" (Tier: 5) — Mana }
+25(20-29)% increased Mana Regeneration Rate
 ```
 
 ## Appendix B — Console lines cheat-sheet

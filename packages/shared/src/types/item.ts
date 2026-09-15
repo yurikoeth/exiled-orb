@@ -14,6 +14,12 @@ export interface ItemMod {
   text: string;
   /** Whether this is a prefix, suffix, implicit, enchant, etc. */
   type: "implicit" | "explicit" | "enchant" | "crafted" | "fractured" | "scourge";
+  /**
+   * The game's own affix tier (1 = best) when the clipboard text came from
+   * an advanced copy (Alt held / "advanced mod descriptions"), which prints
+   * `{ Prefix Modifier "Lord's" (Tier: 8) — Attribute }` above each mod.
+   */
+  gameTier?: number;
 }
 
 /** Structured representation of a PoE item parsed from clipboard */

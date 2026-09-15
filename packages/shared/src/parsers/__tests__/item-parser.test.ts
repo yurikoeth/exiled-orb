@@ -260,3 +260,66 @@ describe("parseItem", () => {
     });
   });
 });
+
+// ===== Advanced mod descriptions (Alt-copy / in-game option) =====
+
+const POE2_ADVANCED_SCEPTRE = `Item Class: Sceptres
+Rarity: Rare
+Plague Call
+Rattling Sceptre
+--------
+Spirit: 120 (augmented)
+--------
+Requires: Level 26
+--------
+Sockets: S 
+--------
+Item Level: 41
+--------
++9 to Intelligence (rune)
+--------
+Grants Skill: Level 11 Skeletal Warrior Minion
+--------
+{ Prefix Modifier "Heated" (Tier: 9) — Damage, Elemental, Fire, Attack }
+Allies in your Presence deal 2(1-2) to 3(3-4) added Attack Fire Damage
+{ Prefix Modifier "Lord's" (Tier: 8) }
+20(20-26)% increased Spirit
+{ Prefix Modifier "Honed" (Tier: 6) — Damage, Physical, Attack }
+Allies in your Presence deal 5(4-6) to 8(8-11) added Attack Physical Damage
+{ Suffix Modifier "of the Lion" (Tier: 5) — Attribute }
++20(17-20) to Strength
+{ Suffix Modifier "of the Despot" (Tier: 3) — Minion, Gem }
++2 to Level of all Minion Skills
+{ Suffix Modifier "of Joy" (Tier: 5) — Mana }
+25(20-29)% increased Mana Regeneration Rate`;
+
+describe("advanced mod descriptions", () => {
+  const item = parseItem(POE2_ADVANCED_SCEPTRE);
+  const texts = item.explicits.map((m) => m.text);
+
+  it("drops the { Modifier … } metadata lines", () => {
+    expect(texts.some((t) => t.startsWith("{"))).toBe(false);
+  });
+
+  it("strips roll ranges so mods read like a plain copy", () => {
+    expect(texts).toContain("20% increased Spirit");
+    expect(texts).toContain("+20 to Strength");
+    expect(texts).toContain("Allies in your Presence deal 2 to 3 added Attack Fire Damage");
+    expect(texts).toContain("25% increased Mana Regeneration Rate");
+  });
+
+  it("keeps the game's tier on each affix", () => {
+    const byText = Object.fromEntries(item.explicits.map((m) => [m.text, m.gameTier]));
+    expect(byText["20% increased Spirit"]).toBe(8);
+    expect(byText["+20 to Strength"]).toBe(5);
+    expect(byText["+2 to Level of all Minion Skills"]).toBe(3);
+    expect(byText["+9 to Intelligence (rune)"]).toBeUndefined();
+  });
+
+  it("still detects the game and item basics", () => {
+    expect(item.game).toBe("poe2");
+    expect(item.rarity).toBe("Rare");
+    expect(item.baseType).toBe("Rattling Sceptre");
+    expect(item.itemLevel).toBe(41);
+  });
+});

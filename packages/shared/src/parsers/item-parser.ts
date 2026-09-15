@@ -41,14 +41,28 @@ function detectGame(raw: string): Game {
   // PoE2 items never have socket links (R-R-R-G-B format) — sockets are on gems
   // If we see the old socket format, it's definitely PoE1
   if (raw.match(/Sockets:\s*[RGBWA][-\s]/)) return "poe1";
-  // PoE2 has "Critical Damage Bonus" instead of "Critical Strike Multiplier"
-  if (raw.includes("Critical Damage Bonus")) return "poe2";
-  // PoE2 has Spirit instead of Mana reservation
-  if (raw.match(/\+\d+ Spirit/)) return "poe2";
+  // PoE2 has "Critical Damage Bonus" / "Critical Hit Chance" instead of
+  // "Critical Strike Multiplier" / "Critical Strike Chance"
+  if (raw.includes("Critical Damage Bonus") || raw.includes("Critical Hit Chance")) return "poe2";
+  // PoE2 has Spirit instead of Mana reservation — as a property line
+  // ("Spirit: 120"), a flat mod ("+45 to Spirit") or a percent mod
+  // ("20% increased Spirit"). Plain \bSpirit\b would catch PoE1's
+  // "Spirit Shield" bases, so keep the forms explicit.
+  if (/^Spirit: \d+/m.test(raw) || /(\+\d+ (?:to )?|% increased )Spirit\b/.test(raw)) {
+    return "poe2";
+  }
+  // PoE2 prints requirements on one line ("Requires: Level 26, 50 Str");
+  // PoE1 prints a "Requirements:" section with "Level: 62" below it.
+  if (/^Requires: Level \d+/m.test(raw)) return "poe2";
+  // Runes are PoE2-only socketables
+  if (raw.includes("(rune)")) return "poe2";
   return "poe1";
 }
 
 /** Parse the rarity line */
+/** "20(20-26)%" / "2(1-2) to 3(3-4)" → "20%" / "2 to 3" (advanced copy ranges). */
+const ROLL_RANGE = /(-?\d+(?:\.\d+)?)\(-?\d+(?:\.\d+)?-(?:-?\d+(?:\.\d+)?)\)/g;
+
 function parseRarity(line: string): Rarity {
   const value = line.replace("Rarity: ", "").trim();
   switch (value) {
@@ -304,30 +318,49 @@ export function parseItem(raw: string): ParsedItem {
     );
 
     if (isMods && lines.length > 0 && !isPropertySection && !ilvlLine) {
-      const mods: ItemMod[] = lines
+      const mods: ItemMod[] = [];
+      // Advanced mod descriptions (Alt-copy, or the "advanced mod
+      // descriptions" option) insert a metadata line above each mod —
+      //   { Prefix Modifier "Lord's" (Tier: 8) — Attribute }
+      // — and print the roll range after every value: "20(20-26)% increased
+      // Spirit". Keep the tier, drop the line, strip the ranges so the mod
+      // reads exactly like a plain copy.
+      let pendingTier: number | undefined;
+      for (const l of lines) {
         // Trailing marker lines such as "Shaper Item", "Searing Exarch Item",
         // "Synthesised Item" or "Fractured Item" are not mods.
-        .filter((l) => l.length > 0 && !/ Item$/.test(l))
-        .map((l) => {
+        if (l.length === 0 || / Item$/.test(l)) continue;
+        if (l.startsWith("{") && l.endsWith("}")) {
+          const tier = /\(Tier: (\d+)\)/.exec(l);
+          pendingTier = tier ? Number(tier[1]) : undefined;
+          continue;
+        }
+        {
           let type: ItemMod["type"] = "explicit";
-          let text = l;
+          let text = l.replace(ROLL_RANGE, "$1");
 
           if (l.includes("(implicit)")) {
             type = "implicit";
-            text = l.replace("(implicit)", "").trim();
+            text = text.replace("(implicit)", "").trim();
           } else if (l.includes("(enchant)")) {
             type = "enchant";
-            text = l.replace("(enchant)", "").trim();
+            text = text.replace("(enchant)", "").trim();
           } else if (l.includes("(crafted)")) {
             type = "crafted";
-            text = l.replace("(crafted)", "").trim();
+            text = text.replace("(crafted)", "").trim();
           } else if (l.includes("(fractured)")) {
             type = "fractured";
-            text = l.replace("(fractured)", "").trim();
+            text = text.replace("(fractured)", "").trim();
           }
 
-          return { text, type };
-        });
+          const mod: ItemMod = { text, type };
+          if (pendingTier !== undefined) {
+            mod.gameTier = pendingTier;
+            pendingTier = undefined;
+          }
+          mods.push(mod);
+        }
+      }
 
       for (const mod of mods) {
         if (mod.type === "implicit") {
