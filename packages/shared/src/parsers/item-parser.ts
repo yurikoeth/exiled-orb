@@ -56,6 +56,9 @@ function detectGame(raw: string): Game {
   if (/^Requires: Level \d+/m.test(raw)) return "poe2";
   // Runes are PoE2-only socketables
   if (raw.includes("(rune)")) return "poe2";
+  // PoE2 property wording: "Block chance:" (PoE1: "Chance to Block:") and
+  // "Grants Skill:" on shields / sceptres.
+  if (/^(Block chance|Grants Skill):/m.test(raw)) return "poe2";
   return "poe1";
 }
 
@@ -204,9 +207,20 @@ export function parseItem(raw: string): ParsedItem {
     properties: {},
   };
 
+  let sawMods = false;
   for (let i = 1; i < sections.length; i++) {
     const section = sections[i];
     const lines = section.split("\n").map((l) => l.trim());
+
+    // Unique flavour text: the prose section after the mods. It never
+    // carries a number, a %, a + or a colon — every real mod line does.
+    if (
+      rarity === "Unique" &&
+      sawMods &&
+      lines.every((l) => l.length === 0 || !/[\d%+:]/.test(l))
+    ) {
+      continue;
+    }
 
     // Single-line special markers
     if (lines.length === 1) {
@@ -384,6 +398,7 @@ export function parseItem(raw: string): ParsedItem {
         }
       }
 
+      if (mods.length > 0) sawMods = true;
       for (const mod of mods) {
         if (mod.type === "implicit") {
           result.implicits.push(mod);

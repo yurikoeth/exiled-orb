@@ -340,3 +340,62 @@ describe("advanced mod descriptions", () => {
     expect(item.itemLevel).toBe(41);
   });
 });
+
+// ===== PoE2 unique shield, advanced copy, with flavour text =====
+
+const POE2_UNIQUE_SHIELD = `Item Class: Shields
+Rarity: Unique
+Arvil's Wheel
+Hardwood Targe
+--------
+Block chance: 25%
+Armour: 18 (augmented)
+Evasion Rating: 13 (augmented)
+--------
+Item Level: 75
+--------
+Grants Skill: Raise Shield
+--------
+{ Unique Modifier - Armour, Evasion }
+82(60-100)% increased Armour and Evasion
+{ Unique Modifier - Life }
+Lose 1% of maximum Life on Kill
+{ Unique Modifier - Mana }
+Lose 1% of maximum Mana on Kill
+{ Unique Modifier }
+44(30-50)% increased Skill Effect Duration
+{ Unique Modifier - Life }
++55(40-60) to maximum Life
+{ Unique Modifier - Mana }
++52(40-60) to maximum Mana
+--------
+The unending carnage of war
+mercilessly grinds away
+at body and mind.`;
+
+describe("PoE2 unique shield (advanced copy + flavour text)", () => {
+  const item = parseItem(POE2_UNIQUE_SHIELD);
+
+  it("detects PoE2 from the Block chance / Grants Skill wording", () => {
+    expect(item.game).toBe("poe2");
+    expect(item.rarity).toBe("Unique");
+    expect(item.name).toBe("Arvil's Wheel");
+  });
+
+  it("does not turn flavour text into mods", () => {
+    expect(item.explicits).toHaveLength(6);
+    expect(item.explicits.map((m) => m.text)).toEqual([
+      "82% increased Armour and Evasion",
+      "Lose 1% of maximum Life on Kill",
+      "Lose 1% of maximum Mana on Kill",
+      "44% increased Skill Effect Duration",
+      "+55 to maximum Life",
+      "+52 to maximum Mana",
+    ]);
+  });
+
+  it("reads the PoE2 property lines", () => {
+    expect(item.properties["Block chance"]).toBe("25%");
+    expect(item.properties["Grants Skill"]).toBe("Raise Shield");
+  });
+});
