@@ -63,6 +63,14 @@ function detectGame(raw: string): Game {
 }
 
 /** Parse the rarity line */
+/**
+ * Usage/description lines the game appends to maps, waystones, currency and
+ * consumables. They sit in their own section after the mods and are not
+ * mods ("Travel to this Map by using it in a personal Map Device…").
+ */
+const DESCRIPTION_LINE =
+  /^(Travel to this Map|Can be used in a (personal )?Map Device|Right[- ]click|Place into|Use in a personal Map Device|Shift click to unstack|Consumes )/i;
+
 /** "20(20-26)%" / "2(1-2) to 3(3-4)" → "20%" / "2 to 3" (advanced copy ranges). */
 const ROLL_RANGE = /(-?\d+(?:\.\d+)?)\(-?\d+(?:\.\d+)?-(?:-?\d+(?:\.\d+)?)\)/g;
 
@@ -212,6 +220,11 @@ export function parseItem(raw: string): ParsedItem {
     const section = sections[i];
     const lines = section.split("\n").map((l) => l.trim());
 
+    // Item usage description ("Travel to this Map…", "Right click to…").
+    if (lines.length > 0 && lines.every((l) => l.length === 0 || DESCRIPTION_LINE.test(l))) {
+      continue;
+    }
+
     // Unique flavour text: the prose section after the mods. It never
     // carries a number, a %, a + or a colon — every real mod line does.
     if (
@@ -305,22 +318,29 @@ export function parseItem(raw: string): ParsedItem {
     }
 
     // Properties section (Armour, Evasion, Energy Shield, etc.)
-    const isPropertySection = lines.some(
-      (l) =>
-        l.startsWith("Armour:") ||
-        l.startsWith("Evasion Rating:") ||
-        l.startsWith("Energy Shield:") ||
-        l.startsWith("Physical Damage:") ||
-        l.startsWith("Attacks per Second:") ||
-        l.startsWith("Critical Hit Chance:") ||
-        // PoE2
-        l.startsWith("Spirit:") ||
-        l.startsWith("Grants Skill:") ||
-        l.startsWith("Elemental Damage:") ||
-        l.startsWith("Chaos Damage:") ||
-        l.startsWith("Reload Time:") ||
-        l.startsWith("Block chance:")
-    );
+    const isPropertySection =
+      lines.some(
+        (l) =>
+          l.startsWith("Armour:") ||
+          l.startsWith("Evasion Rating:") ||
+          l.startsWith("Energy Shield:") ||
+          l.startsWith("Physical Damage:") ||
+          l.startsWith("Attacks per Second:") ||
+          l.startsWith("Critical Hit Chance:") ||
+          // PoE2
+          l.startsWith("Spirit:") ||
+          l.startsWith("Grants Skill:") ||
+          l.startsWith("Elemental Damage:") ||
+          l.startsWith("Chaos Damage:") ||
+          l.startsWith("Reload Time:") ||
+          l.startsWith("Block chance:")
+      ) ||
+      // Generic: a section made only of "Key: value" lines is a property
+      // block (map/waystone bonuses, flask stats, gem stats…). Mod lines
+      // never start with a capitalised key and a colon.
+      (lines.length > 0 &&
+        lines.every((l) => l.length === 0 || /^[A-Z][A-Za-z' ]+: \S/.test(l)) &&
+        !lines.some((l) => l.startsWith("Requirements:") || l.startsWith("Note:")));
     if (isPropertySection) {
       for (const line of lines) {
         const colonIdx = line.indexOf(":");

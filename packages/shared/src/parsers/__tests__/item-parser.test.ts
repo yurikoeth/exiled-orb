@@ -399,3 +399,51 @@ describe("PoE2 unique shield (advanced copy + flavour text)", () => {
     expect(item.properties["Grants Skill"]).toBe("Raise Shield");
   });
 });
+
+// ===== PoE2 waystone, advanced copy, with the usage description line =====
+
+const POE2_WAYSTONE_ADVANCED = `Item Class: Waystones
+Rarity: Rare
+Ancestral Stone
+Waystone (Tier 9)
+--------
+Revives Available: 0 (augmented)
+Item Rarity: +53% (augmented)
+Pack Size: +7% (augmented)
+Monster Rarity: +19% (augmented)
+Waystone Drop Chance: +75% (augmented)
+--------
+Item Level: 74
+--------
+{ Prefix Modifier "Venomous" (Tier: 1) }
+Monsters have 23(20-26)% chance to Poison on Hit
+{ Prefix Modifier "Frostbitten" (Tier: 1) }
+Monsters deal 11(10-14)% of Damage as Extra Cold
+{ Prefix Modifier "Shattering" (Tier: 1) }
+Monsters Break Armour equal to 23(20-25)% of Physical Damage dealt
+{ Suffix Modifier "of the Prism" (Tier: 1) }
++25(25-29)% Monster Elemental Resistances
+{ Suffix Modifier "of Buffering" (Tier: 1) }
+Monsters gain 21(12-25)% of maximum Life as Extra maximum Energy Shield
+{ Suffix Modifier "Sleet" (Tier: 1) }
+Area has patches of Chilled Ground
+--------
+Can be used in a Map Device, allowing you to enter a Map. Waystones can only be used once.`;
+
+describe("PoE2 waystone (advanced copy)", () => {
+  const item = parseItem(POE2_WAYSTONE_ADVANCED);
+
+  it("is a PoE2 waystone with six mods and no description line", () => {
+    expect(item.game).toBe("poe2");
+    expect(item.itemClass).toBe("Waystones");
+    expect(item.explicits).toHaveLength(6);
+    expect(item.explicits.map((m) => m.text)).toContain(
+      "Monsters Break Armour equal to 23% of Physical Damage dealt"
+    );
+    expect(item.explicits.some((m) => m.text.startsWith("Can be used"))).toBe(false);
+  });
+
+  it("keeps the game tier on waystone affixes", () => {
+    expect(item.explicits.every((m) => m.gameTier === 1)).toBe(true);
+  });
+});
