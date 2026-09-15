@@ -67,6 +67,9 @@ export interface NinjaLine {
   listingCount: number;
   links?: number;
   gemLevel?: number;
+  /** Base type when the API provides it — PoE2 lists Runemastered/Runeforged
+   *  variants of a unique as separate lines under the same name. */
+  baseType?: string;
 }
 
 /* eslint-disable @typescript-eslint/no-explicit-any -- untrusted API payloads */
@@ -105,6 +108,7 @@ export function parseNinjaResponse(data: unknown): NinjaLine[] {
         icon: !image ? "" : image.startsWith("http") ? image : `https://web.poecdn.com${image}`,
         change: line.sparkLine?.totalChange ?? line.sparkline?.totalChange ?? 0,
         listingCount: line.listingCount ?? 0,
+        baseType: line.baseType,
       };
     });
   }
@@ -123,6 +127,7 @@ export function parseNinjaResponse(data: unknown): NinjaLine[] {
     listingCount: line.listingCount ?? line.count ?? 0,
     links: line.links,
     gemLevel: line.gemLevel,
+    baseType: line.baseType,
   }));
 }
 

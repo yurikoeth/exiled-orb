@@ -17,7 +17,9 @@ describe("formatNumber", () => {
 
 describe("formatPrice", () => {
   it("shows chaos below one divine, rounded", () => {
-    expect(formatPrice(0.4, 200)).toBe("0c");
+    expect(formatPrice(0.4, 200)).toBe("0.4c");
+    expect(formatPrice(0.02, 200)).toBe("<0.1c");
+    expect(formatPrice(0, 200)).toBe("0c");
     expect(formatPrice(12.6, 200)).toBe("13c");
     expect(formatPrice(199, 200)).toBe("199c");
   });

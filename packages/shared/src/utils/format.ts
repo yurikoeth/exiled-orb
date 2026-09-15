@@ -12,6 +12,9 @@ export function formatPrice(chaos: number, divineRate: number): string {
     const divines = chaos / divineRate;
     return `${divines.toFixed(1)} div`;
   }
+  // PoE2 uniques are often worth a fraction of a chaos — "0c" reads as
+  // "no price", so keep one decimal below 1c.
+  if (chaos > 0 && chaos < 1) return chaos < 0.05 ? "<0.1c" : `${chaos.toFixed(1)}c`;
   return `${Math.round(chaos)}c`;
 }
 

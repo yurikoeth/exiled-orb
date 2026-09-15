@@ -154,6 +154,7 @@ describe("parseNinjaResponse — PoE2 item overview", () => {
     expect(lines).toHaveLength(1);
     expect(lines[0]).toMatchObject({
       name: "Amor Mandragora",
+      baseType: "Runeforged Changeling Talisman",
       divineValue: 0.08782,
       listingCount: 164,
       icon: "https://web.poecdn.com/gen/image/abc/Talisman.png",
