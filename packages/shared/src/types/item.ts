@@ -13,7 +13,7 @@ export interface ItemMod {
   /** Raw mod text as shown in-game */
   text: string;
   /** Whether this is a prefix, suffix, implicit, enchant, etc. */
-  type: "implicit" | "explicit" | "enchant" | "crafted" | "fractured" | "scourge";
+  type: "implicit" | "explicit" | "enchant" | "crafted" | "fractured" | "scourge" | "rune";
   /**
    * The game's own affix tier (1 = best) when the clipboard text came from
    * an advanced copy (Alt held / "advanced mod descriptions"), which prints

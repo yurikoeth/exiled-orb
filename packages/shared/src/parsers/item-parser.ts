@@ -260,6 +260,17 @@ export function parseItem(raw: string): ParsedItem {
       if (match) result.stackSize = parseInt(match[1], 10);
     }
 
+    // PoE2 prints requirements on one line: "Requires: Level 26, 50 Str, 33 Int"
+    const requiresLine = lines.find((l) => l.startsWith("Requires:"));
+    if (requiresLine) {
+      const level = /Level (\d+)/.exec(requiresLine);
+      if (level) result.requirements.Level = parseInt(level[1], 10);
+      for (const attr of requiresLine.matchAll(/(\d+) (Str|Dex|Int)\b/g)) {
+        result.requirements[attr[2]] = parseInt(attr[1], 10);
+      }
+      if (lines.length === 1) continue;
+    }
+
     // Requirements section — check BEFORE gem level to avoid matching "Level:" inside requirements
     if (lines[0] === "Requirements:") {
       for (let j = 1; j < lines.length; j++) {
@@ -287,7 +298,14 @@ export function parseItem(raw: string): ParsedItem {
         l.startsWith("Energy Shield:") ||
         l.startsWith("Physical Damage:") ||
         l.startsWith("Attacks per Second:") ||
-        l.startsWith("Critical Hit Chance:")
+        l.startsWith("Critical Hit Chance:") ||
+        // PoE2
+        l.startsWith("Spirit:") ||
+        l.startsWith("Grants Skill:") ||
+        l.startsWith("Elemental Damage:") ||
+        l.startsWith("Chaos Damage:") ||
+        l.startsWith("Reload Time:") ||
+        l.startsWith("Block chance:")
     );
     if (isPropertySection) {
       for (const line of lines) {
@@ -351,6 +369,10 @@ export function parseItem(raw: string): ParsedItem {
           } else if (l.includes("(fractured)")) {
             type = "fractured";
             text = text.replace("(fractured)", "").trim();
+          } else if (l.includes("(rune)")) {
+            // PoE2 socketed rune — not an affix, must not be tier-scored
+            type = "rune";
+            text = text.replace("(rune)", "").trim();
           }
 
           const mod: ItemMod = { text, type };
@@ -365,7 +387,7 @@ export function parseItem(raw: string): ParsedItem {
       for (const mod of mods) {
         if (mod.type === "implicit") {
           result.implicits.push(mod);
-        } else if (mod.type === "enchant") {
+        } else if (mod.type === "enchant" || mod.type === "rune") {
           result.enchants.push(mod);
         } else {
           result.explicits.push(mod);

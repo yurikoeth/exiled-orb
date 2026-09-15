@@ -313,7 +313,24 @@ describe("advanced mod descriptions", () => {
     expect(byText["20% increased Spirit"]).toBe(8);
     expect(byText["+20 to Strength"]).toBe(5);
     expect(byText["+2 to Level of all Minion Skills"]).toBe(3);
-    expect(byText["+9 to Intelligence (rune)"]).toBeUndefined();
+  });
+
+  it("lists exactly the six affixes as explicits", () => {
+    expect(item.explicits).toHaveLength(6);
+    expect(texts.some((t) => t.startsWith("Spirit:") || t.startsWith("Requires:"))).toBe(false);
+    expect(texts.some((t) => t.startsWith("Grants Skill:"))).toBe(false);
+  });
+
+  it("keeps the rune out of the affix list", () => {
+    expect(texts.some((t) => t.includes("Intelligence"))).toBe(false);
+    const rune = item.enchants.find((m) => m.type === "rune");
+    expect(rune?.text).toBe("+9 to Intelligence");
+  });
+
+  it("reads PoE2 one-line requirements and properties", () => {
+    expect(item.requirements.Level).toBe(26);
+    expect(item.properties["Spirit"]).toBe("120 (augmented)");
+    expect(item.properties["Grants Skill"]).toBe("Level 11 Skeletal Warrior Minion");
   });
 
   it("still detects the game and item basics", () => {
