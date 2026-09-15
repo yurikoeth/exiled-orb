@@ -18,7 +18,11 @@ interface LevelingState {
 export function useLevelingTracker(): LevelingState {
   const currentZone = useOverlayStore((s) => s.currentZone);
   const characterLevel = useOverlayStore((s) => s.characterLevel);
-  const game = useSettingsStore((s) => s.settings.game);
+  // Zones come from whichever game's Client.txt is being watched; the
+  // configured game is only a fallback until a log has been detected.
+  const detectedGame = useOverlayStore((s) => s.detectedGame);
+  const settingsGame = useSettingsStore((s) => s.settings.game);
+  const game = detectedGame ?? settingsGame;
   const [state, setState] = useState<LevelingState>({
     currentStep: null,
     nextStep: null,

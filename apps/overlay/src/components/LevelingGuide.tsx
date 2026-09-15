@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useLevelingTracker } from "../hooks/useLevelingTracker";
 import { useOverlayStore } from "../stores/overlay-store";
+import { useSettingsStore } from "../stores/settings-store";
 import { useBuildStore } from "../stores/build-store";
 import { getLevelingGuide } from "@exiled-orb/shared";
 import type { LevelingStep } from "@exiled-orb/shared";
@@ -26,9 +27,22 @@ async function saveChecked(charName: string, checked: Set<string>) {
 
 export default function LevelingGuide() {
   const { currentStep } = useLevelingTracker();
-  const [selectedGame, setSelectedGame] = useState<"poe1" | "poe2">("poe1");
+  // Follow the game whose Client.txt is being watched (Settings game until a
+  // log is detected) — the user can still toggle, which pins their choice.
+  const detectedGame = useOverlayStore((s) => s.detectedGame);
+  const settingsGame = useSettingsStore((s) => s.settings.game);
+  const activeGame = detectedGame ?? settingsGame;
+  const [selectedGame, setSelectedGame] = useState<"poe1" | "poe2">(activeGame);
+  const manualGame = useRef(false);
   const guide = getLevelingGuide(selectedGame);
   const [selectedAct, setSelectedAct] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!manualGame.current && selectedGame !== activeGame) {
+      setSelectedGame(activeGame);
+      setSelectedAct(null);
+    }
+  }, [activeGame, selectedGame]);
   const [checked, setChecked] = useState<Set<string>>(new Set());
   const activeChar = useBuildStore((s) => s.activeBuild?.characterName) ?? null;
   const activeRef = useRef<HTMLDivElement>(null);
@@ -74,20 +88,20 @@ export default function LevelingGuide() {
     return "";
   };
 
-  // Auto-select act based on current zone
+  // Auto-select act based on current zone (only meaningful for the game the
+  // zone actually belongs to)
   useEffect(() => {
-    if (currentStep && selectedAct === null) {
+    if (currentStep && selectedAct === null && selectedGame === activeGame) {
       setSelectedAct(currentStep.act);
     }
-  }, [currentStep, selectedAct]);
+  }, [currentStep, selectedAct, selectedGame, activeGame]);
 
   // Default to act 1 if nothing selected
   const displayAct = selectedAct ?? acts[0] ?? 1;
   const actSteps = guide.steps.filter((s) => s.act === displayAct);
 
   // Only show active highlight if selected game matches the detected game
-  const detectedGame = useOverlayStore((s) => s.detectedGame);
-  const activeStepZone = selectedGame === detectedGame || !detectedGame ? currentStep?.zone : null;
+  const activeStepZone = selectedGame === activeGame ? currentStep?.zone : null;
 
   // Scroll to active step
   useEffect(() => {
@@ -104,6 +118,7 @@ export default function LevelingGuide() {
           <button
             key={g}
             onClick={() => {
+              manualGame.current = true;
               setSelectedGame(g);
               setSelectedAct(null);
             }}
