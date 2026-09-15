@@ -27,7 +27,13 @@ function getCategory(item: ParsedItem): PoeNinjaCategory | null {
       cls.includes("mace") ||
       cls.includes("axe") ||
       cls.includes("sword") ||
-      cls.includes("claw")
+      cls.includes("claw") ||
+      // PoE2 classes — poe.ninja files talismans under UniqueWeapons
+      cls.includes("spear") ||
+      cls.includes("crossbow") ||
+      cls.includes("quarterstaff") ||
+      cls.includes("flail") ||
+      cls.includes("talisman")
     )
       return "UniqueWeapon";
     if (
@@ -36,7 +42,10 @@ function getCategory(item: ParsedItem): PoeNinjaCategory | null {
       cls.includes("glove") ||
       cls.includes("boot") ||
       cls.includes("body") ||
-      cls.includes("shield")
+      cls.includes("shield") ||
+      cls.includes("focus") ||
+      cls.includes("buckler") ||
+      cls.includes("quiver")
     )
       return "UniqueArmour";
     if (cls.includes("ring") || cls.includes("amulet") || cls.includes("belt"))

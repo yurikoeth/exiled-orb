@@ -22,9 +22,30 @@ export const NINJA_CURRENCY_CATEGORIES: ReadonlySet<string> = new Set(["Currency
  * - PoE2 currency:  /poe2/api/economy/exchange/current/overview
  * - items (both):   /<game>/api/economy/stash/current/item/overview
  */
+/**
+ * poe.ninja names PoE2 unique categories in the plural ("UniqueWeapons");
+ * PoE1 keeps the singular ("UniqueWeapon"). Verified 2026-09-15: the
+ * singular form 404s on /poe2/. Talismans, spears, crossbows, quarterstaves
+ * and flails all live under UniqueWeapons; foci, bucklers and quivers under
+ * UniqueArmours.
+ */
+const POE2_TYPE_NAMES: Readonly<Record<string, string>> = {
+  UniqueWeapon: "UniqueWeapons",
+  UniqueArmour: "UniqueArmours",
+  UniqueAccessory: "UniqueAccessories",
+  UniqueFlask: "UniqueFlasks",
+  UniqueJewel: "UniqueJewels",
+};
+
+/** The `type=` value poe.ninja expects for a category in a given game. */
+export function ninjaTypeName(game: Game, category: string): string {
+  return game === "poe2" ? (POE2_TYPE_NAMES[category] ?? category) : category;
+}
+
 export function buildNinjaUrl(game: Game, league: string, category: string): string {
   const base = NINJA_BASE_URLS[game];
-  const query = `league=${encodeURIComponent(league)}&type=${encodeURIComponent(category)}`;
+  const type = ninjaTypeName(game, category);
+  const query = `league=${encodeURIComponent(league)}&type=${encodeURIComponent(type)}`;
   if (NINJA_CURRENCY_CATEGORIES.has(category)) {
     return game === "poe2"
       ? `${base}/exchange/current/overview?${query}`
@@ -61,21 +82,29 @@ export function parseNinjaResponse(data: unknown): NinjaLine[] {
   const d = data as Record<string, any>;
   if (!d || typeof d !== "object") return [];
 
-  // PoE2 exchange: values live in `lines` (denominated in the primary
-  // currency, divines), display metadata in `items`, rates in `core.rates`.
-  if (d.core && Array.isArray(d.items)) {
+  // PoE2 (both endpoints): values live in `lines.primaryValue`, denominated
+  // in the primary currency (divines), with rates in `core.rates`.
+  // - exchange overview: display metadata in a top-level `items` array
+  //   joined by id (lines carry no name).
+  // - item overview: lines carry `name`/`baseType`/`icon`/`listingCount`
+  //   themselves; `core.items` only lists the currencies. (Shape verified
+  //   2026-09-15 — an earlier version required top-level `items`, so every
+  //   PoE2 unique parsed as 0c.)
+  if (d.core && typeof d.core === "object") {
     const chaosPerDivine: number = d.core?.rates?.chaos ?? 0;
-    const meta = new Map<string, any>(d.items.map((i: any) => [i.id, i]));
+    const metaList: any[] = Array.isArray(d.items) ? d.items : [];
+    const meta = new Map<string, any>(metaList.map((i: any) => [i.id, i]));
     return (Array.isArray(d.lines) ? d.lines : []).map((line: any): NinjaLine => {
       const m = meta.get(line.id);
       const divines = line.primaryValue ?? 0;
+      const image: string | undefined = line.icon ?? m?.image;
       return {
-        name: m?.name ?? String(line.id ?? ""),
+        name: line.name ?? m?.name ?? String(line.id ?? ""),
         chaosValue: chaosPerDivine > 0 ? divines * chaosPerDivine : divines,
         divineValue: divines,
-        icon: m?.image ? `https://web.poecdn.com${m.image}` : "",
-        change: line.sparkline?.totalChange ?? 0,
-        listingCount: 0,
+        icon: !image ? "" : image.startsWith("http") ? image : `https://web.poecdn.com${image}`,
+        change: line.sparkLine?.totalChange ?? line.sparkline?.totalChange ?? 0,
+        listingCount: line.listingCount ?? 0,
       };
     });
   }

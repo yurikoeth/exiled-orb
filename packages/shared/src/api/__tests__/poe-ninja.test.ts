@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { buildNinjaUrl, parseNinjaResponse } from "../poe-ninja.js";
+import { buildNinjaUrl, parseNinjaResponse, ninjaTypeName } from "../poe-ninja.js";
 import { getCurrentLeague } from "../../data/seasons.js";
 
 describe("buildNinjaUrl", () => {
@@ -19,9 +19,16 @@ describe("buildNinjaUrl", () => {
     expect(buildNinjaUrl("poe1", "Allflame", "UniqueWeapon")).toBe(
       "https://poe.ninja/poe1/api/economy/stash/current/item/overview?league=Allflame&type=UniqueWeapon"
     );
-    expect(buildNinjaUrl("poe2", "Runes of Aldur", "UniqueWeapon")).toContain(
-      "/poe2/api/economy/stash/current/item/overview?"
+    expect(buildNinjaUrl("poe2", "Runes of Aldur", "UniqueWeapon")).toBe(
+      "https://poe.ninja/poe2/api/economy/stash/current/item/overview?league=Runes%20of%20Aldur&type=UniqueWeapons"
     );
+  });
+
+  it("pluralises PoE2 unique categories only", () => {
+    expect(ninjaTypeName("poe2", "UniqueAccessory")).toBe("UniqueAccessories");
+    expect(ninjaTypeName("poe2", "UniqueArmour")).toBe("UniqueArmours");
+    expect(ninjaTypeName("poe2", "Currency")).toBe("Currency");
+    expect(ninjaTypeName("poe1", "UniqueAccessory")).toBe("UniqueAccessory");
   });
 });
 
@@ -113,5 +120,45 @@ describe("getCurrentLeague", () => {
 
   it("falls back to the season name when no id override exists", () => {
     expect(getCurrentLeague("poe1")).toBe("Allflame");
+  });
+});
+
+describe("parseNinjaResponse — PoE2 item overview", () => {
+  // Shape captured from the live API on 2026-09-15: metadata under
+  // `core.items` (currencies only), each line self-describing.
+  const payload = {
+    core: {
+      items: [{ id: "divine", name: "Divine Orb", category: "Currency" }],
+      rates: { exalted: 510.7, chaos: 11.46 },
+      primary: "divine",
+      secondary: "chaos",
+    },
+    lines: [
+      {
+        id: 360,
+        itemId: "Amor Mandragora Runeforged Changeling Talisman",
+        name: "Amor Mandragora",
+        baseType: "Runeforged Changeling Talisman",
+        icon: "https://web.poecdn.com/gen/image/abc/Talisman.png",
+        category: "[Talisman]",
+        primaryValue: 0.08782,
+        listingCount: 164,
+        corrupted: false,
+        sparkLine: { totalChange: -3.1, data: [0, null, -3.1] },
+      },
+    ],
+  };
+
+  it("reads name, listing count and icon from the line and converts divines to chaos", () => {
+    const lines = parseNinjaResponse(payload);
+    expect(lines).toHaveLength(1);
+    expect(lines[0]).toMatchObject({
+      name: "Amor Mandragora",
+      divineValue: 0.08782,
+      listingCount: 164,
+      icon: "https://web.poecdn.com/gen/image/abc/Talisman.png",
+      change: -3.1,
+    });
+    expect(lines[0].chaosValue).toBeCloseTo(0.08782 * 11.46);
   });
 });
