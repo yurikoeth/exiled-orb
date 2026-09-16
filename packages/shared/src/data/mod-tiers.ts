@@ -904,6 +904,17 @@ export function evaluateItem(
     priceMax = Math.min(priceMax, 30);
   }
 
+  // Leveling gear: below endgame item level the market pays vendor money to
+  // a few basic-currency units no matter how good the tiers look (PoE1
+  // ilvl < 68, PoE2 ilvl < 65). Only mods that roll at low ilvl exist on
+  // these items anyway, so "T1" here means "best of a weak pool".
+  const endgameIlvl = game === "poe2" ? 65 : 68;
+  if (itemLevel != null && itemLevel > 0 && itemLevel < endgameIlvl) {
+    const cap = itemLevel < 50 ? 3 : 10;
+    priceMin = Math.min(priceMin, 1);
+    priceMax = Math.min(priceMax, cap);
+  }
+
   if (priceMin > priceMax) [priceMin, priceMax] = [priceMax, priceMin];
   const estimatedChaos = { min: Math.round(priceMin), max: Math.round(priceMax) };
 

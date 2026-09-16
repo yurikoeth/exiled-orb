@@ -132,8 +132,8 @@ export async function analyzeItemWithAi(
       // UI can convert, but the prose should use the game's units.
       economy:
         item.game === "poe2"
-          ? `Path of Exile 2: prices are quoted in exalted orbs and divine orbs (1 div = ${units.chaosPerDivine.toFixed(2)} chaos${units.chaosPerExalted ? ` = ${Math.round(units.chaosPerDivine / units.chaosPerExalted)} ex` : ""}). Return minChaos/maxChaos in chaos, but write exalted/divine amounts in your prose.`
-          : `Path of Exile 1: prices are quoted in chaos orbs and divine orbs (1 div = ${Math.round(units.chaosPerDivine)} chaos).`,
+          ? `Path of Exile 2: prices are quoted in exalted orbs and divine orbs (1 div = ${units.chaosPerDivine.toFixed(2)} chaos${units.chaosPerExalted ? ` = ${Math.round(units.chaosPerDivine / units.chaosPerExalted)} ex` : ""}). Return minChaos/maxChaos in chaos, but write exalted/divine amounts in your prose. Items below item level 65 are leveling gear: worth vendor money to a few exalted at most, whatever their tiers.`
+          : `Path of Exile 1: prices are quoted in chaos orbs and divine orbs (1 div = ${Math.round(units.chaosPerDivine)} chaos). Items below item level 68 are leveling gear: worth vendor money to a few chaos at most, whatever their tiers.`,
     });
 
     const result: string = await invoke("analyze_item_price", {
