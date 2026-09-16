@@ -121,6 +121,10 @@ export async function analyzeItemWithAi(
     const units = getPriceUnits(item.game);
     const marketContext = JSON.stringify({
       currentPriceChaos: priceResult?.chaosValue ?? null,
+      currentPriceExalted:
+        item.game === "poe2" && priceResult?.chaosValue && units.chaosPerExalted
+          ? Math.round((priceResult.chaosValue / units.chaosPerExalted) * 10) / 10
+          : null,
       currentPriceDisplay: priceResult?.chaosValue
         ? formatGamePrice(priceResult.chaosValue, units)
         : null,
@@ -132,7 +136,7 @@ export async function analyzeItemWithAi(
       // UI can convert, but the prose should use the game's units.
       economy:
         item.game === "poe2"
-          ? `Path of Exile 2: prices are quoted in exalted orbs and divine orbs (1 div = ${units.chaosPerDivine.toFixed(2)} chaos${units.chaosPerExalted ? ` = ${Math.round(units.chaosPerDivine / units.chaosPerExalted)} ex` : ""}). Return minChaos/maxChaos in chaos, but write exalted/divine amounts in your prose. Items below item level 65 are leveling gear: worth vendor money to a few exalted at most, whatever their tiers.`
+          ? `Path of Exile 2: prices are quoted in exalted orbs and divine orbs (1 div = ${units.chaosPerDivine.toFixed(2)} chaos${units.chaosPerExalted ? ` = ${Math.round(units.chaosPerDivine / units.chaosPerExalted)} ex` : ""}). IMPORTANT: for this item the minChaos and maxChaos fields must contain EXALTED ORB amounts (the field names are legacy) — e.g. a 3-exalt item is minChaos 2, maxChaos 4. Quote exalted/divine in your prose too. Items below item level 65 are leveling gear: worth vendor money to a few exalted at most, whatever their tiers.`
           : `Path of Exile 1: prices are quoted in chaos orbs and divine orbs (1 div = ${Math.round(units.chaosPerDivine)} chaos). Items below item level 68 are leveling gear: worth vendor money to a few chaos at most, whatever their tiers.`,
     });
 
@@ -146,6 +150,18 @@ export async function analyzeItemWithAi(
     // parseAiJson strips fences and repairs trailing commas/truncation.
     const analysis = parseAiJson<AiPriceAnalysis | null>(result, null);
     if (!analysis) throw new Error("Unparseable AI response");
+    // PoE2 answers arrive in exalted (see the economy note above); the card
+    // prints from chaos, so convert once here.
+    if (item.game === "poe2" && analysis.priceRecommendation) {
+      analysis.priceRecommendation.minChaos = basicToChaos(
+        analysis.priceRecommendation.minChaos,
+        units
+      );
+      analysis.priceRecommendation.maxChaos = basicToChaos(
+        analysis.priceRecommendation.maxChaos,
+        units
+      );
+    }
     analysisCache.set(hash, analysis);
     useAiStore.getState().setAnalysis(analysis, false);
   } catch (err) {
