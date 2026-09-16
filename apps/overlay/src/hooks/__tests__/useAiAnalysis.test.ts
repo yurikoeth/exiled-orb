@@ -105,7 +105,9 @@ describe("analyzeItemWithAi", () => {
     );
     const args = invokeMock.mock.calls[0][1] as { itemJson: string; marketContext: string };
     expect(JSON.parse(args.itemJson).explicits).toHaveLength(3);
-    expect(JSON.parse(args.marketContext)).toMatchObject({ currentPrice: 10, league: "Allflame" });
+    const ctx = JSON.parse(args.marketContext);
+    expect(ctx).toMatchObject({ currentPriceChaos: 10, league: "Allflame" });
+    expect(ctx.economy).toContain("Path of Exile 1");
     expect(useAiStore.getState().currentAnalysis?.itemSummary).toBe("Almost worthy of me.");
     expect(useAiStore.getState().analysisLoading).toBe(false);
 

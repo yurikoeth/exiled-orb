@@ -6,6 +6,7 @@ import type {
   NinjaLine,
 } from "@exiled-orb/shared";
 import { buildNinjaUrl, parseNinjaResponse, resolveLeague } from "@exiled-orb/shared";
+import type { PriceUnits } from "@exiled-orb/shared";
 import { useSettingsStore } from "../stores/settings-store";
 import { fetchNinjaCached } from "../utils/ninja-cache";
 
@@ -120,20 +121,35 @@ async function ninjaLookup(
   };
 }
 
-/** Cached divine rate so PriceCheck component can use it */
+/** Cached exchange rates so the price card can print in trading units. */
 let lastDivineRate = 200;
+/** Chaos per exalted orb — PoE2 only, unknown until the exchange is fetched. */
+let lastExaltedRate: number | undefined;
 
-/** Get divine orb rate */
+/** Get divine orb rate (chaos per divine); PoE2 also learns the exalted rate. */
 async function getDivineRate(game: Game, league: string): Promise<number> {
   const result = await ninjaLookup(game, league, "Currency", "Divine Orb");
   const rate = result?.chaosValue ?? 200;
   lastDivineRate = rate;
+  if (game === "poe2") {
+    const ex = await ninjaLookup(game, league, "Currency", "Exalted Orb");
+    if (ex && ex.chaosValue > 0) lastExaltedRate = ex.chaosValue;
+  }
   return rate;
 }
 
 /** Get the last fetched divine rate (for display) */
 export function getDivineRateCached(): number {
   return lastDivineRate;
+}
+
+/** Units for printing a chaos value the way `game`'s economy trades. */
+export function getPriceUnits(game: Game): PriceUnits {
+  return {
+    game,
+    chaosPerDivine: lastDivineRate,
+    chaosPerExalted: game === "poe2" ? lastExaltedRate : undefined,
+  };
 }
 
 /**
@@ -150,6 +166,15 @@ export async function checkPrice(item: ParsedItem, league?: string): Promise<Pri
     `[ExiledOrb] Price check: "${item.name || item.baseType}" category=${category} league=${league} game=${item.game}`
   );
 
+  // Rates come from the Currency overview, cached for 5 minutes — fetch them
+  // first so the card header and mod-tier estimates print in the right units
+  // even when the item itself has no poe.ninja line.
+  try {
+    await getDivineRate(item.game, league);
+  } catch (err) {
+    console.warn("[ExiledOrb] rate lookup failed:", err);
+  }
+
   if (category) {
     try {
       const lookupName = item.name || item.baseType;
@@ -160,7 +185,7 @@ export async function checkPrice(item: ParsedItem, league?: string): Promise<Pri
       });
 
       if (ninjaItem) {
-        const divineRate = await getDivineRate(item.game, league);
+        const divineRate = lastDivineRate;
         return {
           item,
           source: "poe.ninja",

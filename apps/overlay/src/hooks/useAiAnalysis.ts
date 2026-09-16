@@ -3,7 +3,8 @@ import { useAiStore } from "../stores/ai-store";
 import { useSettingsStore } from "../stores/settings-store";
 import { getApiKey } from "../utils/store";
 import { parseAiJson } from "../utils/parseAiJson";
-import { evaluateItem, resolveLeague } from "@exiled-orb/shared";
+import { evaluateItem, resolveLeague, formatGamePrice } from "@exiled-orb/shared";
+import { getPriceUnits } from "./usePriceCheck";
 import type { ParsedItem, PriceResult, AiPriceAnalysis } from "@exiled-orb/shared";
 
 /** Cache of recent AI analyses keyed by item hash */
@@ -55,7 +56,7 @@ function generateLocalAnalysis(item: ParsedItem, priceResult: PriceResult | null
       maxChaos: evaluation.estimatedChaos.max,
       confidence: evaluation.score >= 70 ? "medium" : "low",
       reasoning: priceResult?.chaosValue
-        ? `Based on mod tiers + poe.ninja (${Math.round(priceResult.chaosValue)}c listed)`
+        ? `Based on mod tiers + poe.ninja (${formatGamePrice(priceResult.chaosValue, getPriceUnits(item.game))} listed)`
         : "Based on mod tier analysis only — add Claude API key for deeper insight",
     },
     craftAdvice: null,
@@ -115,12 +116,22 @@ export async function analyzeItemWithAi(
       game: item.game,
     });
 
+    const units = getPriceUnits(item.game);
     const marketContext = JSON.stringify({
-      currentPrice: priceResult?.chaosValue ?? null,
+      currentPriceChaos: priceResult?.chaosValue ?? null,
+      currentPriceDisplay: priceResult?.chaosValue
+        ? formatGamePrice(priceResult.chaosValue, units)
+        : null,
       source: priceResult?.source ?? null,
       confidence: priceResult?.confidence ?? null,
       listingCount: priceResult?.listingCount ?? null,
       league: resolveLeague(item.game, settings.leagues),
+      // PoE2 trades in exalted / divine; the JSON numbers stay in chaos so the
+      // UI can convert, but the prose should use the game's units.
+      economy:
+        item.game === "poe2"
+          ? `Path of Exile 2: prices are quoted in exalted orbs and divine orbs (1 div = ${units.chaosPerDivine.toFixed(2)} chaos${units.chaosPerExalted ? ` = ${Math.round(units.chaosPerDivine / units.chaosPerExalted)} ex` : ""}). Return minChaos/maxChaos in chaos, but write exalted/divine amounts in your prose.`
+          : `Path of Exile 1: prices are quoted in chaos orbs and divine orbs (1 div = ${Math.round(units.chaosPerDivine)} chaos).`,
     });
 
     const result: string = await invoke("analyze_item_price", {

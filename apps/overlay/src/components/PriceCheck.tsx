@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { useOverlayStore } from "../stores/overlay-store";
-import { formatPrice, formatPriceRange, evaluateItem } from "@exiled-orb/shared";
-import { checkPrice, getDivineRateCached } from "../hooks/usePriceCheck";
+import { formatGamePrice, formatGamePriceRange, evaluateItem } from "@exiled-orb/shared";
+import { checkPrice, getDivineRateCached, getPriceUnits } from "../hooks/usePriceCheck";
 import type { ItemEvaluation } from "@exiled-orb/shared";
 import { Btn, Panel, RARITY_COLORS } from "./ui";
 
@@ -96,7 +96,13 @@ export default function PriceCheck() {
           style={{ color: "var(--text-secondary)" }}
         >
           <span style={{ color: "var(--accent)", opacity: 0.7 }}>
-            1 div = {getDivineRateCached()}c
+            {(() => {
+              // PoE2 trades in exalted / divine; PoE1 in chaos / divine.
+              const u = getPriceUnits(currentItem.game);
+              return u.game === "poe2" && u.chaosPerExalted
+                ? `1 div = ${Math.round(u.chaosPerDivine / u.chaosPerExalted)} ex`
+                : `1 div = ${getDivineRateCached()}c`;
+            })()}
           </span>
           <span style={{ opacity: 0.3 }}>|</span>
           {currentItem.itemLevel && <span>iLvl {currentItem.itemLevel}</span>}
@@ -255,11 +261,12 @@ export default function PriceCheck() {
           {priceResult.chaosValue !== null ? (
             <>
               <div className="text-lg font-bold" style={{ color: "var(--text-primary)" }}>
-                {formatPrice(priceResult.chaosValue, getDivineRateCached())}
+                {formatGamePrice(priceResult.chaosValue, getPriceUnits(currentItem.game))}
               </div>
               {priceResult.priceRange && (
                 <div className="text-xs" style={{ color: "var(--text-secondary)" }}>
-                  Range: {formatPriceRange(priceResult.priceRange, getDivineRateCached())}
+                  Range:{" "}
+                  {formatGamePriceRange(priceResult.priceRange, getPriceUnits(currentItem.game))}
                 </div>
               )}
               <div className="flex items-center gap-2 mt-1">
@@ -287,8 +294,11 @@ export default function PriceCheck() {
                   </div>
                   <div className="text-lg font-bold" style={{ color: "var(--text-primary)" }}>
                     {evaluation.estimatedChaos.min === evaluation.estimatedChaos.max
-                      ? `${evaluation.estimatedChaos.min}c`
-                      : `${evaluation.estimatedChaos.min}–${evaluation.estimatedChaos.max}c`}
+                      ? formatGamePrice(
+                          evaluation.estimatedChaos.min,
+                          getPriceUnits(currentItem.game)
+                        )
+                      : `${formatGamePrice(evaluation.estimatedChaos.min, getPriceUnits(currentItem.game))}–${formatGamePrice(evaluation.estimatedChaos.max, getPriceUnits(currentItem.game))}`}
                   </div>
                   <div className="flex items-center gap-2 mt-1">
                     <span className="text-xs px-1.5 py-0.5 rounded bg-yellow-600">estimate</span>

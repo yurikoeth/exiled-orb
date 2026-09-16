@@ -1,4 +1,7 @@
+import { formatGamePrice } from "@exiled-orb/shared";
 import { useAiStore } from "../stores/ai-store";
+import { useOverlayStore } from "../stores/overlay-store";
+import { getPriceUnits } from "../hooks/usePriceCheck";
 import WitchSays from "./WitchSays";
 
 const tierColors: Record<number, string> = {
@@ -15,6 +18,8 @@ export default function AiPriceInsight() {
   // unrelated store write (see CLAUDE.md Zustand convention).
   const currentAnalysis = useAiStore((s) => s.currentAnalysis);
   const analysisLoading = useAiStore((s) => s.analysisLoading);
+  // The recommendation is always in chaos; print it in the game's units.
+  const game = useOverlayStore((s) => s.currentItem?.game) ?? "poe1";
 
   if (analysisLoading) {
     return (
@@ -76,7 +81,8 @@ export default function AiPriceInsight() {
               className="font-bold"
               style={{ color: "var(--text-primary)", fontSize: "0.8rem" }}
             >
-              {priceRecommendation.minChaos}–{priceRecommendation.maxChaos}c
+              {formatGamePrice(priceRecommendation.minChaos, getPriceUnits(game))}–
+              {formatGamePrice(priceRecommendation.maxChaos, getPriceUnits(game))}
             </span>
           </div>
           <div className={confColors[priceRecommendation.confidence]}>

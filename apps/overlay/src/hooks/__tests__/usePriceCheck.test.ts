@@ -171,7 +171,10 @@ describe("checkPrice", () => {
       item({ rarity: "Rare", itemClass: "Rings", baseType: "Ruby Ring" })
     );
     expect(rare).toMatchObject({ source: "unavailable", chaosValue: null, confidence: "none" });
-    expect(fetchNinjaCached).not.toHaveBeenCalled();
+    // Rares never hit an item category — only the (cached) Currency overview
+    // is fetched, for the divine/exalted rates the estimate is printed in.
+    expect(fetchNinjaCached).toHaveBeenCalledTimes(1);
+    expect(fetchNinjaCached.mock.calls[0][0]).toContain("type=Currency");
 
     const unknown = await checkPrice(item({ rarity: "Currency", baseType: "Made Up Orb" }));
     expect(unknown.source).toBe("unavailable");

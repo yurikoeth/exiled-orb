@@ -1,5 +1,12 @@
 import { describe, it, expect } from "vitest";
-import { formatNumber, formatPrice, formatPriceRange, formatDuration } from "../format.js";
+import {
+  formatNumber,
+  formatPrice,
+  formatPriceRange,
+  formatGamePrice,
+  formatGamePriceRange,
+  formatDuration,
+} from "../format.js";
 
 describe("formatNumber", () => {
   it("passes small numbers through", () => {
@@ -55,5 +62,33 @@ describe("formatDuration", () => {
   it("shows hours and minutes past an hour", () => {
     expect(formatDuration(3_600_000)).toBe("1h 0m");
     expect(formatDuration(2 * 3_600_000 + 35 * 60_000 + 59_000)).toBe("2h 35m");
+  });
+});
+
+describe("formatGamePrice", () => {
+  // Live PoE2 rates on 2026-09-15: 1 div = 11.46c = 510.7 ex → 1 ex ≈ 0.0224c
+  const poe2 = { game: "poe2" as const, chaosPerDivine: 11.46, chaosPerExalted: 0.02244 };
+  const poe1 = { game: "poe1" as const, chaosPerDivine: 200 };
+
+  it("prints PoE2 values in exalted below a divine", () => {
+    expect(formatGamePrice(1.006, poe2)).toBe("45 ex");
+    expect(formatGamePrice(0.1, poe2)).toBe("4 ex");
+    expect(formatGamePrice(0.01, poe2)).toBe("<1 ex");
+    expect(formatGamePrice(0, poe2)).toBe("0 ex");
+  });
+
+  it("prints PoE2 values in divines at or above one divine", () => {
+    expect(formatGamePrice(11.46, poe2)).toBe("1.0 div");
+    expect(formatGamePrice(40, poe2)).toBe("3.5 div");
+  });
+
+  it("falls back to chaos for PoE2 when the exalted rate is unknown", () => {
+    expect(formatGamePrice(0.4, { game: "poe2", chaosPerDivine: 11.46 })).toBe("0.4c");
+  });
+
+  it("keeps PoE1 in chaos / divines", () => {
+    expect(formatGamePrice(12.6, poe1)).toBe("13c");
+    expect(formatGamePrice(450, poe1)).toBe("2.3 div");
+    expect(formatGamePriceRange([1, 20], poe2)).toBe("45 ex - 1.7 div");
   });
 });
