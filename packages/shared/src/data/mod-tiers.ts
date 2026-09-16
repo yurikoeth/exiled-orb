@@ -712,6 +712,11 @@ export interface ItemEvaluation {
   t1Count: number;
   t2Count: number;
   socketBonus: number;
+  /**
+   * Verdict-based estimate in the game's BASIC currency: chaos orbs for
+   * PoE1, exalted orbs for PoE2 (where chaos is a mid-tier currency worth
+   * ~45 ex). Convert with the live rates before printing PoE2 values.
+   */
   estimatedChaos: { min: number; max: number };
   hasTripleRes: boolean;
   hasLifePlusRes: boolean;

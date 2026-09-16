@@ -3,7 +3,7 @@ import { useAiStore } from "../stores/ai-store";
 import { useSettingsStore } from "../stores/settings-store";
 import { getApiKey } from "../utils/store";
 import { parseAiJson } from "../utils/parseAiJson";
-import { evaluateItem, resolveLeague, formatGamePrice } from "@exiled-orb/shared";
+import { evaluateItem, resolveLeague, formatGamePrice, basicToChaos } from "@exiled-orb/shared";
 import { getPriceUnits } from "./usePriceCheck";
 import type { ParsedItem, PriceResult, AiPriceAnalysis } from "@exiled-orb/shared";
 
@@ -52,8 +52,10 @@ function generateLocalAnalysis(item: ParsedItem, priceResult: PriceResult | null
     itemSummary: `${summary}.${comboNote} Score: ${evaluation.score}/100.`,
     modTiers,
     priceRecommendation: {
-      minChaos: evaluation.estimatedChaos.min,
-      maxChaos: evaluation.estimatedChaos.max,
+      // estimatedChaos is in the game's basic currency (PoE2: exalted);
+      // the recommendation is always chaos so the card can print units.
+      minChaos: basicToChaos(evaluation.estimatedChaos.min, getPriceUnits(item.game)),
+      maxChaos: basicToChaos(evaluation.estimatedChaos.max, getPriceUnits(item.game)),
       confidence: evaluation.score >= 70 ? "medium" : "low",
       reasoning: priceResult?.chaosValue
         ? `Based on mod tiers + poe.ninja (${formatGamePrice(priceResult.chaosValue, getPriceUnits(item.game))} listed)`

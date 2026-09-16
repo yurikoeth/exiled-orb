@@ -1,6 +1,11 @@
 import { useMemo } from "react";
 import { useOverlayStore } from "../stores/overlay-store";
-import { formatGamePrice, formatGamePriceRange, evaluateItem } from "@exiled-orb/shared";
+import {
+  formatGamePrice,
+  formatGamePriceRange,
+  formatBasicEstimate,
+  evaluateItem,
+} from "@exiled-orb/shared";
 import { checkPrice, getDivineRateCached, getPriceUnits } from "../hooks/usePriceCheck";
 import type { ItemEvaluation } from "@exiled-orb/shared";
 import { Btn, Panel, RARITY_COLORS } from "./ui";
@@ -293,12 +298,10 @@ export default function PriceCheck() {
                     Estimated (based on mod tiers)
                   </div>
                   <div className="text-lg font-bold" style={{ color: "var(--text-primary)" }}>
-                    {evaluation.estimatedChaos.min === evaluation.estimatedChaos.max
-                      ? formatGamePrice(
-                          evaluation.estimatedChaos.min,
-                          getPriceUnits(currentItem.game)
-                        )
-                      : `${formatGamePrice(evaluation.estimatedChaos.min, getPriceUnits(currentItem.game))}–${formatGamePrice(evaluation.estimatedChaos.max, getPriceUnits(currentItem.game))}`}
+                    {formatBasicEstimate(
+                      evaluation.estimatedChaos,
+                      getPriceUnits(currentItem.game)
+                    )}
                   </div>
                   <div className="flex items-center gap-2 mt-1">
                     <span className="text-xs px-1.5 py-0.5 rounded bg-yellow-600">estimate</span>

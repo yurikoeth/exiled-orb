@@ -5,6 +5,8 @@ import {
   formatPriceRange,
   formatGamePrice,
   formatGamePriceRange,
+  formatBasicEstimate,
+  basicToChaos,
   formatDuration,
 } from "../format.js";
 
@@ -90,5 +92,28 @@ describe("formatGamePrice", () => {
     expect(formatGamePrice(12.6, poe1)).toBe("13c");
     expect(formatGamePrice(450, poe1)).toBe("2.3 div");
     expect(formatGamePriceRange([1, 20], poe2)).toBe("45 ex - 1.7 div");
+  });
+});
+
+describe("formatBasicEstimate", () => {
+  const poe2 = { game: "poe2" as const, chaosPerDivine: 11.46, chaosPerExalted: 0.02244 };
+  const poe1 = { game: "poe1" as const, chaosPerDivine: 200 };
+
+  it("treats the estimate as exalted for PoE2 and converts through the rates", () => {
+    expect(basicToChaos(28, poe2)).toBeCloseTo(0.628);
+    expect(formatBasicEstimate({ min: 28, max: 31 }, poe2)).toBe("28 ex–31 ex");
+    expect(formatBasicEstimate({ min: 600, max: 600 }, poe2)).toBe("1.2 div");
+  });
+
+  it("prints PoE2 as ex when the exalted rate is unknown", () => {
+    expect(formatBasicEstimate({ min: 5, max: 30 }, { game: "poe2", chaosPerDivine: 11.46 })).toBe(
+      "5 ex–30 ex"
+    );
+  });
+
+  it("keeps PoE1 in chaos", () => {
+    expect(basicToChaos(28, poe1)).toBe(28);
+    expect(formatBasicEstimate({ min: 0, max: 1 }, poe1)).toBe("0c–1c");
+    expect(formatBasicEstimate({ min: 450, max: 450 }, poe1)).toBe("2.3 div");
   });
 });

@@ -60,6 +60,36 @@ export function formatGamePriceRange(range: [number, number], units: PriceUnits)
 }
 
 /**
+ * Convert a value in the game's basic currency (PoE1 chaos, PoE2 exalted —
+ * the unit of `ItemEvaluation.estimatedChaos`) to chaos. Without a PoE2
+ * exalted rate the value is returned unchanged.
+ */
+export function basicToChaos(value: number, units: PriceUnits): number {
+  if (units.game === "poe2" && units.chaosPerExalted && units.chaosPerExalted > 0) {
+    return value * units.chaosPerExalted;
+  }
+  return value;
+}
+
+/**
+ * Format a mod-tier estimate (basic-currency min/max) in trading units:
+ * "5–30c" / "5–30 ex" / "1.2 div–2.0 div". A PoE2 estimate with no exalted
+ * rate is printed as "N ex" rather than mislabelled as chaos.
+ */
+export function formatBasicEstimate(
+  range: { min: number; max: number },
+  units: PriceUnits
+): string {
+  const fmt = (v: number): string => {
+    if (units.game === "poe2" && !(units.chaosPerExalted && units.chaosPerExalted > 0)) {
+      return `${v} ex`;
+    }
+    return formatGamePrice(basicToChaos(v, units), units);
+  };
+  return range.min === range.max ? fmt(range.min) : `${fmt(range.min)}–${fmt(range.max)}`;
+}
+
+/**
  * Format a long duration as days + hours ("23d 14h"), for season-length
  * countdowns. Under a day drops to hours ("14h"); under an hour → "<1h".
  * Negative input is treated as 0.
