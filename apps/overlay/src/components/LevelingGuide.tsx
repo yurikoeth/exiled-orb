@@ -151,7 +151,7 @@ export default function LevelingGuide() {
               fontWeight: activeStepZone && currentStep?.act === act ? 700 : 400,
             }}
           >
-            {toRoman(act)}
+            {guide.actLabels?.[act] ?? toRoman(act)}
             {activeStepZone && currentStep?.act === act && " •"}
           </button>
         ))}

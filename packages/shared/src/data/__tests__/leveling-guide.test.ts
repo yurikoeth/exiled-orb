@@ -2,10 +2,10 @@ import { describe, it, expect } from "vitest";
 import { POE1_LEVELING, POE2_LEVELING, findCurrentStep, getNextStep } from "../leveling-guide.js";
 
 describe("POE2_LEVELING", () => {
-  it("covers only the released acts (1–4)", () => {
+  it("covers the released acts (1–4) plus the three Interludes (5–7)", () => {
     for (const step of POE2_LEVELING.steps) {
       expect(step.act, step.zone).toBeGreaterThanOrEqual(1);
-      expect(step.act, step.zone).toBeLessThanOrEqual(4);
+      expect(step.act, step.zone).toBeLessThanOrEqual(7);
     }
   });
 
@@ -74,6 +74,8 @@ describe("getNextStep", () => {
   });
 
   it("returns null at the end of the guide", () => {
-    expect(getNextStep(POE2_LEVELING, "Heart of the Tribe")).toBeNull();
+    expect(getNextStep(POE2_LEVELING, "The Cuachic Vault")).toBeNull();
+    // Act 4's finale now hands over to the first Interlude hub
+    expect(getNextStep(POE2_LEVELING, "Heart of the Tribe")?.zone).toBe("The Refuge");
   });
 });
