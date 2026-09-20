@@ -111,7 +111,11 @@ export async function analyzeItemWithAi(
       baseType: item.baseType,
       rarity: item.rarity,
       itemLevel: item.itemLevel,
-      explicits: item.explicits.map((m) => m.text),
+      // Advanced copies carry the game's own affix tier — far more reliable
+      // than guessing, so hand it to the model verbatim.
+      explicits: item.explicits.map((m) =>
+        m.gameTier !== undefined ? `${m.text} [game tier ${m.gameTier}]` : m.text
+      ),
       implicits: item.implicits.map((m) => m.text),
       corrupted: item.corrupted,
       links: item.links,

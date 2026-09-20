@@ -25,6 +25,30 @@ const tierColors: Record<number, string> = {
   5: "#555",
 };
 
+/**
+ * Tier badge from the game's own advanced item description (`{ Prefix
+ * Modifier "Lord's" (Tier: 8) }`), shown when the local tier table has no
+ * opinion. Same colour scale as local tiers; a dim dash when unknown.
+ */
+function GameTierBadge({ tier }: { tier: number | undefined }) {
+  if (tier === undefined) {
+    return (
+      <span className="shrink-0 w-5 text-center" style={{ color: "#333" }}>
+        —
+      </span>
+    );
+  }
+  return (
+    <span
+      className="font-bold shrink-0 w-5 text-center"
+      style={{ color: tierColors[tier] || "#555", opacity: 0.85 }}
+      title="Tier from the game's advanced item description"
+    >
+      T{tier}
+    </span>
+  );
+}
+
 const verdictColors: Record<string, string> = {
   godly: "#ffd700",
   great: "#44cc44",
@@ -47,6 +71,18 @@ export default function PriceCheck() {
   const priceLoading = useOverlayStore((s) => s.priceLoading);
 
   // Evaluate rare item mods
+  // Tiers the game itself printed (advanced item descriptions) — used as the
+  // badge whenever our own tier table has no row for the mod.
+  const gameTiers = useMemo(
+    () =>
+      new Map(
+        [...(currentItem?.explicits ?? []), ...(currentItem?.implicits ?? [])]
+          .filter((m) => m.gameTier !== undefined)
+          .map((m) => [m.text, m.gameTier as number])
+      ),
+    [currentItem]
+  );
+
   const evaluation: ItemEvaluation | null = useMemo(() => {
     if (!currentItem || currentItem.rarity !== "Rare") return null;
     const allMods = [
@@ -150,12 +186,16 @@ export default function PriceCheck() {
             {evaluation.mods.map((mod, i) => (
               <div key={i}>
                 <div className="flex items-center gap-2 text-xs">
-                  <span
-                    className="font-bold shrink-0 w-5 text-center"
-                    style={{ color: mod.tier > 0 ? tierColors[mod.tier] || "#555" : "#333" }}
-                  >
-                    {mod.tier > 0 ? `T${mod.tier}` : "—"}
-                  </span>
+                  {mod.tier > 0 ? (
+                    <span
+                      className="font-bold shrink-0 w-5 text-center"
+                      style={{ color: tierColors[mod.tier] || "#555" }}
+                    >
+                      T{mod.tier}
+                    </span>
+                  ) : (
+                    <GameTierBadge tier={gameTiers.get(mod.modText)} />
+                  )}
                   <span className="flex-1 truncate" style={{ color: "var(--text-primary)" }}>
                     {mod.modText}
                   </span>
@@ -205,9 +245,7 @@ export default function PriceCheck() {
               .filter((m) => !evaluation.mods.some((em) => em.modText === m.text))
               .map((m, i) => (
                 <div key={`u${i}`} className="flex items-center gap-2 text-xs">
-                  <span className="shrink-0 w-5 text-center" style={{ color: "#333" }}>
-                    —
-                  </span>
+                  <GameTierBadge tier={m.gameTier} />
                   <span className="truncate" style={{ color: "var(--text-secondary)" }}>
                     {m.text}
                   </span>
