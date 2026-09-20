@@ -30,18 +30,20 @@ ExiledOrb is an always-on-top desktop companion that monitors your clipboard and
 
 ## Screenshots
 
-<!--
-TODO shot list (capture on Windows, overlay next to the game):
-  1. HERO GIF (ScreenToGif): Ctrl+C an item in-game -> price check panel pops
-     with tier bars + verdict. Keep it under ~10s / ~15MB.
-  2. Map timer mid-run: live timer + splits vs PB.
-  3. Characters tab: gear viewer with socket colors/links.
-  4. Ask AI: a Witch-persona response.
-  Save to docs/screenshots/, reference like:
-  ![Price check](docs/screenshots/price-check.gif)
--->
+<p align="center">
+  <img src="docs/screenshots/price-check.png" width="30%" alt="Price check: mod tiers, poe.ninja price and the Witch's insight" />
+  <img src="docs/screenshots/waystone.png" width="30%" alt="Waystone mod warnings" />
+  <img src="docs/screenshots/maps.png" width="30%" alt="Map outcomes and run history" />
+</p>
+<p align="center">
+  <img src="docs/screenshots/characters.png" width="30%" alt="Character gear from the GGG OAuth API" />
+  <img src="docs/screenshots/market.png" width="30%" alt="Live poe.ninja market tab" />
+  <img src="docs/screenshots/home.png" width="30%" alt="Home: character header, season and tabs" />
+</p>
 
-_Screenshots coming soon._
+Left to right: Ctrl+C price check with mod tiers and the Witch's insight, waystone mod
+warnings, map outcomes and run history; character gear via the GGG OAuth API, live
+poe.ninja market, and the home screen with the character header pulled from Client.txt.
 
 ---
 
