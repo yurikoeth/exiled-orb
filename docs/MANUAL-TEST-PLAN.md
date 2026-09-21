@@ -50,7 +50,7 @@ cargo fmt --check
 
 ### B1. Install, launch, tray, window lifecycle
 
-- [ ] B1.1 Installer (`ExiledOrb_1.0.0_x64-setup.exe`) runs without admin;
+- [ ] B1.1 Installer (`ExiledOrb_<version>_x64-setup.exe`) runs without admin;
       SmartScreen shows "More info → Run anyway" as the README describes.
 - [ ] B1.2 App launches to the home screen; window title is "ExiledOrb";
       tray icon appears.
